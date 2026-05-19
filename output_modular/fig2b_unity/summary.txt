@@ -1,0 +1,19 @@
+============================================================
+MEMRISTOR STRUKOV (2008) — GEMELO DIGITAL
+Escenario: fig2b_unity
+Generado: 2026-05-18 21:20
+============================================================
+
+Puntos de simulación : 60000
+Tiempo total         : 6.000 s
+
+Voltaje   : [-1.000, 1.000] V
+Corriente : [-0.117, 0.117] mA
+Estado x  : [0.0998, 0.8385]
+Resistencia: [2667, 14413] Ohm
+
+Parámetros del dispositivo:
+  R_on  = 100.0 Ohm
+  R_off = 16000.0 Ohm
+  Ratio = 160.0:1
+  D     = 10.0 nm
