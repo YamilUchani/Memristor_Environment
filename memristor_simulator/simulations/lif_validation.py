@@ -1,26 +1,17 @@
 """
 simulations/lif_validation.py
 ==============================
-Simulación de validación aislada de la neurona LIF.
+Simulación de validación del modelo físico de la neurona TSM-LIF.
 
-Genera cuatro experimentos que demuestran cada capacidad fundamental:
-
-  EXP-1: Rampa de corriente  → V aumenta con la corriente de entrada.
-  EXP-2: Umbral (threshold)  → debajo no dispara, encima sí.
-  EXP-3: Spike completo      → disparo + reset observados en el tiempo.
-  EXP-4: Trenes de spikes    → múltiples disparos con corriente sostenida.
-
-Uso::
-
-    from memristor_simulator.simulations.lif_validation import LIFValidation
-    results = LIFValidation().run(verbose=True)
-
-Referencia:
-    Gerstner & Kistler (2002) — Spiking Neuron Models, Cap. 4.
+Genera cuatro experimentos que demuestran cada capacidad física:
+  EXP-1: Rampa de voltaje    → Vc aumenta con Vin hasta conmutar.
+  EXP-2: Umbral (threshold)  → Vin subumbral (0.5V) vs sobreumbral (5V).
+  EXP-3: Spike físico único  → subida, disparo, descarga rápida y lenta.
+  EXP-4: Tren de spikes      → disparos periódicos bajo Vin constante de 5V.
 """
 
 import numpy as np
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 from ..models.lif_neuron import LIFNeuron, LIFParameters, default_lif_params
 
@@ -32,59 +23,44 @@ from ..models.lif_neuron import LIFNeuron, LIFParameters, default_lif_params
 @dataclass
 class LIFExperimentResult:
     """
-    Resultado de un experimento de validación LIF.
-
-    Atributos
-    ---------
-    label : str
-        Nombre descriptivo del experimento.
-    time : np.ndarray
-        Vector de tiempo [s].
-    voltage : np.ndarray
-        Potencial de membrana V(t) [V].
-    current : np.ndarray
-        Corriente de entrada I(t) [A].
-    spike_times : np.ndarray
-        Instantes donde ocurrió un spike [s].
-    params : LIFParameters
-        Parámetros de la neurona usados.
+    Resultado de un experimento de validación TSM-LIF.
     """
     label:       str
     time:        np.ndarray
-    voltage:     np.ndarray
-    current:     np.ndarray
+    voltage:     np.ndarray     # Vc [V]
+    current:     np.ndarray     # Vin [V] (usado para mantener compatibilidad de nombres)
+    vout:        np.ndarray     # Vout [V]
+    w:           np.ndarray     # w [0, 1]
     spike_times: np.ndarray
     params:      LIFParameters
 
     @property
     def voltage_mV(self) -> np.ndarray:
-        """Potencial de membrana en mV."""
+        """Potencial Vc en mV (usado por graficador antiguo o adaptado)."""
         return self.voltage * 1e3
 
     @property
     def current_nA(self) -> np.ndarray:
-        """Corriente en nanoamperios."""
-        return self.current * 1e9
+        """En el modelo físico, devuelve Vin en voltios."""
+        return self.current
 
     @property
     def n_spikes(self) -> int:
-        """Número total de spikes registrados."""
         return len(self.spike_times)
 
     @property
     def mean_firing_rate_Hz(self) -> float:
-        """Frecuencia media de disparo [Hz]."""
         T = self.time[-1] - self.time[0]
         return self.n_spikes / T if T > 0 else 0.0
 
 
 @dataclass
 class LIFValidationResults:
-    """Colección de los cuatro experimentos de validación."""
-    ramp:      LIFExperimentResult   # EXP-1: rampa de corriente
-    threshold: LIFExperimentResult   # EXP-2: umbral
-    single:    LIFExperimentResult   # EXP-3: spike único
-    train:     LIFExperimentResult   # EXP-4: tren de spikes
+    ramp:      LIFExperimentResult
+    threshold: LIFExperimentResult
+    single:    LIFExperimentResult
+    train:     LIFExperimentResult
+    comparison: LIFExperimentResult
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -92,39 +68,25 @@ class LIFValidationResults:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _run_simulation(neuron: LIFNeuron,
-                    current_array: np.ndarray,
+                    vin_array: np.ndarray,
                     dt: float,
                     label: str) -> LIFExperimentResult:
-    """
-    Ejecuta la integración numérica paso a paso para un perfil de corriente dado.
-
-    Parámetros
-    ----------
-    neuron : LIFNeuron
-        Neurona a simular (se reinicia al inicio).
-    current_array : np.ndarray
-        Corriente de entrada I(t) [A], un valor por paso de tiempo.
-    dt : float
-        Paso de tiempo [s].
-    label : str
-        Etiqueta descriptiva del experimento.
-
-    Retorna
-    -------
-    LIFExperimentResult con todos los arrays poblados.
-    """
-    n = len(current_array)
+    n = len(vin_array)
     neuron.reset()
 
     t_arr  = np.zeros(n)
     v_arr  = np.zeros(n)
+    vout_arr = np.zeros(n)
+    w_arr  = np.zeros(n)
     spikes = []
 
     for k in range(n):
         t = k * dt
-        fired, V = neuron.step(current_array[k], dt)
+        fired, V = neuron.step(vin_array[k], dt)
         t_arr[k] = t
         v_arr[k] = V
+        vout_arr[k] = neuron.Vout
+        w_arr[k] = neuron.w
         if fired:
             spikes.append(t)
 
@@ -132,7 +94,9 @@ def _run_simulation(neuron: LIFNeuron,
         label       = label,
         time        = t_arr,
         voltage     = v_arr,
-        current     = current_array.copy(),
+        current     = vin_array.copy(),  # Vin
+        vout        = vout_arr,
+        w           = w_arr,
         spike_times = np.array(spikes),
         params      = neuron.params,
     )
@@ -140,162 +104,95 @@ def _run_simulation(neuron: LIFNeuron,
 
 class LIFValidation:
     """
-    Batería de cuatro experimentos de validación de la neurona LIF.
-
-    Los experimentos están diseñados para demostrar de forma independiente
-    cada mecanismo fundamental antes de integrar la neurona con el memristor.
-
-    Parámetros
-    ----------
-    params : LIFParameters, opcional
-        Parámetros de la neurona. Por defecto = default_lif_params().
-    dt : float
-        Paso de tiempo [s]. Por defecto 0.1 ms.
+    Batería de cuatro experimentos de validación física del modelo TSM-LIF.
     """
 
     def __init__(self,
                  params: Optional[LIFParameters] = None,
-                 dt: float = 0.1e-3):
+                 dt: float = 0.05e-3):
         self.params = params or default_lif_params()
         self.dt = dt
 
-    # ── EXP-1: Rampa de corriente ─────────────────────────────────────────────
+    # ── EXP-1: Rampa de voltaje ─────────────────────────────────────────────
 
     def _exp1_ramp(self) -> LIFExperimentResult:
-        """
-        EXP-1 — Rampa de corriente.
-
-        Aplica una corriente que aumenta linealmente de 0 a 6 nA en 300 ms.
-        Demuestra que V crece a mayor velocidad cuando más corriente entra,
-        y que la neurona dispara antes cuanto más fuerte es la entrada.
-        """
-        T = 0.30           # 300 ms
-        I_max = 6e-9       # 6 nA
+        """Rampa lineal de Vin: de 0 a 5 V en 500 ms."""
+        T = 0.50
         n = int(T / self.dt)
-        t_arr = np.arange(n) * self.dt
-        # Rampa lineal: I aumenta de 0 a I_max
-        current = np.linspace(0.0, I_max, n)
-
+        vin = np.linspace(0.0, 5.0, n)
         neuron = LIFNeuron(self.params)
-        return _run_simulation(neuron, current, self.dt,
-                               "EXP-1: Rampa de corriente (0 -> 6 nA)")
+        return _run_simulation(neuron, vin, self.dt, "EXP-1: Rampa de voltaje (0 -> 5 V)")
 
     # ── EXP-2: Umbral (threshold) ─────────────────────────────────────────────
 
     def _exp2_threshold(self) -> LIFExperimentResult:
-        """
-        EXP-2 — Comparación por encima/debajo del umbral.
-
-        Aplica dos niveles de corriente constante separados por una pausa:
-          - Segmento A (0–200 ms):   I = 1 nA  → V sube, pero no llega a V_th.
-          - Pausa     (200–250 ms):  I = 0     → V decae hacia E_L.
-          - Segmento B (250–500 ms): I = 4 nA  → V supera V_th → spike.
-
-        Demuestra la existencia del umbral: el mismo circuito, dos respuestas.
-        """
-        T_total    = 0.50   # 500 ms
-        T_sub      = 0.20   # 200 ms subthreshold
-        T_pause    = 0.05   # 50 ms de pausa
-        T_supra    = 0.25   # 250 ms suprathreshold
-        I_sub      = 1e-9   # 1 nA  — por debajo del umbral
-        I_supra    = 4e-9   # 4 nA  — por encima del umbral
-
+        """Vin subumbral (0.5V) y Vin sobreumbral (5V)."""
+        T_total = 0.50
+        T_sub   = 0.20
+        T_pause = 0.05
+        
         n_total = int(T_total / self.dt)
-        n_sub   = int(T_sub   / self.dt)
+        n_sub   = int(T_sub / self.dt)
         n_pause = int(T_pause / self.dt)
 
-        current = np.zeros(n_total)
-        current[:n_sub]              = I_sub
-        current[n_sub:n_sub+n_pause] = 0.0
-        current[n_sub+n_pause:]      = I_supra
+        vin = np.zeros(n_total)
+        vin[:n_sub] = 0.5                      # 0.5 V - no conmutará
+        vin[n_sub:n_sub+n_pause] = 0.0         # pausa
+        vin[n_sub+n_pause:] = 5.0              # 5.0 V - provocará conmutación
 
         neuron = LIFNeuron(self.params)
-        return _run_simulation(neuron, current, self.dt,
-                               "EXP-2: Por debajo / por encima del umbral")
+        return _run_simulation(neuron, vin, self.dt, "EXP-2: Vin subumbral (0.5 V) vs sobreumbral (5 V)")
 
     # ── EXP-3: Spike único ────────────────────────────────────────────────────
 
     def _exp3_single_spike(self) -> LIFExperimentResult:
-        """
-        EXP-3 — Spike único con zoom en el evento.
-
-        Aplica un pulso de corriente corto (30 ms) que provoca exactamente
-        un disparo, seguido de silencio para ver el reset completo.
-
-        Muestra en detalle:
-          - Subida gradual de V.
-          - Disparo abrupto al alcanzar V_th.
-          - Reset a V_reset.
-          - Decaimiento post-spike hacia E_L.
-        """
-        T = 0.25           # 250 ms
-        T_pulse = 0.030    # 30 ms de pulso
-        I_pulse = 5e-9     # 5 nA — garantiza disparo en ≈20 ms
-
+        """Pulso corto de Vin para generar exactamente un disparo físico."""
+        T = 0.30
+        T_pulse = 0.120   # lo suficientemente largo para conmutar una vez
+        
         n = int(T / self.dt)
         n_pulse = int(T_pulse / self.dt)
 
-        current = np.zeros(n)
-        current[:n_pulse] = I_pulse   # Pulso inicial
+        vin = np.zeros(n)
+        vin[:n_pulse] = 5.0
 
         neuron = LIFNeuron(self.params)
-        return _run_simulation(neuron, current, self.dt,
-                               "EXP-3: Spike unico - disparo y reset")
+        return _run_simulation(neuron, vin, self.dt, "EXP-3: Spike fisico unico")
 
     # ── EXP-4: Tren de spikes ─────────────────────────────────────────────────
-
     def _exp4_spike_train(self) -> LIFExperimentResult:
-        """
-        EXP-4 — Tren de spikes con tres niveles de corriente.
-
-        Divide la simulación en tres segmentos con corriente constante creciente:
-          - Segmento 1 (0–300 ms):    I = 2 nA  → frecuencia baja.
-          - Segmento 2 (300–600 ms):  I = 4 nA  → frecuencia media.
-          - Segmento 3 (600–900 ms):  I = 7 nA  → frecuencia alta.
-
-        Demuestra la curva f-I (firing rate vs input current) de la neurona.
-        """
-        T_seg = 0.30       # 300 ms por segmento
-        levels = [2e-9, 4e-9, 7e-9]  # nA: baja, media, alta
-
-        segments = []
-        for I_level in levels:
-            n_seg = int(T_seg / self.dt)
-            segments.append(np.full(n_seg, I_level))
-        current = np.concatenate(segments)
-
+        """Vin constante sostenido de 5 V en 1.5 segundos para observar el tren de disparos."""
+        T = 1.50
+        n = int(T / self.dt)
+        vin = np.full(n, 5.0)
         neuron = LIFNeuron(self.params)
-        return _run_simulation(neuron, current, self.dt,
-                               "EXP-4: Tren de spikes (3 niveles de corriente)")
+        return _run_simulation(neuron, vin, self.dt, "EXP-4: Tren de spikes (Vin = 5 V constante)")
 
-    # ── Ejecutar todos ────────────────────────────────────────────────────────
+    # ── EXP-5: Comparación con Datos Experimentales ─────────────────────────
+    def _exp5_experimental_comparison(self) -> LIFExperimentResult:
+        """EXP-5 — Comparación directa con datos experimentales (onda cuadrada a 100 Hz)."""
+        T = 0.50
+        n = int(T / self.dt)
+        t = np.arange(n) * self.dt
+        f_in = 100.0
+        vin = np.where((t * f_in) % 1.0 < 0.5, 5.0, 0.0)
+        neuron = LIFNeuron(self.params)
+        return _run_simulation(neuron, vin, self.dt, "EXP-5: Comparacion Experimental (100 Hz)")
 
     def run(self, verbose: bool = True) -> LIFValidationResults:
-        """
-        Ejecuta los cuatro experimentos de validación en secuencia.
-
-        Parámetros
-        ----------
-        verbose : bool
-            Si True, imprime resumen estadístico de cada experimento.
-
-        Retorna
-        -------
-        LIFValidationResults con los cuatro experimentos.
-        """
         if verbose:
             print("\n" + "="*60)
-            print("  VALIDACION LIF — Neurona Aislada")
-            print("  Paso 4 del proyecto de Computacion Neurormorfica")
+            print("  VALIDACION TSM-LIF — Neurona Fisiológica")
             print("="*60)
             print(self.params)
-            print(f"  dt = {self.dt*1e3:.2f} ms\n")
+            print(f"  dt = {self.dt*1e3:.3f} ms\n")
 
         experiments = {
             "ramp":      self._exp1_ramp,
             "threshold": self._exp2_threshold,
             "single":    self._exp3_single_spike,
             "train":     self._exp4_spike_train,
+            "comparison": self._exp5_experimental_comparison,
         }
 
         results_dict = {}
@@ -305,30 +202,19 @@ class LIFValidation:
             if verbose:
                 _print_experiment_summary(res)
 
-        if verbose:
-            print("\n" + "="*60)
-            print("  [OK] Validacion completada.")
-            print("="*60)
-
         return LIFValidationResults(**results_dict)
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Utilidades
-# ─────────────────────────────────────────────────────────────────────────────
-
 def _print_experiment_summary(res: LIFExperimentResult):
-    """Imprime un resumen estadístico de un experimento."""
     p = res.params
     print(f"  [{res.label}]")
-    print(f"    Duracion       : {res.time[-1]*1e3:.0f} ms")
-    print(f"    I entrada      : [{res.current_nA.min():.2f}, "
-          f"{res.current_nA.max():.2f}] nA")
-    print(f"    V rango        : [{res.voltage_mV.min():.2f}, "
-          f"{res.voltage_mV.max():.2f}] mV")
-    print(f"    V_th           : {p.V_th*1e3:.2f} mV")
+    print(f"    Duración       : {res.time[-1]*1000:.1f} ms")
+    print(f"    Vin rango      : [{res.current.min():.2f}, {res.current.max():.2f}] V")
+    print(f"    Vc rango       : [{res.voltage.min():.2f}, {res.voltage.max():.2f}] V")
+    print(f"    V_th / V_hold  : {p.V_th:.2f} / {p.V_hold:.2f} V")
+    print(f"    Vout máx pico  : {res.vout.max():.3f} V")
     print(f"    Spikes         : {res.n_spikes}")
     if res.n_spikes > 0:
-        print(f"    Primer spike   : {res.spike_times[0]*1e3:.2f} ms")
+        print(f"    Primer spike   : {res.spike_times[0]*1000:.2f} ms")
         print(f"    Freq. media    : {res.mean_firing_rate_Hz:.2f} Hz")
     print()
+

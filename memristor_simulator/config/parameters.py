@@ -60,6 +60,7 @@ class StrukovParameters:
     R_off: float = 16_000.0      # Ω  (ratio 160:1, Fig 2b)
     D: float = 10e-9             # m  (10 nm)
     mu_v: float = 1e-14          # m²/V·s  (= 10⁻¹⁰ cm²/V·s)
+    v_th_mem: float = 0.0        # Umbral de conmutacion (V) para STDP
     w_init: float = 0.1          # x₀ = w₀/D (inicio en región baja)
 
     # ── Extensiones de dinámica no lineal ─────────────────────────────────

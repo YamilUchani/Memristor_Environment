@@ -1,5 +1,5 @@
 # Memristor Strukov (2008) — Simulación numérica
-# Generado: 2026-05-18T21:20:17.519648
+# Generado: 2026-06-15T14:11:26.869901
 # scenario: fig2b_unity
 time_s,voltage_V,current_A,current_mA,resistance_Ohm,state_variable_x,memristance_Ohm
 0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,14410.0000,0.100000,14410.0000

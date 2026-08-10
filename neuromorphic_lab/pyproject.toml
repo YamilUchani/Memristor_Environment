@@ -1,0 +1,6 @@
+[project]
+name = "neuromorphic-lab"
+version = "0.1.0"
+description = "Clean neuromorphic simulation lab."
+requires-python = ">=3.10"
+dependencies = []

@@ -1,7 +1,7 @@
 ============================================================
 MEMRISTOR STRUKOV (2008) — GEMELO DIGITAL
 Escenario: fig2b_unity
-Generado: 2026-05-18 21:20
+Generado: 2026-06-15 14:11
 ============================================================
 
 Puntos de simulación : 60000

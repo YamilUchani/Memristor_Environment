@@ -1,0 +1,6 @@
+Metrica,Valor
+Accuracy,0.8
+Precision (Macro),0.5555555555555555
+Recall (Macro),0.6666666666666666
+F1 Score (Macro),0.6
+Tasa de acierto,80.0

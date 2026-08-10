@@ -40,26 +40,21 @@ def calculate_resistance(x: float, r_on: float, r_off: float) -> float:
     return r_on * x + r_off * (1.0 - x)
 
 
-def dxdt_strukov(current: float, r_on: float, d: float, mu_v: float) -> float:
+def dxdt_strukov(i_in: float, R_on: float, D: float, mu_v: float, v_mem: float = None, v_th_mem: float = 0.0) -> float:
     """
-    dx/dt = (μ_v · R_on / D²) · I(t)    [Ec. 6 del paper]
-
-    Parámetros
-    ----------
-    current : float
-        Corriente instantánea (A).
-    r_on : float
-        Resistencia ON (Ω).
-    d : float
-        Espesor de la película (m).
-    mu_v : float
-        Movilidad iónica media (m²/V·s).
+    Ecuación de deriva lineal propuesta por Strukov et al. (2008).
+    dx/dt = mu_v * (R_on / D^2) * I(t)
+    Si se proporciona v_mem y v_th_mem > 0, se aplica un umbral para permitir STDP.
 
     Retorna
     -------
     float : Tasa de cambio de la variable de estado (s⁻¹).
     """
-    return (mu_v * r_on / d**2) * current
+    if v_mem is not None and v_th_mem > 0.0:
+        if abs(v_mem) <= v_th_mem:
+            return 0.0
+            
+    return mu_v * (R_on / (D ** 2)) * i_in
 
 
 def window_biolek(x: float, p: int = 5) -> float:
@@ -182,7 +177,7 @@ class StrukovMemristor:
         current = voltage / r
 
         # 2. Tasa de cambio de estado
-        dxdt = dxdt_strukov(current, self.params.R_on, self.params.D, self.params.mu_v)
+        dxdt = dxdt_strukov(current, self.params.R_on, self.params.D, self.params.mu_v, v_mem=voltage, v_th_mem=self.params.v_th_mem)
 
         # Aplicar función ventana de Biolek (drift no lineal en bordes)
         if self.params.enable_nonlinear_drift:
@@ -231,7 +226,7 @@ class StrukovMemristor:
         """dx/dt para un voltaje dado (sin avanzar el estado)."""
         r = max(self.resistance, 1.0)
         current = voltage / r
-        dxdt = dxdt_strukov(current, self.params.R_on, self.params.D, self.params.mu_v)
+        dxdt = dxdt_strukov(current, self.params.R_on, self.params.D, self.params.mu_v, v_mem=voltage, v_th_mem=self.params.v_th_mem)
         if self.params.enable_nonlinear_drift:
             dxdt *= window_biolek(self.x)
         return dxdt
