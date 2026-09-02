@@ -20,8 +20,16 @@ def _qt_message_handler(mode: QtMsgType, context: QMessageLogContext, message: s
 
 def main():
     """Punto de entrada para la ejecución de la GUI neurolab."""
-    print("Neuromorphic Lab » inicializando interfaz gráfica...")
-    print("  (puede tardar unos segundos en la primera carga)")
+    # Consolas Windows con codepage legacy (cp850/cp1252) no representan emojis:
+    # sustituir caracteres no codificables en vez de lanzar UnicodeEncodeError.
+    try:
+        sys.stdout.reconfigure(errors="replace")
+        sys.stderr.reconfigure(errors="replace")
+    except Exception:
+        pass
+
+    print("Neuromorphic Lab » inicializando interfaz gráfica...", flush=True)
+    print("  (puede tardar unos segundos en la primera carga)", flush=True)
 
     # Permitir que el sistema maneje SIGINT (Ctrl+C) limpiamente sin traceback de C++ eventFilter
     signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -50,10 +58,9 @@ def main():
     window.raise_()
     window.activateWindow()
 
-    print("✅ Neuromorphic Lab » ventana abierta.")
-    print("   La consola queda 'bloqueada' mientras la ventana esté abierta (es normal).")
-    print("   Para salir: cierra la ventana o presiona Ctrl+C.")
-    sys.stdout.flush()
+    print("[OK] Neuromorphic Lab » ventana abierta.", flush=True)
+    print("   La consola queda 'bloqueada' mientras la ventana esté abierta (es normal).", flush=True)
+    print("   Para salir: cierra la ventana o presiona Ctrl+C.", flush=True)
 
     sys.exit(app.exec())
 
