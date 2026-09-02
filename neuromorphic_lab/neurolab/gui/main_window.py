@@ -321,15 +321,16 @@ class MainWindow(QMainWindow):
         # Ventana Flotante del Memristor
         self.memristor_window = MemristorConfigWindow(self)
         
-        btn_config_memristor = QPushButton("⚙️ Configurar Memristor Acoplado")
-        btn_config_memristor.setStyleSheet("""
+        self.btn_config_memristor = QPushButton("⚙️ Configurar Memristor Acoplado")
+        self.btn_config_memristor.setStyleSheet("""
             QPushButton { background-color: #f38ba8; color: #11111b; font-weight: bold; padding: 10px; border-radius: 6px; }
             QPushButton:hover { background-color: #eba0ac; }
+            QPushButton:disabled { background-color: #45475a; color: #a6adc8; }
         """)
-        btn_config_memristor.clicked.connect(self.memristor_window.show)
+        self.btn_config_memristor.clicked.connect(self.memristor_window.show)
         
         controls_layout_h.addWidget(group_coupling)
-        controls_layout_h.addWidget(btn_config_memristor)
+        controls_layout_h.addWidget(self.btn_config_memristor)
         controls_layout_h.addWidget(self.hybrid_neuron_panel)
         controls_layout_h.addWidget(self.hybrid_signal_panel)
         
@@ -375,10 +376,14 @@ class MainWindow(QMainWindow):
         self.run_simulation()
 
     def _on_coupling_mode_changed(self, index: int):
-        """Activa/Desactiva el botón del memristor según el modo."""
+        """Activa/Desactiva el botón y la ventana del memristor según el modo."""
         if index == 0:
+            self.btn_config_memristor.setEnabled(True)
             self.status_bar.showMessage("Modo de Acoplamiento: Memristor Dinámico activado.")
         else:
+            # En Resistencia Fija no hay memristor: deshabilitar el botón y ocultar su monitor
+            self.btn_config_memristor.setEnabled(False)
+            self.memristor_window.hide()
             self.status_bar.showMessage("Modo de Acoplamiento: Resistencia Fija activado.")
 
     # ── Gestión de Sesión ────────────────────────────────────────────────────
