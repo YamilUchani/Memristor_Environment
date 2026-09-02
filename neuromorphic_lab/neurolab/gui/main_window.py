@@ -14,7 +14,8 @@ import numpy as np
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QScrollArea,
     QStatusBar, QMessageBox, QSplitter, QTabWidget, QTabBar,
-    QGroupBox, QFormLayout, QComboBox, QDialog, QPushButton
+    QGroupBox, QFormLayout, QComboBox, QDialog, QPushButton,
+    QDoubleSpinBox, QLabel
 )
 from PySide6.QtCore import Qt, QTimer, Signal
 from neurolab.gui.widgets.config_panel import ConfigPanel
@@ -319,6 +320,31 @@ class MainWindow(QMainWindow):
             QComboBox { background-color: #313244; color: #a6e3a1; font-weight: bold; padding: 6px; }
         """)
         layout_coupling.addWidget(self.combo_coupling_mode)
+
+        # Resistencia de acople fija (solo aplica al modo "Resistencia Fija")
+        self.spin_r_fixed = QDoubleSpinBox()
+        self.spin_r_fixed.setRange(0.1, 100000.0)
+        self.spin_r_fixed.setValue(10.0)
+        self.spin_r_fixed.setDecimals(1)
+        self.spin_r_fixed.setSingleStep(1.0)
+        self.spin_r_fixed.setSuffix(" kΩ")
+        self.spin_r_fixed.setToolTip(
+            "Resistencia de acople en modo Resistencia Fija.\n"
+            "I_syn = (V_fuente − V_m) / R  (con diodo serie).\n"
+            "R baja o V alta ⇒ más corriente ⇒ ráfagas de spikes."
+        )
+        layout_coupling.addWidget(self.spin_r_fixed)
+
+        # Nota física: diferencia clave respecto a la Pestaña 2
+        label_hint_coupling = QLabel(
+            "I_syn = (V_fuente − V_m)/R_syn (diodo serie).\n"
+            "A diferencia de la Pestaña 2 (fuente de corriente\n"
+            "ideal/clamp), aquí la corriente depende de V_m:\n"
+            "sube V₀ o baja R_syn y la neurona dispara en ráfaga."
+        )
+        label_hint_coupling.setWordWrap(True)
+        label_hint_coupling.setStyleSheet("color: #a6adc8; font-size: 11px;")
+        layout_coupling.addWidget(label_hint_coupling)
         group_coupling.setLayout(layout_coupling)
         
         # Ventana Flotante del Memristor
@@ -382,11 +408,13 @@ class MainWindow(QMainWindow):
         """Activa/Desactiva el botón y la ventana del memristor según el modo."""
         if index == 0:
             self.btn_config_memristor.setEnabled(True)
+            self.spin_r_fixed.setEnabled(False)
             self.status_bar.showMessage("Modo de Acoplamiento: Memristor Dinámico activado.")
         else:
             # En Resistencia Fija no hay memristor: deshabilitar el botón y ocultar su monitor
             self.btn_config_memristor.setEnabled(False)
             self.memristor_window.hide()
+            self.spin_r_fixed.setEnabled(True)
             self.status_bar.showMessage("Modo de Acoplamiento: Resistencia Fija activado.")
 
     # ── Gestión de Sesión ────────────────────────────────────────────────────
@@ -559,7 +587,8 @@ class MainWindow(QMainWindow):
                 self._coupled_memristor = self.memristor_window.config_panel.build_memristor()
                 circuit = MemristorLIFCircuit(memristor=self._coupled_memristor, neuron=neuron)
             else:
-                circuit = ResistorLIFCircuit(r_input=10_000.0, neuron=neuron)  # 10 kΩ fija
+                r_fixed_ohm = self.spin_r_fixed.value() * 1e3
+                circuit = ResistorLIFCircuit(r_input=r_fixed_ohm, neuron=neuron)
 
             t, v_in, dt = self.hybrid_signal_panel.generate_voltage_signal()
             steps = len(t)
@@ -610,6 +639,8 @@ class MainWindow(QMainWindow):
             
             msg = (f"✓ Simulación ejecutada en {elapsed:.3f}s | Pasos: {steps:,} | "
                    f"Spikes: {n_spikes} ({freq:.1f} Hz)")
+            if not is_memristor_mode and steps > 0 and np.max(i_in_hist) > 0:
+                msg += f" | I_syn max: {np.max(i_in_hist)*1e6:.0f} µA"
             self.status_bar.showMessage(msg)
             
         except Exception as e:
