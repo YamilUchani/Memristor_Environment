@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QScrollArea,
     QStatusBar, QMessageBox, QSplitter, QTabWidget, QTabBar,
     QGroupBox, QFormLayout, QComboBox, QDialog, QPushButton,
-    QDoubleSpinBox, QLabel
+    QDoubleSpinBox, QLabel, QCheckBox
 )
 from PySide6.QtCore import Qt, QTimer, Signal
 from neurolab.gui.widgets.config_panel import ConfigPanel
@@ -302,11 +302,13 @@ class MainWindow(QMainWindow):
         
         # --- Paneles de Configuración ---
         self.hybrid_neuron_panel = NeuronConfigPanel()
-        self.hybrid_signal_panel = SignalPanel(mode="voltage")  # V_in para atacar al memristor
+        # En modo "Igualar a Pestaña 2" (clamp) el panel se interpreta como CORRIENTE
+        # en µA (mismo significado que la Pestaña 2): 20 µA @ 40 Hz por defecto.
+        self.hybrid_signal_panel = SignalPanel(mode="current")  # I_objetivo en µA (clamp) / V (directo)
         self.hybrid_signal_panel.combo_waveform.setCurrentText("Tren de Pulsos (Unipolar)")
-        self.hybrid_signal_panel.spin_v0.setValue(1.0) # 1 Volt
-        self.hybrid_signal_panel.spin_f0.setValue(40.0) # 40 Hz
-        self.hybrid_signal_panel.spin_duration.setValue(0.1) # 100 ms
+        self.hybrid_signal_panel.spin_v0.setValue(20.0)  # 20 µA (== Pestaña 2)
+        self.hybrid_signal_panel.spin_f0.setValue(40.0)  # 40 Hz
+        self.hybrid_signal_panel.spin_duration.setValue(0.1)  # 100 ms
 
         # --- Selector de Modo de Acoplamiento ---
         group_coupling = QGroupBox("Modo de Acoplamiento (Sinapsis)")
@@ -330,17 +332,32 @@ class MainWindow(QMainWindow):
         self.spin_r_fixed.setSuffix(" kΩ")
         self.spin_r_fixed.setToolTip(
             "Resistencia de acople en modo Resistencia Fija.\n"
-            "I_syn = (V_fuente − V_m) / R  (con diodo serie).\n"
-            "R baja o V alta ⇒ más corriente ⇒ ráfagas de spikes."
+            "Con 'Igualar a Pestaña 2' activo: V_fuente = V_m + I_objetivo·R_syn,\n"
+            "así que R_syn solo define la escala V↔I (el resultado es idéntico a Pestaña 2).\n"
+            "Sin clamp: I_syn = (V_fuente − V_m)/R_syn (R baja ⇒ más ráfagas)."
         )
         layout_coupling.addWidget(self.spin_r_fixed)
 
-        # Nota física: diferencia clave respecto a la Pestaña 2
+        # Clamp de corriente: equivalencia EXACTA con la Pestaña 2 mediante voltaje
+        self.chk_current_clamp = QCheckBox("⚡ Igualar a Pestaña 2 (clamp de corriente vía voltaje)")
+        self.chk_current_clamp.setChecked(True)
+        self.chk_current_clamp.setStyleSheet("font-weight: bold; color: #a6e3a1;")
+        self.chk_current_clamp.setToolTip(
+            "ACTIVO (por defecto): V_fuente(t) = V_m + I_objetivo(t)·R_syn. La neurona\n"
+            "recibe EXACTAMENTE la misma corriente que la Pestaña 2 ⇒ misma V(t) y\n"
+            "los mismos spikes. La diferencia es que la señal se entrega como VOLTAJE\n"
+            "a través de la resistencia sináptica R_syn (fija y visible en el gráfico ②).\n\n"
+            "INACTIVO: V_fuente se aplica directamente (I_syn = (V_fuente − V_m)/R_syn),\n"
+            "con la realimentación de V_m que produce ráfagas por pulso."
+        )
+        layout_coupling.addWidget(self.chk_current_clamp)
+
+        # Nota física
         label_hint_coupling = QLabel(
-            "I_syn = (V_fuente − V_m)/R_syn (diodo serie).\n"
-            "A diferencia de la Pestaña 2 (fuente de corriente\n"
-            "ideal/clamp), aquí la corriente depende de V_m:\n"
-            "sube V₀ o baja R_syn y la neurona dispara en ráfaga."
+            "Con el clamp activo, I_syn ≡ I_objetivo(t) ⇒ resultado idéntico a la\n"
+            "Pestaña 2 (mismos spikes y V(t)). La diferencia está en cómo se entrega\n"
+            "la señal: aquí es VOLTAJE a través de R_syn (gráfico ① V_fuente y ② R_syn).\n"
+            "Desactívalo para ver el efecto de la realimentación de V_m (ráfagas)."
         )
         label_hint_coupling.setWordWrap(True)
         label_hint_coupling.setStyleSheet("color: #a6adc8; font-size: 11px;")
@@ -409,12 +426,14 @@ class MainWindow(QMainWindow):
         if index == 0:
             self.btn_config_memristor.setEnabled(True)
             self.spin_r_fixed.setEnabled(False)
+            self.chk_current_clamp.setEnabled(False)
             self.status_bar.showMessage("Modo de Acoplamiento: Memristor Dinámico activado.")
         else:
             # En Resistencia Fija no hay memristor: deshabilitar el botón y ocultar su monitor
             self.btn_config_memristor.setEnabled(False)
             self.memristor_window.hide()
             self.spin_r_fixed.setEnabled(True)
+            self.chk_current_clamp.setEnabled(True)
             self.status_bar.showMessage("Modo de Acoplamiento: Resistencia Fija activado.")
 
     # ── Gestión de Sesión ────────────────────────────────────────────────────
@@ -592,6 +611,7 @@ class MainWindow(QMainWindow):
 
             t, v_in, dt = self.hybrid_signal_panel.generate_voltage_signal()
             steps = len(t)
+            v_source_hist = np.zeros(steps)
             v_m_hist = np.zeros(steps)
             r_syn_hist = np.zeros(steps)
             i_in_hist = np.zeros(steps)
@@ -601,8 +621,24 @@ class MainWindow(QMainWindow):
                 g_hist = np.zeros(steps)
                 v_drop_hist = np.zeros(steps)
 
+            # Clamp de corriente (solo Resistencia Fija): con el checkbox activo,
+            # V_fuente(t) = V_m + I_objetivo(t)·R_syn  -> la corriente inyectada es
+            # EXACTAMENTE I_objetivo(t), idéntica a la Pestaña 2 (misma V(t), mismos
+            # spikes). La diferencia es que la señal se entrega como VOLTAJE.
+            use_current_clamp = (not is_memristor_mode) and self.chk_current_clamp.isChecked()
+
             for step_idx in range(steps):
-                res = circuit.step(v_in[step_idx], dt)
+                if use_current_clamp:
+                    # Señal del panel en µA -> I_objetivo en A (igual interpretación
+                    # que la Pestaña 2, que multiplica la señal por 1e-6).
+                    i_target = v_in[step_idx] * 1e-6
+                    v_source = neuron.v_membrane + i_target * r_fixed_ohm
+                    res = circuit.step(v_source, dt)
+                    v_source_hist[step_idx] = v_source
+                else:
+                    res = circuit.step(v_in[step_idx], dt)
+                    v_source_hist[step_idx] = v_in[step_idx]
+
                 if is_memristor_mode:
                     r_syn_hist[step_idx] = res["r_M"]
                     x_state_hist[step_idx] = res["x"]
@@ -618,7 +654,7 @@ class MainWindow(QMainWindow):
             
             self.hybrid_plot_canvas.plot_results(
                 t=t,
-                v_source=v_in,
+                v_source=v_source_hist,
                 i_in=i_in_hist,
                 v_m=v_m_hist,
                 r_syn_hist=r_syn_hist,

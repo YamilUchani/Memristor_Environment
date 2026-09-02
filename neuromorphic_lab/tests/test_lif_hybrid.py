@@ -66,3 +66,32 @@ def test_hybrid_resistor_lif_dispara_spikes():
         _, v = _pulse_train_waveform(k)
         circuit.step(v, DT)
     assert len(n.spike_times) >= 1, f"Se esperaban spikes, se obtuvieron {len(n.spike_times)}"
+
+
+def test_clamp_corriente_equivale_pestana2():
+    """
+    Equivalencia EXACTA entre Pestaña 2 y Pestaña 3 (Resistencia Fija + clamp):
+    si V_fuente(t) = V_m + I_objetivo(t)·R_syn, la corriente inyectada es idéntica
+    a la fuente de corriente de la Pestaña 2 → mismos tiempos de spike y misma V(t).
+    """
+    r_syn = 10_000.0
+    n_cur = _build_neuron()      # Pestaña 2: inyección directa de corriente
+    n_cla = _build_neuron()      # Pestaña 3: clamp de corriente vía voltaje
+    circuit = ResistorLIFCircuit(r_input=r_syn, neuron=n_cla)
+
+    steps = int(DURATION / DT)
+    for k in range(steps):
+        i_uA, _ = _pulse_train_waveform(k)
+        i_target = i_uA * 1e-6
+
+        # Pestaña 2
+        n_cur.step(i_target, DT)
+
+        # Pestaña 3 (clamp): fuente de voltaje que cancela la caída por V_m
+        v_source = n_cla.v_membrane + i_target * r_syn
+        circuit.step(v_source, DT)
+
+    # Corriente efectivamente inyectada por el clamp == i_target (diodo y R exactos)
+    assert len(n_cla.spike_times) == len(n_cur.spike_times)
+    np.testing.assert_allclose(n_cla.spike_times, n_cur.spike_times, atol=1e-12)
+    assert len(n_cur.spike_times) >= 4  # sigue siendo la demo de 1 spike/pulso
