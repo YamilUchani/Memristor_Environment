@@ -11,7 +11,9 @@ def _qt_message_handler(mode: QtMsgType, context: QMessageLogContext, message: s
     # "This plugin does not support propagateSizeHints()" lo emite QPlatformWindow en
     # los plugins de plataforma (windows/offscreen) cuando el layout pide propagar
     # hints de tamaño; es inofensivo y solo ensucia la consola.
-    if "propagateSizeHints" in message:
+    # "This plugin does not support raise()" es el equivalente para raise() y
+    # también es inofensivo.
+    if "propagateSizeHints" in message or "does not support raise()" in message:
         return
     formatted = qFormatLogMessage(mode, context, message).rstrip("\n")
     sys.stderr.write(formatted + "\n")
@@ -43,6 +45,18 @@ def main():
         _fonts = r"C:\Windows\Fonts"
         if os.path.isdir(_fonts):
             os.environ["QT_QPA_FONTDIR"] = _fonts
+
+    # Modo ventana invisible (offscreen): válido solo para pruebas headless. En una
+    # sesión de escritorio normal suele ser un resto accidental (p. ej. de una
+    # terminal usada para tests headless) y hace que la app corra SIN ventana
+    # visible, con la consola "bloqueada" aparentando un cuelgue.
+    if os.name == "nt" and os.environ.get("QT_QPA_PLATFORM", "").lower() == "offscreen":
+        if os.environ.get("NEUROLAB_HEADLESS") == "1":
+            print("[AVISO] Modo headless forzado (NEUROLAB_HEADLESS=1): ventana invisible.", flush=True)
+        else:
+            del os.environ["QT_QPA_PLATFORM"]
+            print("[AVISO] Se ignoró QT_QPA_PLATFORM=offscreen de esta sesión: la ventana", flush=True)
+            print("       sería invisible. Para forzar modo headless usa NEUROLAB_HEADLESS=1.", flush=True)
 
     app = QApplication(sys.argv)
 
