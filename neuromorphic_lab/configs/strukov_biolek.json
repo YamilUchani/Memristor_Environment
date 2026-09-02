@@ -1,0 +1,35 @@
+{
+    "_meta": {
+        "schema_version": "1.0",
+        "app_version": "0.1.0",
+        "profile_name": "Strukov — Extendido (Ventana Biolek, p=5)",
+        "saved_at": "2026-08-31T00:00:00"
+    },
+    "device_name": "Strukov TiO2 (Normalizado - Ventana Biolek)",
+    "device_family": "oxide_memristor",
+    "model_name": "strukov",
+    "r_on": 100.0,
+    "r_off": 16000.0,
+    "initial_state": 0.1,
+    "D_nm": 10.0,
+    "mu_v": 1e-14,
+    "seed": 42,
+    "realism_mode_index": 1,
+    "window_type": "Biolek",
+    "biolek_p": 5,
+    "enable_c2c": false,
+    "c2c_sigma": 0.05,
+    "c2c_theta": 1.0,
+    "enable_d2d": false,
+    "d2d_sigma": 0.05,
+    "enable_noise": false,
+    "noise_std": 1e-06,
+    "signal": {
+        "realtime_enabled": true,
+        "waveform": "Sinusoidal",
+        "v0": 1.0,
+        "f0": 0.5,
+        "duration": 8.0,
+        "dt_ms": 0.1
+    }
+}

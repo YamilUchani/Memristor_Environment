@@ -34,3 +34,15 @@ sysinfo.txt
 *.unitypackage
 *.app
 crashlytics-build.properties
+
+# Python / Neuromorphic Lab
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+.python-version
