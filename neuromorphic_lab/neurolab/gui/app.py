@@ -2,13 +2,29 @@ import sys
 import os
 import signal
 from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, QtMsgType, QMessageLogContext, qInstallMessageHandler, qFormatLogMessage
 from neurolab.gui.main_window import MainWindow
+
+
+def _qt_message_handler(mode: QtMsgType, context: QMessageLogContext, message: str):
+    """Filtra avisos benignos de Qt y re-emite el resto con el formato por defecto."""
+    # "This plugin does not support propagateSizeHints()" lo emite QPlatformWindow en
+    # los plugins de plataforma (windows/offscreen) cuando el layout pide propagar
+    # hints de tamaño; es inofensivo y solo ensucia la consola.
+    if "propagateSizeHints" in message:
+        return
+    formatted = qFormatLogMessage(mode, context, message).rstrip("\n")
+    sys.stderr.write(formatted + "\n")
+    sys.stderr.flush()
+
 
 def main():
     """Punto de entrada para la ejecución de la GUI neurolab."""
     # Permitir que el sistema maneje SIGINT (Ctrl+C) limpiamente sin traceback de C++ eventFilter
     signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+    # Filtro de avisos benignos de Qt (antes de crear QApplication)
+    qInstallMessageHandler(_qt_message_handler)
 
     # PySide6 >= 6.10 ya no empaqueta fuentes; si no hay QT_QPA_FONTDIR, apuntar al
     # directorio de fuentes del SO para evitar el aviso "Cannot find font directory".
