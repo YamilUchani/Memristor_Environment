@@ -20,6 +20,9 @@ def _qt_message_handler(mode: QtMsgType, context: QMessageLogContext, message: s
 
 def main():
     """Punto de entrada para la ejecución de la GUI neurolab."""
+    print("Neuromorphic Lab » inicializando interfaz gráfica...")
+    print("  (puede tardar unos segundos en la primera carga)")
+
     # Permitir que el sistema maneje SIGINT (Ctrl+C) limpiamente sin traceback de C++ eventFilter
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -42,6 +45,16 @@ def main():
 
     window = MainWindow()
     window.show()
+
+    # En Windows la ventana puede quedar detrás de la consola: traerla al frente
+    window.raise_()
+    window.activateWindow()
+
+    print("✅ Neuromorphic Lab » ventana abierta.")
+    print("   La consola queda 'bloqueada' mientras la ventana esté abierta (es normal).")
+    print("   Para salir: cierra la ventana o presiona Ctrl+C.")
+    sys.stdout.flush()
+
     sys.exit(app.exec())
 
 if __name__ == "__main__":

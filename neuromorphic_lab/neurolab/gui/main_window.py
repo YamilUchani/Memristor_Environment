@@ -96,7 +96,10 @@ class MainWindow(QMainWindow):
 
         self._apply_dark_theme()
         self.init_ui()
-        self._restore_last_session()
+        # Simulación inicial ÚNICA: con la sesión restaurada si existe, o con
+        # los valores por defecto en caso contrario (evita simular dos veces).
+        if not self._restore_last_session():
+            self.run_simulation()
 
     # ── Tema Visual ──────────────────────────────────────────────────────────
 
@@ -372,8 +375,8 @@ class MainWindow(QMainWindow):
         self.setStatusBar(self.status_bar)
         self.status_bar.showMessage("Listo. Modo en tiempo real activo.")
 
-        # Ejecutar simulación inicial
-        self.run_simulation()
+        # Nota: la simulación inicial la ejecuta el constructor (una sola vez)
+        # después de intentar restaurar la última sesión.
 
     def _on_coupling_mode_changed(self, index: int):
         """Activa/Desactiva el botón y la ventana del memristor según el modo."""
@@ -388,23 +391,26 @@ class MainWindow(QMainWindow):
 
     # ── Gestión de Sesión ────────────────────────────────────────────────────
 
-    def _restore_last_session(self):
+    def _restore_last_session(self) -> bool:
         """
         Restaura la última sesión guardada (configs/last_session.json).
-        Si no existe o falla, no hace nada (la app arranca con valores por defecto).
+        Devuelve True si la sesión se restauró correctamente; False si no
+        existe o está corrupta (la app arranca con valores por defecto).
+        No ejecuta la simulación: el llamador decide cuándo simular, de modo
+        que el arranque ejecute la simulación inicial una sola vez.
         """
-        data = self._profile_manager.load_last_session()
-        if data is None:
-            return
         try:
+            data = self._profile_manager.load_last_session()
+            if data is None:
+                return False
             self.config_panel.from_dict(data)
             device_name = data.get("device_name", "Última Sesión")
             self._update_window_title(device_name)
             self.status_bar.showMessage(f"✓ Sesión restaurada: '{device_name}'")
-            self.run_simulation()
+            return True
         except Exception:
             # Sesión corrupta: ignorar silenciosamente
-            pass
+            return False
 
     def _save_last_session(self):
         """Guarda la configuración actual como última sesión (silencioso, sin diálogo)."""
