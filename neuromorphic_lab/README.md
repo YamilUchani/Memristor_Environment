@@ -5,9 +5,15 @@ Nueva versión limpia del entorno neuromórfico.
 ## Ejecución
 
 ```bash
-pip install -r requirements.txt
+# Opción 1: desde la raíz del repositorio (recomendada)
+python run_app.py
+
+# Opción 2: desde la carpeta del lab
+cd neuromorphic_lab
 python run_app.py
 ```
+
+Dependencias: `pip install -r requirements.txt` (en la raíz o en `neuromorphic_lab/`).
 
 ## Pestañas de la GUI
 

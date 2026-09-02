@@ -37,6 +37,8 @@ Memristor_Environment/
 │
 ├── run_validation.py             # ORQUESTADOR INTERACTIVO MAESTRO DE LA SUITE DE VALIDACIÓN (Consola)
 │
+├── run_app.py                    # LANZADOR DE LA GUI NEUROMORPHIC LAB (python run_app.py)
+│
 ├── Documento_Maestro_Tesis...md  # Reporte maestro que analiza y contrasta los resultados
 ├── informe_neuromorfico.txt      # Código fuente LaTeX del informe final del Taller de Grado I
 ├── references.bib                # Base de datos BibTeX de referencias bibliográficas de la tesis
