@@ -35,9 +35,11 @@ class D2DVariabilityModifier(BaseRealismModifier):
         self.variability_std = variability_std
         self.rng = np.random.default_rng(seed)
 
-        # Factor D2D fijo: calculado una sola vez (fabricación estática)
+        # Factor D2D fijo: calculado una sola vez (fabricación estática con distribución normal truncada)
         if variability_std > 0:
-            self._d2d_factor = float(max(0.5, 1.0 + self.rng.normal(0.0, variability_std)))
+            raw_sample = self.rng.normal(0.0, variability_std)
+            clipped_sample = float(np.clip(raw_sample, -2.0 * variability_std, 2.0 * variability_std))
+            self._d2d_factor = 1.0 + clipped_sample
         else:
             self._d2d_factor = 1.0
 
@@ -58,10 +60,13 @@ class D2DVariabilityModifier(BaseRealismModifier):
         if self.variability_std <= 0:
             return electrical
 
-        factor_on = float(max(0.5, 1.0 + self.rng.normal(0.0, self.variability_std)))
-        factor_off = float(max(0.5, 1.0 + self.rng.normal(0.0, self.variability_std)))
+        sample_on = float(np.clip(self.rng.normal(0.0, self.variability_std), -2.0 * self.variability_std, 2.0 * self.variability_std))
+        sample_off = float(np.clip(self.rng.normal(0.0, self.variability_std), -2.0 * self.variability_std, 2.0 * self.variability_std))
 
-        new_r_on = electrical.r_on * factor_on
+        factor_on = 1.0 + sample_on
+        factor_off = 1.0 + sample_off
+
+        new_r_on = max(1.0, electrical.r_on * factor_on)
         new_r_off = max(new_r_on * 1.5, electrical.r_off * factor_off)
 
         return ElectricalConfig(

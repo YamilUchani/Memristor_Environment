@@ -1,0 +1,24 @@
+{
+    "_meta": {
+        "type": "lif_neuron_config",
+        "saved_at": "2026-09-13T10:33:00"
+    },
+    "c_m_value": 100.0,
+    "c_m_unit": "nF",
+    "r_series_value": 100.0,
+    "r_series_unit": "kΩ",
+    "r_leak_value": 1.0,
+    "r_leak_unit": "MΩ",
+    "v_rest": 0.0,
+    "v_th": 2.5,
+    "v_reset": 0.0,
+    "t_ref": 2.0,
+    "signal_panel": {
+        "realtime_enabled": true,
+        "waveform": "Tren de Pulsos (Unipolar)",
+        "v0": 5.0,
+        "f0": 40.0,
+        "duration": 5.0,
+        "dt_ms": 0.01
+    }
+}

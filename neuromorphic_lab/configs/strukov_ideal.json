@@ -28,8 +28,8 @@
         "realtime_enabled": true,
         "waveform": "Sinusoidal",
         "v0": 1.0,
-        "f0": 0.5,
-        "duration": 8.0,
-        "dt_ms": 0.1
+        "f0": 100.0,
+        "duration": 0.05,
+        "dt_ms": 0.001
     }
 }

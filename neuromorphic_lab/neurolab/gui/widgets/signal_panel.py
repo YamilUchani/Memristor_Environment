@@ -43,9 +43,9 @@ class SignalPanel(QWidget):
         else:
             self.spin_v0 = ArrowDoubleSpinBox(value=1.0, min_val=0.01, max_val=1000.0, step=1.0, suffix=" V")
             amp_label = "Amplitud V_0:"
-        self.spin_f0 = ArrowDoubleSpinBox(value=0.5, min_val=0.001, max_val=1000.0, step=0.1, decimals=3, suffix=" Hz")
-        self.spin_duration = ArrowDoubleSpinBox(value=8.0, min_val=0.001, max_val=10000.0, step=0.1, decimals=3, suffix=" s")
-        self.spin_dt_ms = ArrowDoubleSpinBox(value=0.1, min_val=0.001, max_val=10.0, step=0.01, decimals=4, suffix=" ms")
+        self.spin_f0 = ArrowDoubleSpinBox(value=100.0, min_val=0.001, max_val=10000.0, step=1.0, decimals=3, suffix=" Hz")
+        self.spin_duration = ArrowDoubleSpinBox(value=0.05, min_val=0.0001, max_val=10000.0, step=0.01, decimals=4, suffix=" s")
+        self.spin_dt_ms = ArrowDoubleSpinBox(value=0.001, min_val=0.0001, max_val=10.0, step=0.0005, decimals=5, suffix=" ms")
 
         form.addRow(self.chk_realtime)
         form.addRow("Forma de Onda:", self.combo_waveform)
@@ -115,13 +115,13 @@ class SignalPanel(QWidget):
         if "dt_ms" in data: self.spin_dt_ms.setValue(data["dt_ms"])
 
     def reset_defaults(self):
-        """Restablece los parámetros por defecto de la señal experimental."""
+        """Restablece los parámetros por defecto de la señal experimental del Paper Strukov 2008."""
         self.chk_realtime.setChecked(True)
         self.combo_waveform.setCurrentIndex(0)
         self.spin_v0.setValue(1.0)
-        self.spin_f0.setValue(0.5)
-        self.spin_duration.setValue(8.0)  # 4 ciclos completos @ 0.5 Hz -> histéresis visible
-        self.spin_dt_ms.setValue(0.1)
+        self.spin_f0.setValue(100.0)      # 100 Hz
+        self.spin_duration.setValue(0.05)  # 50 ms -> 5 ciclos completos a 100 Hz
+        self.spin_dt_ms.setValue(0.001)    # 0.001 ms -> 1 µs (50 000 pasos)
 
     def generate_voltage_signal(self):
         """

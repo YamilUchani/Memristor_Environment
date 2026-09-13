@@ -45,6 +45,25 @@ def test_lif_tren_pulsos_dispara_spikes():
     assert len(n.spike_times) >= 4, f"Se esperaban ~4 spikes, se obtuvieron {len(n.spike_times)}"
 
 
+def test_lif_voltage_input_with_r_series():
+    """Pestaña 2 (Fuente de Voltaje): V_IN = 5V @40 Hz con R_S = 100 kΩ debe disparar spikes."""
+    n = LIFNeuron(LIFConfig(
+        c_m=100e-9,      # 100 nF
+        r_series=100e3,  # 100 kΩ
+        r_leak=1e6,      # 1 MΩ
+        v_rest=0.0,
+        v_th=1.5,        # 1.5V umbral < V_inf * (1 - exp(-5ms/9ms)) = 1.95V
+        v_reset=0.0,
+        t_ref=2e-3
+    ))
+    steps = int(DURATION / DT)
+    for k in range(steps):
+        _, v_val = _pulse_train_waveform(k)
+        v_in = v_val * 5.0  # Pulsos de 5V
+        n.step(voltage_input=v_in, dt=DT)
+    assert len(n.spike_times) >= 1, f"Se esperaban spikes con V_IN=5V y R_S=100kΩ, se obtuvieron {len(n.spike_times)}"
+
+
 def test_hybrid_memristor_lif_dispara_spikes():
     """Pestaña 3 (modo Memristor): fuente 1 V @40 Hz debe excitar la neurona."""
     mem = create_strukov_paper_device(initial_state=0.1)
@@ -95,3 +114,23 @@ def test_clamp_corriente_equivale_pestana2():
     assert len(n_cla.spike_times) == len(n_cur.spike_times)
     np.testing.assert_allclose(n_cla.spike_times, n_cur.spike_times, atol=1e-12)
     assert len(n_cur.spike_times) >= 4  # sigue siendo la demo de 1 spike/pulso
+
+
+def test_lif_analytical_validation_metrics():
+    """Sección E: Verifica que la trayectoria numérica LIF reproduce la solución analítica diferencial exacta (R² > 0.99)."""
+    from neurolab.core.lif_validation import compute_lif_validation_metrics
+    cfg = LIFConfig(c_m=100e-9, r_series=100e3, r_leak=1e6, v_rest=0.0, v_th=2.5, v_reset=0.0)
+    n = LIFNeuron(cfg)
+    steps = 1000
+    t = np.linspace(0, 0.1, steps)
+    dt = t[1] - t[0]
+    v_signal = np.full(steps, 2.0)  # Voltaje constante subumbral de 2.0V
+    v_sim = np.zeros(steps)
+    
+    for k in range(steps):
+        v_sim[k] = n.v_membrane
+        n.step(voltage_input=v_signal[k], dt=dt)
+        
+    metrics = compute_lif_validation_metrics(t, v_sim, v_signal, cfg, is_voltage_input=True)
+    assert metrics["r2"] > 0.99, f"Se esperaba R² > 0.99, se obtuvo {metrics['r2']}"
+    assert metrics["mae"] < 0.05, f"Se esperaba MAE < 50 mV, se obtuvo {metrics['mae']}"

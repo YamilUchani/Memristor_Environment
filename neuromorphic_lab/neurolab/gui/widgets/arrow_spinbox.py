@@ -1,10 +1,53 @@
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QDoubleSpinBox, QSpinBox, QPushButton
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QDoubleSpinBox, QSpinBox, QPushButton, QComboBox, QAbstractSpinBox
+from PySide6.QtCore import Signal, Qt, QObject, QEvent
+
+
+class FocusDoubleSpinBox(QDoubleSpinBox):
+    """QDoubleSpinBox que ignora la rueda del ratón a menos que tenga el foco activo (clic previo)."""
+    def wheelEvent(self, event):
+        if self.hasFocus():
+            super().wheelEvent(event)
+        else:
+            event.ignore()
+
+
+class FocusSpinBox(QSpinBox):
+    """QSpinBox que ignora la rueda del ratón a menos que tenga el foco activo (clic previo)."""
+    def wheelEvent(self, event):
+        if self.hasFocus():
+            super().wheelEvent(event)
+        else:
+            event.ignore()
+
+
+class FocusComboBox(QComboBox):
+    """QComboBox que ignora la rueda del ratón a menos que tenga el foco activo (clic previo)."""
+    def wheelEvent(self, event):
+        if self.hasFocus():
+            super().wheelEvent(event)
+        else:
+            event.ignore()
+
+
+class NoUnfocusedWheelEventFilter(QObject):
+    """
+    Filtro de eventos Qt global que evita que cualquier control numérico o desplegable
+    cambie de valor al girar la rueda del ratón por encima sin haber hecho clic primero.
+    """
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.Wheel:
+            if isinstance(obj, (QAbstractSpinBox, QComboBox, ArrowDoubleSpinBox, ArrowSpinBox)):
+                has_focus = obj.hasFocus() or (hasattr(obj, 'spin') and obj.spin.hasFocus())
+                if not has_focus:
+                    event.ignore()
+                    return True
+        return super().eventFilter(obj, event)
+
 
 class ArrowDoubleSpinBox(QWidget):
     """
     Control numérico flotante con botones independientes ▲ y ▼ fuera de la barra de texto.
-    Elimina los problemas de captura de cursor de texto.
+    Solo responde a la rueda del ratón si primero ha sido enfocado con un clic.
     """
     valueChanged = Signal(float)
 
@@ -18,8 +61,8 @@ class ArrowDoubleSpinBox(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
 
-        # Spinbox sin botones internos
-        self.spin = QDoubleSpinBox()
+        # Spinbox con protección de foco contra scroll no deseado
+        self.spin = FocusDoubleSpinBox()
         self.spin.setButtonSymbols(QDoubleSpinBox.NoButtons)
         self.spin.setRange(min_val, max_val)
         self.spin.setDecimals(decimals)
@@ -83,6 +126,12 @@ class ArrowDoubleSpinBox(QWidget):
         self.btn_down.clicked.connect(self._step_down)
         self.spin.valueChanged.connect(self.valueChanged.emit)
 
+    def wheelEvent(self, event):
+        if self.spin.hasFocus():
+            self.spin.wheelEvent(event)
+        else:
+            event.ignore()
+
     def _step_up(self):
         new_val = min(self.max_val, self.spin.value() + self.step)
         self.spin.setValue(new_val)
@@ -101,6 +150,7 @@ class ArrowDoubleSpinBox(QWidget):
 class ArrowSpinBox(QWidget):
     """
     Control numérico entero con botones independientes ▲ y ▼ fuera de la barra de texto.
+    Solo responde a la rueda del ratón si primero ha sido enfocado con un clic.
     """
     valueChanged = Signal(int)
 
@@ -114,7 +164,7 @@ class ArrowSpinBox(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
 
-        self.spin = QSpinBox()
+        self.spin = FocusSpinBox()
         self.spin.setButtonSymbols(QSpinBox.NoButtons)
         self.spin.setRange(min_val, max_val)
         self.spin.setValue(value)
@@ -168,6 +218,12 @@ class ArrowSpinBox(QWidget):
         self.btn_up.clicked.connect(self._step_up)
         self.btn_down.clicked.connect(self._step_down)
         self.spin.valueChanged.connect(self.valueChanged.emit)
+
+    def wheelEvent(self, event):
+        if self.spin.hasFocus():
+            self.spin.wheelEvent(event)
+        else:
+            event.ignore()
 
     def _step_up(self):
         new_val = min(self.max_val, self.spin.value() + self.step)

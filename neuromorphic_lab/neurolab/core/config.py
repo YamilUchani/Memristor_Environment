@@ -12,9 +12,9 @@ class DeviceIdentity:
 @dataclass
 class ElectricalConfig:
     """NIVEL B: Parámetros eléctricos universales del dispositivo."""
-    r_on: float = 100.0
-    r_off: float = 16_000.0
-    initial_state: float = 0.1  # x_0 normalizado [0.0, 1.0]
+    r_on: float = 100.0        # R_min = 100 Ω (Strukov 2008)
+    r_off: float = 16_000.0    # R_max = 16 kΩ (Strukov 2008, Ratio 160)
+    initial_state: float = 0.10 # x_0 = w_0/D = 0.10 (w_0 = 1 nm)
 
     def __post_init__(self):
         if self.r_on <= 0 or self.r_off <= 0:

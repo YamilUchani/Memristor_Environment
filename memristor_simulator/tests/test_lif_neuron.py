@@ -92,13 +92,15 @@ class TestLIFNeuronDynamics:
     def test_switching_occurs_with_high_vin(self):
         """Con Vin = 5.0 V constante, Vc cruza V_th, w conmuta a 1.0 y se detecta un spike."""
         fired_at_any_step = False
+        w_max = 0.0
         for _ in range(5000):  # Simular suficiente tiempo
             fired, _ = self.neuron.step(5.0, self.dt)
+            w_max = max(w_max, self.neuron.w)  # w oscila: sube a 1.0 al disparar y decae tras el reset
             if fired:
                 fired_at_any_step = True
         assert fired_at_any_step
         assert self.neuron.spike_count >= 1
-        assert self.neuron.w > 0.9
+        assert w_max > 0.9
 
     def test_vout_peak_during_spike(self):
         """Durante la conmutación, Vout debe aproximarse a Vc * R0 / (Ron + R0)."""
