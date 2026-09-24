@@ -977,11 +977,6 @@ class Crossbar4x4View(QWidget):
 
     def _apply_programming_pulse(self, v_pulse: float):
         """Aplica un pulso de programación V/2 (LTP o LTD) a la celda objetivo M_ij."""
-        if self.mode != "program_v2":
-            self.mode = "program_v2"
-            self.plasticity_mode = "off"
-            self._update_mode_button_styles()
-
         tg_r, tg_c = self.target_cell
         target_mem = self.elements.get(f'M{tg_r+1}{tg_c+1}')
         if not target_mem:
@@ -1045,30 +1040,21 @@ class Crossbar4x4View(QWidget):
         s_key = f'S{sensor_idx+1}'
         if s_key in self.elements:
             self.elements[s_key].params['V_out'] = val
-            if self.mode == "program_v2":
-                self.mode = "read"
-                self._update_mode_button_styles()
 
-            v_tag = "⚡ ESCRITURA" if val > 0.49 else "📖 LECTURA"
+            v_tag = "⚡ ESCRITURA" if abs(val) > 0.49 else "📖 LECTURA"
             self.status_label.setText(f"{v_tag} en {s_key}: Voltaje ajustado a {val:.2f} V")
-            if val > 0.49:
+            if abs(val) > 0.49:
                 for _ in range(10):
                     self._step_physics(0.02)
             self.canvas.update()
 
     def _set_all_sensors_read(self):
-        if self.mode == "program_v2":
-            self.mode = "read"
-            self._update_mode_button_styles()
         for i, sb in enumerate(self.sensor_spinboxes):
             sb.setValue(0.2)
         self.status_label.setText("📖 Todos los sensores ajustados a Voltaje de Lectura No Destructivo (0.20V)")
         self.canvas.update()
 
     def _set_sensor_write(self, sensor_idx: int, v_write: float = 2.0):
-        if self.mode == "program_v2":
-            self.mode = "read"
-            self._update_mode_button_styles()
         if 0 <= sensor_idx < 4:
             self.sensor_spinboxes[sensor_idx].setValue(v_write)
             self.status_label.setText(f"⚡ Voltaje de ESCRITURA (+{v_write:.2f}V) aplicado a S{sensor_idx+1}. ¡Memristores de la Fila {sensor_idx+1} evolucionando conductancia!")
@@ -1095,10 +1081,6 @@ class Crossbar4x4View(QWidget):
                 self.canvas.update()
 
         if isinstance(element, SensorElement):
-            if self.mode == "program_v2":
-                self.mode = "read"
-                self._update_mode_button_styles()
-
             v_curr = float(element.params.get('V_out', 0.2))
             if v_curr <= 0.5:
                 v_new = 2.0
