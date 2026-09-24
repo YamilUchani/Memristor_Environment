@@ -35,8 +35,22 @@ class LIFNeuron(BaseNeuron):
         self.spike_times: List[float] = []
         self.has_spiked = False
 
+    @property
+    def V_m(self) -> float:
+        """Alias para v_membrane."""
+        return self.v_membrane
+
+    @V_m.setter
+    def V_m(self, value: float) -> None:
+        self.v_membrane = float(value)
+
+    def update(self, I_in: float = 0.0, dt: float = 1e-4, V_in: float = None) -> bool:
+        """Alias para step."""
+        return self.step(current_input=I_in, dt=dt, voltage_input=V_in)
+
     def reset(self) -> None:
         """Reinicia la neurona a su estado de reposo y limpia el historial."""
+
         self.v_membrane = self.config.v_rest
         self.refractory_time_left = 0.0
         self.t = 0.0

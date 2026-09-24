@@ -1,0 +1,127 @@
+% =====================================================================
+% Capítulo 2: Marco Teórico
+% =====================================================================
+
+\chapter{Marco Teórico}
+\label{ch:marco-teorico}
+
+\section{Fundamentos del Memristor}
+\label{sec:marco-memristor}
+
+El memristor (\emph{memory resistor}), postulado hipotéticamente por Leon Chua en 1971 como el cuarto elemento pasivo fundamental de circuito y sintetizado por primera vez en laboratorios de HP por Strukov et al. en 2008~\cite{strukov2008}, establece una relación directa entre la carga eléctrica acumulada $q$ y el flujo magnético $\varphi$:
+
+\begin{equation}
+d\varphi = M(q) \, dq
+\label{eq:memristor-fundamental}
+\end{equation}
+
+La resistencia equivalente del dispositivo, denominada \emph{memristancia} $M(w)$, depende dinámicamente de una variable interna de estado $x(t) = w(t)/D \in [0, 1]$, que representa la frontera física entre la zona dopada y no dopada del material.
+
+\subsection{Modelo matemático de Strukov (2008)}
+\label{subsec:marco-strukov}
+
+En el modelo de Strukov et al.~\cite{strukov2008}, la resistencia total $R(x)$ se expresa como una combinación lineal estricta de las resistencias extremas en estado ON ($\RON$) y OFF ($\ROFF$):
+
+\begin{equation}
+R(x) = \RON \cdot x + \ROFF \cdot (1 - x)
+\label{eq:strukov-rx}
+\end{equation}
+
+La ecuación diferencial de evolución del estado interno $x(t)$ bajo una corriente $i(t)$ es:
+
+\begin{equation}
+\frac{dx}{dt} = \mu_v \cdot \frac{\RON}{D^2} \cdot i(t) \cdot f(x)
+\label{eq:strukov-dxdt}
+\end{equation}
+
+donde $\mu_v$ es la movilidad promedio de vacancias de oxígeno y $f(x)$ representa una función de ventana que modela los efectos de frontera no lineales en las interfaces del dispositivo.
+
+\subsection{Modelo de Yakopcic y Prezioso (2011, 2014, 2015)}
+\label{subsec:marco-yakopcic}
+
+Para capturar la asimetría umbral y la no linealidad en dispositivos de capa fina $\mathrm{Al_2O_3/TiO_{2-x}}$~\cite{prezioso2014, prezioso2015}, se emplea la formulación de Yakopcic et al.~\cite{yakopcic2011}. La corriente $I(v, x)$ sigue una relación exponencial con el voltaje aplicado $v(t)$:
+
+\begin{equation}
+I(v, x) = 
+\begin{cases}
+a_1 \cdot x(t) \cdot \sinh(b \cdot v(t)), & v(t) \geq 0 \\
+a_2 \cdot x(t) \cdot \sinh(b \cdot v(t)), & v(t) < 0
+\end{cases}
+\label{eq:yakopcic-iv}
+\end{equation}
+
+donde la tasa de variación $\dot{x}(t)$ se activa únicamente al superar los voltajes umbrales de SET ($V_p$) y RESET ($V_n$):
+
+\begin{equation}
+\frac{dx}{dt} = 
+\begin{cases}
+A_p \cdot \left( e^{v(t) - V_p} - 1 \right) \cdot f(x), & v(t) > V_p \\
+-A_n \cdot \left( e^{-v(t) - V_n} - 1 \right) \cdot f(x), & v(t) < -V_n \\
+0, & -V_n \leq v(t) \leq V_p
+\end{cases}
+\label{eq:yakopcic-dxdt}
+\end{equation}
+
+\subsection{Memristores volátiles para nodos sensoriales}
+\label{subsec:marco-volatile}
+
+A diferencia de las celdas no volátiles, los memristores volátiles (basados en $\mathrm{HfO_2}$ o nanoclústeres difusivos de $\mathrm{Ag:SiO_2}$)~\cite{wang2025, yang2017} exhiben un fenómeno de relajación espontánea del estado interno hacia un valor basal $x_0$ debido al decaimiento térmico de las filamentaciones metálicas. La cinética de estado se modela mediante:
+
+\begin{equation}
+\frac{dx}{dt} = f_{\text{activación}}(v, x) - \frac{x(t) - x_0}{\tau_{\mathrm{relax}}}
+\label{eq:volatile-dxdt}
+\end{equation}
+
+donde $\tau_{\mathrm{relax}}$ determina la constante de tiempo de olvido o relajación espontánea.
+
+\section{Modelo de Neurona Spiking LIF}
+\label{sec:marco-lif}
+
+La neurona de disparo e integración con fuga (\emph{Leaky Integrate-and-Fire}, LIF) constituye el bloque computacional primario en redes neuromórficas. El potencial de membrana $V_m(t)$ evoluciona según la ecuación diferencial:
+
+\begin{equation}
+C_m \frac{dV_m(t)}{dt} = I_{\mathrm{syn}}(t) - \frac{V_m(t) - V_{\mathrm{rest}}}{R_{\mathrm{leak}}}
+\label{eq:lif-diffeq}
+\end{equation}
+
+Cuando el potencial $V_m(t)$ alcanza el umbral de disparo $V_{\mathrm{th}}$, la neurona emite un impulso (\emph{spike}), reinicia su potencial a $V_{\mathrm{reset}}$ y permanece inactiva durante un período refractario $t_{\mathrm{ref}}$:
+
+\begin{equation}
+\text{Si } V_m(t) \ge V_{\mathrm{th}} \implies 
+\begin{cases}
+S(t) = 1 \\
+V_m(t^+) = V_{\mathrm{reset}}
+\end{cases}
+\label{eq:lif-spike}
+\end{equation}
+
+\section{Plasticidad Sináptica}
+\label{sec:marco-plasticidad}
+
+\subsection{Plasticidad dependiente del tiempo de disparo (STDP)}
+\label{subsec:marco-stdp}
+
+La regla de aprendizaje Hebbiano STDP~\cite{bi1998, jo2010} modifica la conductancia sináptica $G_{ij}$ de acuerdo a la diferencia de tiempos $\Delta t = t_{\mathrm{post}} - t_{\mathrm{pre}}$ entre los impulsos pre y postsinápticos:
+
+\begin{equation}
+\Delta G = 
+\begin{cases}
+A_+ \cdot \exp\left( -\frac{\Delta t}{\tau_+} \right), & \Delta t > 0 \quad (\text{Potenciación - LTP}) \\
+-A_- \cdot \exp\left( \frac{\Delta t}{\tau_-} \right), & \Delta t < 0 \quad (\text{Depresión - LTD})
+\end{cases}
+\label{eq:stdp-window}
+\end{equation}
+
+\subsection{Plasticidad modulada por recompensa (R-STDP)}
+\label{subsec:marco-rstdp}
+
+En sistemas de aprendizaje por refuerzo, la modificación del peso sináptico se modula mediante una señal escalar de recompensa $R(t)$ emitida por el entorno:
+
+\begin{equation}
+\frac{dG_{ij}}{dt} = \eta \cdot R(t) \cdot e_{ij}(t)
+\label{eq:rstdp-rule}
+\end{equation}
+
+
+
+donde $e_{ij}(t)$ representa la traza de elegibilidad acumulada producida por los emparejamientos STDP locales.

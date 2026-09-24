@@ -102,11 +102,12 @@ def compute_all_metrics(
     x_sim: np.ndarray,
     r_sim_kohm: np.ndarray,
     g_sim_us: np.ndarray,
-    val_data: dict
+    val_data: dict,
+    v_sim: Optional[np.ndarray] = None,
 ) -> list[QuantityMetrics]:
     """
     Calcula métricas para todas las magnitudes disponibles en val_data,
-    interpolando la simulación en los instantes de tiempo del CSV.
+    interpolando la simulación en los instantes de tiempo o voltaje del CSV.
 
     Args:
         t_sim:       Vector de tiempo de la simulación (s).
@@ -115,6 +116,7 @@ def compute_all_metrics(
         r_sim_kohm:  Resistencia simulada en kΩ.
         g_sim_us:    Conductancia simulada en µS.
         val_data:    Diccionario devuelto por ValidationDataLoader.load_all().
+        v_sim:       Vector de voltaje simulado (V) opcional.
 
     Returns:
         Lista de QuantityMetrics ordenada por magnitud.
@@ -125,19 +127,57 @@ def compute_all_metrics(
     t_w = val_data.get("t_w")
     wd_ref = val_data.get("wd_val")
     if t_w is not None and wd_ref is not None:
-        x_interp = np.interp(t_w, t_sim, x_sim)
-        results.append(compute_metrics(wd_ref, x_interp, "x(t) — w/D", "adim.", threshold=1e-3))
+        mask_valid_wd = np.isfinite(wd_ref)
+        if mask_valid_wd.any():
+            x_interp = np.interp(t_w[mask_valid_wd], t_sim, x_sim)
+            results.append(compute_metrics(wd_ref[mask_valid_wd], x_interp, "x(t) — w/D", "adim.", threshold=1e-3))
 
-    # ── Corriente I(t) en mA ────────────────────────────────────────────────
+    # ── Corriente I(t) / I(V) en mA ────────────────────────────────────────
     t_i = val_data.get("t_i")
     i_ref_mA = val_data.get("i_val_mA")
+    v_ref = val_data.get("v_interp")
     if t_i is not None and i_ref_mA is not None:
-        i_interp = np.interp(t_i, t_sim, i_sim_mA)
-        results.append(compute_metrics(i_ref_mA, i_interp, "I(t)", "mA", threshold=1e-4))
+        if v_sim is not None and v_ref is not None and (wd_ref is None or not np.isfinite(wd_ref).any()):
+            # Para curvas de histéresis V-I (Prezioso 2014), usar ciclo estabilizado (t >= 50% sim)
+            # y emparejamiento por mínima distancia en el plano 2D (V, I) para respetar las ramas SET/RESET
+            half = len(v_sim) // 2 if len(v_sim) >= 4 else 0
+            v_s = v_sim[half:]
+            i_s = i_sim_mA[half:]
+            
+            # Decimación acelerada para emparejamiento 2D (< 2ms execution time)
+            if len(v_s) > 2000:
+                step_m = len(v_s) // 2000
+                v_s_m = v_s[::step_m]
+                i_s_m = i_s[::step_m]
+            else:
+                v_s_m = v_s
+                i_s_m = i_s
+
+            v_span = np.ptp(v_s_m) if np.ptp(v_s_m) > 0 else 1.0
+            i_span = np.ptp(i_s_m) if np.ptp(i_s_m) > 0 else 1.0
+
+            i_interp = np.array([
+                i_s_m[np.argmin(((v_s_m - vr) / v_span)**2 + ((i_s_m - ir) / i_span)**2)]
+                for vr, ir in zip(v_ref, i_ref_mA)
+            ])
+
+            mask_set = v_ref >= 0.0
+            mask_reset = v_ref < 0.0
+
+            if mask_set.any():
+                results.append(compute_metrics(i_ref_mA[mask_set], i_interp[mask_set], "I(V) SET (V>=0)", "mA", threshold=1e-4))
+            if mask_reset.any():
+                results.append(compute_metrics(i_ref_mA[mask_reset], i_interp[mask_reset], "I(V) RESET (V<0)", "mA", threshold=1e-4))
+            results.append(compute_metrics(i_ref_mA, i_interp, "I(V) Completo", "mA", threshold=1e-4))
+        else:
+            i_interp = np.interp(t_i, t_sim, i_sim_mA)
+            results.append(compute_metrics(i_ref_mA, i_interp, "I(t)", "mA", threshold=1e-4))
+
+    has_time_series_ref = wd_ref is not None and np.isfinite(wd_ref).any()
 
     # ── Resistencia R(t) en kΩ ──────────────────────────────────────────────
     r_ref = val_data.get("r_val_kohm")
-    if t_i is not None and r_ref is not None:
+    if has_time_series_ref and t_i is not None and r_ref is not None:
         r_interp = np.interp(t_i, t_sim, r_sim_kohm)
         mask_valid = np.isfinite(r_ref)
         if mask_valid.any():
@@ -147,7 +187,7 @@ def compute_all_metrics(
 
     # ── Conductancia G(t) en µS ─────────────────────────────────────────────
     g_ref = val_data.get("g_val_us")
-    if t_i is not None and g_ref is not None:
+    if has_time_series_ref and t_i is not None and g_ref is not None:
         g_interp = np.interp(t_i, t_sim, g_sim_us)
         mask_valid = np.isfinite(g_ref)
         if mask_valid.any():

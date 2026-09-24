@@ -39,7 +39,7 @@ class C2CVariabilityModifier(BaseRealismModifier):
     # Factor de escala del dt para el proceso OU respecto al dt de simulación.
     # OU opera a una escala temporal más lenta que el paso de integración del memristor.
     # Un factor de 20 significa que el ruido evoluciona ~20x más lento que la dinámica base.
-    _OU_DT_SCALE: float = 20.0
+    _OU_DT_SCALE: float = 1.0
 
     def __init__(self, sigma: float = 0.05, theta: float = 1.0,
                  seed: int = 42, relative_std: float = None,
@@ -66,11 +66,12 @@ class C2CVariabilityModifier(BaseRealismModifier):
         if self.sigma <= 0:
             return dxdt
 
-        # Bug #2 fix: dt_ou escala con el dt real de simulación (no hardcodeado).
-        # Se usa un factor de escala para que el OU opere más lento que la dinámica base.
+        # Exact Gillespie (1996) Ornstein-Uhlenbeck discrete transition:
+        # eta_{k+1} = eta_k * exp(-theta*dt_ou) + sigma * sqrt((1 - exp(-2*theta*dt_ou)) / (2*theta)) * N(0, 1)
         dt_ou = self._dt_sim * self._OU_DT_SCALE
-        d_eta = -self.theta * self.eta * dt_ou + self.sigma * np.sqrt(dt_ou) * self.rng.normal(0.0, 1.0)
-        self.eta += float(d_eta)
+        decay = np.exp(-self.theta * dt_ou)
+        std_ou = self.sigma * np.sqrt((1.0 - np.exp(-2.0 * self.theta * dt_ou)) / (2.0 * self.theta))
+        self.eta = self.eta * decay + float(std_ou * self.rng.normal(0.0, 1.0))
 
         factor = max(0.1, 1.0 + self.eta)
         return float(dxdt * factor)

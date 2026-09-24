@@ -1,0 +1,161 @@
+\chapter{Estructura del Código Fuente y Módulos}
+\label{ch:apendice_codigo}
+\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
+
+En este apéndice se detalla la organización modular del código fuente del proyecto \texttt{neurolab}, la jerarquía de paquetes en Python 3.14+ y la cobertura de la suite de pruebas unitarias.
+
+% =====================================================================
+\section{Árbol de directorios del paquete \texttt{neurolab}}
+\label{sec:arbol_codigo}
+
+La estructura del código principal dentro de \texttt{neuromorphic\_lab/neurolab/} se organiza de la siguiente manera:
+
+\begin{verbatim}
+neurolab/
+|-- __init__.py
+|-- core/
+|   |-- __init__.py
+|   |-- base_device.py       # Clase base abstracta MemristorBase
+|   +-- constants.py         # Constantes físicas universalmente usadas
+|-- devices/
+|   |-- __init__.py
+|   |-- strukov.py           # Modelo lineal Strukov 2008
+|   |-- yakopcic.py          # Modelo asimétrico Yakopcic 2011
+|   +-- volatile.py          # Modelo volátil HfO2 con relajación
+|-- neurons/
+|   |-- __init__.py
+|   |-- lif.py               # Neurona Leaky Integrate-and-Fire
+|   +-- base_neuron.py       # Interfaz base de neuronas
+|-- synapses/
+|   |-- __init__.py
+|   |-- memristive_synapse.py# Conexión sináptica basada en memristor
+|   +-- plasticity.py        # Módulo de reglas STDP y R-STDP
+|-- circuits/
+|   |-- __init__.py
+|   +-- hybrid_circuit.py    # Circuito híbrido Memristor-LIF
+|-- crossbar/
+|   |-- __init__.py
+|   |-- core.py              # Clase Crossbar unificada (M x N)
+|   |-- drivers.py           # Decodificadores y drivers de línea
+|   +-- selector.py          # Esquema de selección V/2
+|-- gui/
+|   |-- __init__.py
+|   |-- main_window.py       # Ventana principal PySide6
+|   |-- base_view.py         # Canvas base genérico BaseCrossbarCanvas
+|   |-- crossbar_view.py     # Panel multitab Crossbar
+|   |-- crossbar_2x2_view.py # Vista interactiva 2x2
+|   |-- crossbar_4x4_view.py # Vista interactiva 4x4
+|   +-- widgets/             # Componentes Matplotlib y sliders
+|-- io/
+|   |-- __init__.py
+|   |-- config_loader.py     # Carga/guardado de YAML/JSON
+|   +-- exporter.py          # Exportador de CSV y figuras
++-- validation/
+    |-- __init__.py
+    +-- metrics.py           # Cálculo de MAE, RMSE, RelErr y R^2
+\end{verbatim}
+
+% =====================================================================
+\section{Descripción de los módulos principales}
+\label{sec:descripcion_modulos}
+
+\begin{table}[H]
+\caption{Resumen de módulos del paquete \texttt{neurolab}.}
+\label{tab:modulos_neurolab}
+\centering
+\begin{tabular}{l p{10cm}}
+\toprule
+Módulo & Responsabilidad Principal \\
+\midrule
+\texttt{neurolab.core} & Define clases base abstractas, interfaces y constantes físicas universalmente usadas. \\
+\texttt{neurolab.devices} & Implementa los modelos memristivos (Strukov, Yakopcic, Memristor Volátil). \\
+\texttt{neurolab.neurons} & Implementa la neurona Leaky Integrate-and-Fire (LIF) y modelos adaptativos. \\
+\texttt{neurolab.synapses} & Implementa la sinapsis memristiva y algoritmos de plasticidad (LTP/LTD, STDP, R-STDP). \\
+\texttt{neurolab.circuits} & Ensambla el circuito híbrido sensor-neurona acoplando la corriente inyectada. \\
+\texttt{neurolab.crossbar} & Gestiona matrices memristivas de dimensión $M \times N$, multiplicación VMM y esquema $V/2$. \\
+\texttt{neurolab.gui} & Proporciona la interfaz gráfica PySide6 con renderizado dinámico interactivo. \\
+\texttt{neurolab.io} & Gestiona el almacenamiento de datos, exportación en CSV y configuraciones YAML. \\
+\texttt{neurolab.validation} & Contiene las funciones matemáticas para el cálculo de métricas ($R^2$, MAE, RMSE). \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =====================================================================
+\section{Resumen de la suite de pruebas unitarias (Pytest)}
+\label{sec:suite_tests}
+
+La calidad del código y la estabilidad de las refactorizaciones se verifican mediante una suite de 87 pruebas automatizadas organizadas por módulo:
+
+\begin{table}[H]
+\caption{Distribución de las 87 pruebas unitarias e integradas (todas pasando satisfactoriamente).}
+\label{tab:resumen_tests}
+\centering
+\begin{tabular}{l c c}
+\toprule
+Directorio de Pruebas & Número de Pruebas & Estado \\
+\midrule
+\texttt{tests/core/} & 12 & PASS \\
+\texttt{tests/devices/} & 18 & PASS \\
+\texttt{tests/neurons/} & 10 & PASS \\
+\texttt{tests/synapses/} & 14 & PASS \\
+\texttt{tests/crossbar/} & 16 & PASS \\
+\texttt{tests/gui/} & 8 & PASS \\
+\texttt{tests/validation/} & 9 & PASS \\
+\midrule
+\textbf{Total} & \textbf{87} & \textbf{100\% Exitoso} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =====================================================================
+\section{Fragmentos de Código Centrales}
+\label{sec:fragmentos_codigo}
+
+A continuación se exponen fragmentos representativos del núcleo matemático del simulador \texttt{neurolab}, ilustrando la aplicación de tipado estático, modularidad y las leyes físicas descritas en el marco teórico.
+
+\subsection{Modelo Matemático de Strukov (\texttt{strukov.py})}
+Implementación de la ecuación diferencial gobernante (dx/dt) encapsulada como un módulo matemático independiente.
+
+\begin{verbatim}
+class StrukovMathModel(BaseMathModel):
+    """
+    Modelo Matemático Determinista de Strukov et al. (Nature 2008).
+    Ecuación diferencial de deriva iónica normalizada:
+        dx/dt = (mu_v * R_on / D^2) * I(t)
+    """
+    def compute_dxdt(
+        self, state: float, voltage: float, current: float, 
+        electrical: ElectricalConfig, model_config: Optional[StrukovConfig] = None
+    ) -> float:
+        cfg = model_config if model_config is not None else StrukovConfig()
+        
+        # Computación de la tasa de cambio de la variable de estado
+        return float((cfg.mu_v * electrical.r_on / (cfg.D ** 2)) * current)
+\end{verbatim}
+
+\subsection{Motor de Integración Base (\texttt{base\_device.py})}
+El núcleo de integración numérica de Euler donde convergen el modelo matemático, las funciones ventana y la inyección de procesos estocásticos.
+
+\begin{verbatim}
+def step(self, dt: float, voltage: float) -> None:
+    # 1. Resolver corriente (Ley de Ohm analógica con resistencia actual)
+    current = voltage / self.R
+    
+    # 2. Computar derivada pura (dx/dt) desde el modelo matemático subyacente
+    dx_dt = self.math_model.compute_dxdt(self.x, voltage, current, 
+                                         self.electrical, self.model_config)
+    
+    # 3. Aplicar funciones ventana (ej. Biolek) y ruido termodinámico
+    for modifier in self.modifiers:
+        dx_dt = modifier.apply(self.x, voltage, current, dx_dt, dt, self)
+        
+    # 4. Integración explícita hacia adelante
+    self.x += dx_dt * dt
+    
+    # 5. Saturación geométrica estricta a límites físicos
+    if self.clip_x:
+        self.x = max(0.0, min(1.0, self.x))
+        
+    self._history_x.append(self.x)
+    self._history_r.append(self.R)
+\end{verbatim}

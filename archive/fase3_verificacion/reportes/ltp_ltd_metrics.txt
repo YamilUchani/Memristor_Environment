@@ -1,0 +1,17 @@
+============================================================
+  RESULTADOS DE VALIDACIÓN: LTP / LTD
+============================================================
+LTP: G_inicial = 69.40 μS | G_final = 71.62 μS | ΔG = +2.23 μS
+LTD: G_inicial = 69.40 μS | G_final = 67.36 μS | ΔG = -2.03 μS
+Gráfica guardada en: G:\Github\Software de simulacion\Memristor_Environment\neuromorphic_lab\validaciones\validacion_ltp_ltd.png
+Datos exportados a:  G:\Github\Software de simulacion\Memristor_Environment\neuromorphic_lab\validaciones\validacion_ltp_ltd.csv
+============================================================
+
+============================================================
+  RESULTADOS DE VALIDACIÓN: CICLO COMPLETO LTP + LTD
+============================================================
+G_inicial (pulso 0)  = 69.40 μS
+G_max     (pulso 50) = 72.21 μS (LTP max)
+G_final   (pulso 100)= 69.39 μS (LTD final)
+Gráfica guardada en: G:\Github\Software de simulacion\Memristor_Environment\neuromorphic_lab\validaciones\validacion_ltp_ltd_ciclo.png
+============================================================

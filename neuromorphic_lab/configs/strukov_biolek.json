@@ -9,7 +9,10 @@
     "device_family": "oxide_memristor",
     "model_name": "strukov",
     "r_on": 100.0,
-    "r_off": 16000.0,
+    "r_on_unit": "Ω",
+    "r_off": 16.0,
+    "r_off_unit": "kΩ",
+
     "initial_state": 0.1,
     "D_nm": 10.0,
     "mu_v": 1e-14,

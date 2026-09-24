@@ -1,0 +1,15 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.0, pytest-9.0.3, pluggy-1.6.0 -- C:\Python314\python.exe
+cachedir: .pytest_cache
+rootdir: G:\Github\Software de simulacion\Memristor_Environment\neuromorphic_lab
+configfile: pyproject.toml
+plugins: anyio-4.13.0
+collected 5 items
+
+tests/test_synapses.py::test_memristive_synapse_initialization PASSED    [ 20%]
+tests/test_synapses.py::test_weight_conductance_mapping_clipping PASSED  [ 40%]
+tests/test_synapses.py::test_ltp_ltd_rules PASSED                        [ 60%]
+tests/test_synapses.py::test_stdp_hebbian_and_anti_hebbian PASSED        [ 80%]
+tests/test_synapses.py::test_plasticity_config PASSED                    [100%]
+
+============================== 5 passed in 0.16s ==============================

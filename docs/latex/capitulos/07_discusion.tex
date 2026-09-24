@@ -1,0 +1,16 @@
+\chapter{Discusión de Resultados y Limitaciones}
+\label{ch:discusion_limitaciones}
+
+\section{Discusión de Resultados}
+La validación integral de las cuatro fases demuestra que Neuromorphic Lab es capaz de escalar desde la física de estado sólido de un solo memristor hasta arquitecturas matriciales densas. Al comparar las métricas cuantitativas transversales, se observa que la introducción de ventanas de no linealidad (Biolek) y procesos estocásticos (Ornstein-Uhlenbeck) penaliza mínimamente el tiempo de cómputo ($\mathcal{O}(N)$), pero incrementa exponencialmente el realismo físico frente a datos empíricos. La integración híbrida Memristor-LIF corroboró la capacidad de realizar transducción analógica de frecuencia de pulsos a estados resistivos no volátiles, estableciendo una base firme para redes neuronales pulsantes (SNNs).
+
+\section{Limitaciones del Estudio}
+A pesar de los resultados robustos, la iteración actual presenta ciertas limitaciones metodológicas y computacionales:
+\begin{itemize}
+    \item \textbf{Sneak Paths y Parasitismo:} La matriz Crossbar actual asume hilos conductores ideales. Las caídas de tensión por resistencia de línea (IR drop) y las corrientes de fuga por rutas indeseadas (\textit{sneak paths}) aún no están modeladas en el simulador.
+    \item \textbf{Efectos Térmicos Avanzados:} Aunque se integró ruido térmico estocástico macroscópico, las dinámicas de calentamiento de Joule dependientes de la disipación temporal a nivel nanométrico no están acopladas al modelo fenomenológico iterativo.
+    \item \textbf{Dependencia del Solver Numérico:} El método de integración (Euler Forward) requiere pasos temporales sumamente restrictivos ($dt \leq 10^{-3}$ s) para evitar inestabilidades algebraicas al operar en los umbrales ultra no lineales del dispositivo.
+\end{itemize}
+
+\section{Reproducibilidad y Código Abierto}
+Para garantizar los principios de ciencia abierta, todas las validaciones presentadas en este documento pueden ser íntegramente reproducidas ejecutando los scripts correspondientes alojados en la carpeta \texttt{neuromorphic\_lab/validaciones/}. El entorno virtual requiere Python 3.10+ y la instalación de las dependencias estipuladas en \texttt{requirements.txt}. Por ejemplo, al ejecutar \texttt{python 01\_strukov\_2008.py}, el motor generará automáticamente las figuras métricas de alta fidelidad y realizará el cómputo de la tabulación estadística del $R^2$ sin requerir de ninguna intervención manual por parte del operador, re-validando en tiempo real todo el ecosistema virtual expuesto.

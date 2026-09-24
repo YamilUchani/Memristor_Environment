@@ -1,0 +1,38 @@
+% =====================================================================
+% Capítulo 1: Introducción
+% =====================================================================
+
+\chapter{Introducción}
+\label{ch:introduccion}
+
+\section{Contexto y motivación}
+\label{sec:intro-contexto}
+
+El crecimiento exponencial de las aplicaciones de inteligencia artificial y procesamiento de datos ha puesto en evidencia las limitaciones intrínsecas de la arquitectura computacional von Neumann tradicional. La separación física entre las unidades de procesamiento central (CPU/GPU) y las memorias secundarias genera un cuello de botella de ancho de banda y un consumo energético insostenible, conocido como el \emph{cuello de botella de von Neumann}.
+
+La computación neuromórfica surge como una alternativa paradigmática inspirada en la arquitectura y dinámica de los sistemas biológicos cerebrales. Al integrar la memoria y el procesamiento en el mismo elemento físico mediante redes de memristores y neuronas artificiales tipo Disparo e Integración con Fuga (\emph{Leaky Integrate-and-Fire}, LIF), es posible reducir el consumo energético en varios órdenes de magnitud y habilitar el aprendizaje en tiempo real en dispositivos de borde (\emph{edge computing}).
+
+\section{Planteamiento del problema}
+\label{sec:intro-problema}
+
+A pesar de los avances teóricos en dispositivos memristivos y modelos de neuronas de impulsos (\emph{spiking neurons}), existe una brecha significativa entre la modelación analítica aislada y las plataformas de simulación de circuitos completos integrados. Los simuladores existentes frecuentemente presentan uno o más de los siguientes inconvenientes:
+\begin{enumerate}
+    \item Falta de modularidad para intercambiar dinámicamente modelos de memristores no volátiles (Strukov, Prezioso, Jo) y volátiles (Wang, Yang).
+    \item Omisión de efectos no ideales deterministas y estocásticos reales, como la variabilidad dispositivo a dispositivo (\emph{device-to-device}, D2D) y ciclo a ciclo (\emph{cycle-to-cycle}, C2C).
+    \item Dificultad para validar de forma automatizada y reproducible la precisión numérica frente a datos experimentales publicados en la literatura.
+\end{enumerate}
+
+\section{Objetivos}
+\label{sec:intro-objetivos}
+
+\subsection{Objetivo general}
+Desarrollar y validar cuantitativamente una plataforma de simulación modular en Python (\emph{Neuromorphic Lab}) para la modelación y análisis de dispositivos memristivos, neuronas LIF, circuitos híbridos y matrices de interconexión (\emph{crossbar array}), con interfaz gráfica interactiva y verificación automatizada contra datos de la literatura.
+
+\subsection{Objetivos específicos}
+\begin{enumerate}
+    \item Implementar una biblioteca centralizada de modelos físicos y matemáticos de memristores (Strukov, Yakopcic/Prezioso, Jo, Wang) y neuronas LIF.
+    \item Incorporar variabilidad estocástica D2D y C2C mediante distribuciones normales truncadas y procesos de Ornstein-Uhlenbeck.
+    \item Diseñar e integrar algoritmos de plasticidad sináptica Hebbiana (\emph{Spike-Timing-Dependent Plasticity}, STDP) y reforzada (\emph{R-STDP}).
+    \item Consolidar la arquitectura de matrices crossbar (1×1, 2×2, 4×4) en una implementación unificada con decodificadores y controladores de fila/columna.
+    \item Construir una suite de 27 pruebas de validación automatizadas reportando métricas de precisión ($\text{MAE}$, $\text{RMSE}$, $\text{Error Relativo}$ y $R^2$).
+\end{enumerate}

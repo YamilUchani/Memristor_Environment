@@ -29,19 +29,23 @@ class ValidationDataLoader:
         self.time_scale = time_scale
         self.current_scale = current_scale
         self._cached_data: Optional[Dict[str, np.ndarray]] = None
+        self._cached_prezioso_data: Optional[Dict[str, np.ndarray]] = None
 
     @staticmethod
     def _resolve_default_data_dir() -> Path:
-        """Resuelve la ruta a `neuromorphic_lab/data for validation`."""
+        """Resuelve la ruta a `neuromorphic_lab/data_validation`."""
         neurolab_pkg = Path(__file__).resolve().parent.parent
         project_root = neurolab_pkg.parent
-        return project_root / "data for validation"
+        return project_root / "data_validation"
 
-    def load_all(self, force_reload: bool = False) -> Optional[Dict[str, np.ndarray]]:
+    def load_all(self, force_reload: bool = False, dataset: str = "default") -> Optional[Dict[str, np.ndarray]]:
         """
-        Carga CvsT.csv, VvsT.csv y WDvsT.csv.
-        Retorna un diccionario con vectores numpy, o None si los archivos no existen.
+        Carga los datos experimentales de validación.
+        dataset: "default" (CvsT, VvsT, WDvsT) o "prezioso" (VvsC_Prezioso.csv).
         """
+        if dataset == "prezioso":
+            return self.load_prezioso(force_reload=force_reload)
+
         if self._cached_data is not None and not force_reload:
             return self._cached_data
 
@@ -96,4 +100,51 @@ class ValidationDataLoader:
             return self._cached_data
         except Exception as e:
             print(f"Error al cargar datos de validación CSV: {e}")
+            return None
+
+    def load_prezioso(self, force_reload: bool = False) -> Optional[Dict[str, np.ndarray]]:
+        """
+        Carga VvsC_Prezioso.csv (Voltaje V vs Corriente µA de Prezioso et al. 2014 Fig 1b).
+        """
+        if self._cached_prezioso_data is not None and not force_reload:
+            return self._cached_prezioso_data
+
+        try:
+            prez_path = self.data_dir / "VvsC_Prezioso.csv"
+            if not prez_path.exists():
+                return None
+
+            data = np.loadtxt(prez_path, delimiter=",")
+            v_val = data[:, 0]          # Voltaje (V)
+            i_val_uA = data[:, 1]       # Corriente (µA)
+            i_val_mA = i_val_uA / 1e3   # Corriente (mA)
+            i_val_amps = i_val_uA * 1e-6 # Corriente (A)
+
+            # Tiempo sintetizado para consistencia en gráficas temporales
+            t_i = np.linspace(0, 0.4, len(v_val))
+            t_v = t_i
+            t_w = t_i
+            wd_val = np.full_like(v_val, np.nan)
+
+            v_interp = v_val
+
+            mask_i = np.abs(i_val_amps) >= 1e-7
+            r_val_kohm = np.where(mask_i, np.abs(v_val / i_val_amps) / 1e3, np.nan)
+            g_val_us = np.where(mask_i, (1.0 / (r_val_kohm * 1e3)) * 1e6, np.nan)
+
+            self._cached_prezioso_data = {
+                "t_i": t_i,
+                "i_val_mA": i_val_mA,
+                "i_val": i_val_amps,
+                "t_v": t_v,
+                "v_val": v_val,
+                "t_w": t_w,
+                "wd_val": wd_val,
+                "v_interp": v_interp,
+                "r_val_kohm": r_val_kohm,
+                "g_val_us": g_val_us,
+            }
+            return self._cached_prezioso_data
+        except Exception as e:
+            print(f"Error al cargar datos de validación Prezioso CSV: {e}")
             return None

@@ -1,0 +1,6 @@
+Metrica,Ciclo1,Ciclo2,Unidad
+Total_Spikes,1430,1476,count
+Primer_ISI_ms,41.1400,31.6400,ms
+Ultimo_ISI_ms,1.5600,1.5600,ms
+Reduccion_ISI_pct,96.21,95.07,%
+R_S_inicio_ciclo_kOhm,475.50,412.50,kOhm

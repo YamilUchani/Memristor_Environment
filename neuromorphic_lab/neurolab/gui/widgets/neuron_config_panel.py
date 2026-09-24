@@ -205,19 +205,26 @@ class NeuronConfigPanel(QWidget):
         return data
 
     def from_dict(self, data: dict):
-        if "c_m_value" in data: self.spin_c_m.setValue(data["c_m_value"])
-        if "c_m_unit" in data: self.combo_c_unit.setCurrentText(data["c_m_unit"])
-        if "r_series_value" in data: self.spin_r_series.setValue(data["r_series_value"])
-        if "r_series_unit" in data: self.combo_rs_unit.setCurrentText(data["r_series_unit"])
-        if "r_leak_value" in data: self.spin_r_leak.setValue(data["r_leak_value"])
-        if "r_leak_unit" in data: self.combo_r_unit.setCurrentText(data["r_leak_unit"])
-        if "v_rest" in data: self.spin_v_rest.setValue(data["v_rest"])
-        if "v_th" in data: self.spin_v_th.setValue(data["v_th"])
-        if "v_reset" in data: self.spin_v_reset.setValue(data["v_reset"])
-        if "t_ref" in data: self.spin_t_ref.setValue(data["t_ref"])
-        if "signal_panel" in data and hasattr(self, '_signal_panel') and self._signal_panel is not None:
-            self._signal_panel.from_dict(data["signal_panel"])
+        was_blocked = self.signalsBlocked()
+        self.blockSignals(True)
+        try:
+            if "c_m_value" in data: self.spin_c_m.setValue(data["c_m_value"])
+            if "c_m_unit" in data: self.combo_c_unit.setCurrentText(data["c_m_unit"])
+            if "r_series_value" in data: self.spin_r_series.setValue(data["r_series_value"])
+            if "r_series_unit" in data: self.combo_rs_unit.setCurrentText(data["r_series_unit"])
+            if "r_leak_value" in data: self.spin_r_leak.setValue(data["r_leak_value"])
+            if "r_leak_unit" in data: self.combo_r_unit.setCurrentText(data["r_leak_unit"])
+            if "v_rest" in data: self.spin_v_rest.setValue(data["v_rest"])
+            if "v_th" in data: self.spin_v_th.setValue(data["v_th"])
+            if "v_reset" in data: self.spin_v_reset.setValue(data["v_reset"])
+            if "t_ref" in data: self.spin_t_ref.setValue(data["t_ref"])
+            if "signal_panel" in data and hasattr(self, '_signal_panel') and self._signal_panel is not None:
+                self._signal_panel.from_dict(data["signal_panel"])
+        finally:
+            self.blockSignals(was_blocked)
+
         self._on_change()
+
 
     def _save_lif_config_file(self):
         file_path, _ = QFileDialog.getSaveFileName(

@@ -1,0 +1,86 @@
+% =====================================================================
+% Tesis -- Neuromorphic Lab
+% Simulador Modular de Memristores y Circuitos Neuromórficos
+% =====================================================================
+\documentclass[11pt,a4paper,oneside]{book}
+
+% --- Codificación e idioma ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla]{babel}
+
+% --- Matemáticas ---
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+
+% --- Figuras y tablas ---
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[singlelinecheck=false]{caption}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+
+% --- Hipervínculos y colores ---
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+
+% --- Bibliografía ---
+\usepackage{cite}
+
+% --- Espaciado y márgenes ---
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+% --- Comandos auxiliares ---
+\newcommand{\Rtwo}{R^{2}}
+\newcommand{\ISI}{\mathrm{ISI}}
+\newcommand{\RON}{R_{\mathrm{ON}}}
+\newcommand{\ROFF}{R_{\mathrm{OFF}}}
+\newcommand{\Robj}{R_{\mathrm{obj}}}
+\newcommand{\Rteo}{R_{\mathrm{teo}}}
+
+% --- Metadatos ---
+\title{\textbf{Neuromorphic Lab: Simulador Modular de Memristores y Circuitos Neuromórficos}\\[0.5em]
+\Large Tesis de Grado -- Validación Cuantitativa y Arquitectura Hardware}
+\author{\textbf{Yamil Uchani}}
+\date{\today}
+
+\begin{document}
+
+\frontmatter
+\maketitle
+\tableofcontents
+\listoffigures
+\listoftables
+
+\include{capitulos/00_preliminares}
+\newpage
+
+\mainmatter
+
+% --- Capítulos principales ---
+\include{capitulos/01_introduccion}
+\include{capitulos/02_marco_teorico}
+\include{capitulos/03_fase1_nucleo}
+\include{capitulos/04_fase2_hibrido}
+\include{capitulos/05_fase3_plasticidad}
+\include{capitulos/06_fase4_crossbar}
+\include{capitulos/07_discusion}
+\include{capitulos/08_conclusiones}
+
+% --- Apéndices ---
+\appendix
+\include{apendices/A_codigo}
+\include{apendices/B_datos}
+
+% --- Bibliografía ---
+\backmatter
+\bibliographystyle{ieeetr}
+\bibliography{references}
+
+\end{document}

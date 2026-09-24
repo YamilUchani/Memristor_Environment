@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from typing import Dict, Any, Optional
 
 # ── Reexports desde core (fuente de verdad) ─────────────────────────────────
-from neurolab.core.config import ElectricalConfig, StrukovConfig  # noqa: F401
+from neurolab.core.config import ElectricalConfig, StrukovConfig, PreziosoConfig  # noqa: F401
 
 # ── Configuraciones propias de la capa devices ───────────────────────────────
 

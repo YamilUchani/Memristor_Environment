@@ -1,0 +1,122 @@
+\chapter{Conjuntos de Datos, Scripts y Métricas de Validación}
+\label{ch:apendice_datos}
+
+En este apéndice se proporciona la referencia exhaustiva de los conjuntos de datos de entrada, los scripts de validación numerados, las figuras de alta resolución generadas y la tabla maestra con las 27 métricas cuantitativas del proyecto.
+
+% =====================================================================
+\section{Conjuntos de datos de referencia (CSVs)}
+\label{sec:datos_csv}
+
+\begin{table}[H]
+\centering
+\caption{Conjuntos de datos experimentales digitalizados incluidos en \texttt{neuromorphic\_lab/validaciones/datos/}.}
+\label{tab:csv_datasets}
+\begin{tabular}{l l l}
+\toprule
+Archivo CSV & Artículo de Referencia & Descripción \\
+\midrule
+\texttt{CvsT.csv} & Strukov et al. (2008)~\cite{strukov2008} & Corriente vs. Tiempo $I(t)$ \\
+\texttt{VvsT.csv} & Strukov et al. (2008)~\cite{strukov2008} & Voltaje de entrada $V(t)$ \\
+\texttt{WDvsT.csv} & Strukov et al. (2008)~\cite{strukov2008} & Ancho de capa $w(t)/D$ \\
+\texttt{VvsC\_Prezioso.csv} & Prezioso et al. (2014)~\cite{prezioso2014} & Ciclo I-V asimétrico en Al$_2$O$_3$ \\
+\texttt{Prezioso2015\_S3a.csv} & Prezioso et al. (2015)~\cite{prezioso2015} & Estado virgen Fig. S3a \\
+\texttt{Prezioso2015\_S3b.csv} & Prezioso et al. (2015)~\cite{prezioso2015} & Formación de filamento S3b \\
+\texttt{Prezioso2015\_S3c.csv} & Prezioso et al. (2015)~\cite{prezioso2015} & Conmutación reversibilidad S3c \\
+\texttt{Wang2025\_Sensor.csv} & Wang et al. (2025)~\cite{wang2025} & Adaptación de frecuencia sensor HfO$_2$ \\
+\texttt{Jo2010\_STDP.csv} & Jo et al. (2010)~\cite{jo2010} & Curva de plasticidad STDP $\Delta G(\Delta t)$ \\
+\texttt{Jo2010\_LTP\_LTD.csv} & Jo et al. (2010)~\cite{jo2010} & Modulación por pulsos LTP/LTD \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =====================================================================
+\section{Catálogo de figuras generadas}
+\label{sec:catalogo_figuras}
+
+\begin{table}[H]
+\centering
+\caption{Catálogo consolidado de las 23 figuras representativas e integradas en la tesis.}
+\label{tab:catalogo_figuras}
+\begin{tabular}{c l l p{5.5cm}}
+\toprule
+\# & Archivo de Figura & Script Generador & Descripción \\
+\midrule
+1 & \texttt{fig\_01\_strukov.png} & \texttt{01\_strukov\_2008.py} & Validación 6 paneles Strukov 2008 \\
+2 & \texttt{fig\_02\_prezioso.png} & \texttt{02\_prezioso\_2014.py} & Ajuste de modelo Yakopcic Prezioso 2014 \\
+3 & \texttt{fig\_03\_lif.png} & \texttt{03\_lif\_analitica.py} & Respuesta subumbral analítica LIF \\
+4 & \texttt{fig\_04\_convergencia.png} & \texttt{04\_convergencia.py} & Análisis de orden de convergencia $p=0.98$ \\
+5 & \texttt{fig\_05\_d2d\_c2c.png} & \texttt{05\_d2d\_c2c.py} & Variabilidad D2D y proceso C2C \\
+6 & \texttt{fig\_06\_hfo2\_isi.png} & \texttt{06\_hfo2\_isi.py} & Sensor HfO$_2$ + LIF en 2 ciclos \\
+7 & \texttt{fig\_07\_r\_x.png} & \texttt{07\_r\_x\_consistencia.py} & Consistencia analítica $R(x)$ \\
+8 & \texttt{fig\_08\_rs\_x.png} & \texttt{08\_rs\_de\_x.py} & Verificación $R_S$ proveniente de $x(t)$ \\
+9 & \texttt{fig\_09\_dt\_extremos.png} & \texttt{09\_dt\_extremos.py} & Fronteras de estabilidad con $dt$ \\
+10 & \texttt{fig\_10\_triangular.png} & \texttt{10\_triangular.py} & Respuesta a señal triangular \\
+11 & \texttt{fig\_11\_ruido.png} & \texttt{11\_ruido.py} & Sensibilidad a ruido estocástico \\
+12 & \texttt{fig\_12\_estadistica.png} & \texttt{12\_estadistica.py} & Tests estadísticos acumulados \\
+13 & \texttt{fig\_13\_wang.png} & \texttt{13\_wang\_2025.py} & Comparativa cuantitativa Wang 2025 \\
+14 & \texttt{fig\_14\_ltp\_ltd.png} & \texttt{14\_ltp\_ltd.py} & Trenes de pulsos LTP/LTD \\
+15 & \texttt{fig\_15\_stdp.png} & \texttt{15\_stdp.py} & Ventana de aprendizaje STDP \\
+16 & \texttt{fig\_16\_ciclo.png} & \texttt{16\_ltp\_ltd\_ciclo.py} & Reversibilidad tras 100 ciclos \\
+17 & \texttt{fig\_17\_stdp\_spikes.png} & \texttt{17\_stdp\_spikes.py} & Formas de onda de pulsos STDP \\
+18 & \texttt{fig\_18\_stdp\_temporal.png} & \texttt{18\_stdp\_temporal.py} & Acumulación temporal de pesos \\
+19 & \texttt{fig\_19\_iv\_hysteresis.png} & \texttt{19\_iv\_histeresis.py} & Lazo de histéresis sináptico \\
+20 & \texttt{fig\_20\_vi\_ltp\_ltd.png} & \texttt{20\_vi\_ltp\_ltd.py} & Caracterización V-I-R-G \\
+21a-d & \texttt{fig\_21a-d\_crossbar\_*.png} & \texttt{21\_crossbar\_1x1.py} & Operación matricial $1 \times 1$ \\
+22 & \texttt{fig\_22\_prezioso\_v2.png} & \texttt{22\_prezioso\_v2.py} & Validación Prezioso V2 extendida \\
+23 & \texttt{fig\_23\_s3a.png} & \texttt{prezioso2015\_s3.py} & Estado virgen Prezioso 2015 S3a \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =====================================================================
+\section{Tabla maestra de las 27 validaciones cuantitativas}
+\label{sec:tabla_27_validaciones}
+
+{\small
+\begin{longtable}{c l l l c}
+\caption{Resumen consolidado de las 27 validaciones del proyecto Neuromorphic Lab.}
+\label{tab:27_validaciones} \\
+\toprule
+ID & Referencia / Origen & Script & Métrica Principal & Valor Obtenido \\
+\midrule
+\endfirsthead
+\caption[]{Resumen consolidado de las 27 validaciones (Continuación)} \\
+\toprule
+ID & Referencia / Origen & Script & Métrica Principal & Valor Obtenido \\
+\midrule
+\endhead
+\midrule
+\multicolumn{5}{r}{\textit{Continúa en la siguiente página...}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+
+V01 & Strukov 2008 & \texttt{01\_strukov\_2008.py} & $R^2$ en corriente $I(t)$ & $> 0.99$ \\
+V02 & Strukov 2008 & \texttt{07\_r\_x\_consistencia.py} & Error relativo $R(x)$ & $0.00\%$ \\
+V03 & Strukov 2008 & \texttt{04\_convergencia.py} & Orden de convergencia $p$ & $0.98$ \\
+V04 & Strukov 2008 & \texttt{09\_dt\_extremos.py} & Umbral máximo de $dt$ & $10^{-3}\,\mathrm{s}$ \\
+V05 & Strukov 2008 & \texttt{10\_triangular.py} & Rango del estado $x(t)$ & $[0.0, 0.38]$ \\
+V06 & Prezioso 2014 & \texttt{02\_prezioso\_2014.py} & $R^2$ ciclo completo & $0.9640$ \\
+V07 & Prezioso 2014 & \texttt{22\_prezioso\_v2.py} & Asimetría SET/RESET & Ratio $I_{RESET}/I_{SET} = 3.0$ \\
+V08 & Prezioso 2015 & \texttt{prezioso2015\_s3.py} & Estado virgen S3a & Cualitativo OK \\
+V09 & Prezioso 2015 & \texttt{prezioso2015\_s3.py} & Electro-formación S3b & Cualitativo OK \\
+V10 & Prezioso 2015 & \texttt{prezioso2015\_s3.py} & Conmutación S3c & Cualitativo OK \\
+V11 & Wang 2025 & \texttt{06\_hfo2\_isi.py} & Diferencia ISI entre ciclos & $< 0.3\%$ \\
+V12 & Wang 2025 & \texttt{08\_rs\_de\_x.py} & Error $R_S$ vs $x(t)$ & $0.00\%$ \\
+V13 & Wang 2025 & \texttt{13\_wang\_2025.py} & Factor de compresión & $27.2\times$ \\
+V14 & Jo 2010 & \texttt{15\_stdp.py} & Ventana STDP ($R^2$) & $> 0.98$ \\
+V15 & Jo 2010 & \texttt{17\_stdp\_spikes.py} & Solapamiento de pulsos & $\Delta V_{pico} = 450\,\mathrm{mV}$ \\
+V16 & Jo 2010 & \texttt{18\_stdp\_temporal.py} & Acumulación temporal & $R^2 = 0.99$ \\
+V17 & Jo 2010 & \texttt{14\_ltp\_ltd.py} & Potenciación $\Delta G > 0$ & Verificado \\
+V18 & Jo 2010 & \texttt{14\_ltp\_ltd.py} & Depresión $\Delta G < 0$ & Verificado \\
+V19 & Jo 2010 & \texttt{16\_ltp\_ltd\_ciclo.py} & Error de retorno (100 c.) & $< 1.0\%$ \\
+V20 & Jo 2010 & \texttt{20\_vi\_ltp\_ltd.py} & Coherencia V-I-R-G & Error $= 0.00\%$ \\
+V21 & Jo 2010 & \texttt{19\_iv\_histeresis.py} & Lazo pinzado en origen & $I(0) = 0.0\,\mathrm{nA}$ \\
+V22 & Solución Exacta & \texttt{03\_lif\_analitica.py} & $R^2$ respuesta subumbral & $\mathbf{1.0000}$ \\
+V23 & Variabilidad & \texttt{05\_d2d\_c2c.py} & Test KS $p$-valor D2D & $0.8959$ \\
+V24 & Variabilidad & \texttt{05\_d2d\_c2c.py} & Error varianza C2C & $3.62\%$ \\
+V25 & Ruido & \texttt{11\_ruido.py} & Coeficiente variación $I_{pp}$ & $115\%$ \\
+V26 & Estadística & \texttt{12\_estadistica.py} & Test normalidad KS & $p > 0.05$ \\
+V27 & Crossbar 1x1 & \texttt{21\_crossbar\_1x1.py} & Operación VMM ($I=G \cdot V$) & Error $= 0.00\%$ \\
+\end{longtable}
+}

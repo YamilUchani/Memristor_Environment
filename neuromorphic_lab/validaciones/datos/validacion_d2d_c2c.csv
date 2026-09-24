@@ -1,0 +1,4 @@
+Metrica,Valor,Esperado,Diagnostico
+KS_p_value,0.8959,>0.05,PASADO
+C2C_Var_Sim,0.001295,0.001250,Error=3.62%
+C2C_Var_Error_Pct,3.62%,<5.0%,PASADO

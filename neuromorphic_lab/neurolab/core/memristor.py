@@ -40,6 +40,23 @@ class Memristor:
         """Estado interno normalizado x (0.0 = OFF / R_off, 1.0 = ON / R_on)."""
         return self._x
 
+    @property
+    def RON(self) -> float:
+        return self.electrical.r_on
+
+    @property
+    def ROFF(self) -> float:
+        return self.electrical.r_off
+
+    @property
+    def r_on(self) -> float:
+        return self.electrical.r_on
+
+    @property
+    def r_off(self) -> float:
+        return self.electrical.r_off
+
+
     @x.setter
     def x(self, value: float) -> None:
         val = float(value)
@@ -61,10 +78,16 @@ class Memristor:
         paso temporal es grande (corrientes artificiales de miles de amperios).
         Físicamente justificado: ningún óxido memristivo real tiene R < 1 Ω.
         """
-        R_MIN_OHMS = 1.0  # Piso de resistencia para estabilidad numérica
-        x_eff = max(0.0, min(1.0, self._x)) if not self.clip_x else self._x
-        r_raw = self.electrical.r_on * x_eff + self.electrical.r_off * (1.0 - x_eff)
-        return max(r_raw, R_MIN_OHMS)
+        import numpy as np
+        x_eff = float(np.clip(self._x, 0.0, 1.0))
+        r_min_phys = max(1.0, float(self.electrical.r_on))
+        v_curr = getattr(self, "_last_v", 0.0)
+        if hasattr(self.math_model, "compute_resistance"):
+            r_raw = self.math_model.compute_resistance(x_eff, self.electrical, self.model_config, v_curr)
+        else:
+            r_raw = self.electrical.r_on * x_eff + self.electrical.r_off * (1.0 - x_eff)
+        return max(float(r_raw), r_min_phys)
+
 
     @property
     def conductance(self) -> float:
@@ -73,6 +96,50 @@ class Memristor:
         G(x) = 1.0 / R(x)
         """
         return 1.0 / self.resistance
+
+    def current(self, voltage: float) -> float:
+        """
+        Calcula la corriente instantánea que circula por el memristor (A).
+        Aplica los modificadores de realismo en la corriente si están presentes.
+        """
+        self._last_v = voltage
+        r_current = self.resistance
+        curr = voltage / r_current if r_current > 0 else 0.0
+        for modifier in self.modifiers:
+            curr = modifier.modify_current(curr, voltage, self._x)
+        return curr
+
+    def update(self, voltage: float, dt: float) -> None:
+        """
+        Actualiza el estado interno integrando dx/dt en el paso temporal dt.
+        """
+        self._last_v = voltage
+        r_current = self.resistance
+        curr = voltage / r_current if r_current > 0 else 0.0
+
+        dxdt = self.math_model.compute_dxdt(
+            state=self._x,
+            voltage=voltage,
+            current=curr,
+            electrical=self.electrical,
+            model_config=self.model_config
+        )
+
+        for modifier in self.modifiers:
+            dxdt = modifier.modify_dxdt(
+                dxdt=dxdt,
+                state=self._x,
+                voltage=voltage,
+                current=curr,
+                electrical=self.electrical,
+                model_config=self.model_config
+            )
+
+        new_x = self._x + dxdt * dt
+        if self.clip_x:
+            self._x = 1.0 if new_x > 1.0 else (0.0 if new_x < 0.0 else new_x)
+        else:
+            self._x = new_x
 
     def step(self, voltage: float, dt: float) -> float:
         """
@@ -85,42 +152,9 @@ class Memristor:
         Returns:
             float: Corriente instantánea que circula por el memristor (A).
         """
-        # 1. Corriente instantánea Ohmiana base: I = V / R(x)
-        r_current = self.resistance
-        current = voltage / r_current if r_current > 0 else 0.0
-
-        # 2. Calcular la tasa de cambio base dx/dt desde el modelo matemático físico
-        dxdt = self.math_model.compute_dxdt(
-            state=self._x,
-            voltage=voltage,
-            current=current,
-            electrical=self.electrical,
-            model_config=self.model_config
-        )
-
-        # 3. Aplicar pipeline de modificadores de realismo (Efectos no lineales, bordes, variabilidad)
-        for modifier in self.modifiers:
-            dxdt = modifier.modify_dxdt(
-                dxdt=dxdt,
-                state=self._x,
-                voltage=voltage,
-                current=current,
-                electrical=self.electrical,
-                model_config=self.model_config
-            )
-
-        # 4. Integrar el estado normalizado usando Euler Explícito (optimizado)
-        new_x = self._x + dxdt * dt
-        if self.clip_x:
-            self._x = 1.0 if new_x > 1.0 else (0.0 if new_x < 0.0 else new_x)
-        else:
-            self._x = new_x
-
-        # 5. Aplicar modificaciones en la corriente de salida si hay ruido térmico/lectura
-        for modifier in self.modifiers:
-            current = modifier.modify_current(current, voltage, self._x)
-
-        return current
+        i = self.current(voltage)
+        self.update(voltage, dt)
+        return i
 
     def reset(self, initial_state: Optional[float] = None) -> None:
         """Reinicia el estado interno al estado inicial especificado o configurado."""

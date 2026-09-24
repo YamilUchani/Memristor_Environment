@@ -1,0 +1,11 @@
+================================================================================
+ VALIDACIÓN DEL MODELO MEMRISTOR STRUKOV — SEÑAL TRIANGULAR V(t)
+================================================================================
+ Rango de estado x(t):   [0.0000, 0.3868]
+ Rango de Resistencia R: [9849.11, 16000.00] Ohm
+ Rango de Corriente I:   [-0.0753, 0.0753] mA
+ Puntos simulados:       60,000
+
+[OK] Archivos generados exitosamente:
+   - validacion_triangular.png
+   - validacion_triangular.csv

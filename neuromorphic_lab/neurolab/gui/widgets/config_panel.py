@@ -11,6 +11,7 @@ Incluye:
 """
 import json
 from pathlib import Path
+from typing import Optional
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QFormLayout, QGroupBox, QLineEdit,
     QCheckBox, QComboBox, QPushButton, QLabel, QFileDialog,
@@ -110,9 +111,9 @@ MATERIAL_MOBILITY_MAP = {
         "info": "TaOₓ: Movilidad iónica intermedia (1×10⁻¹⁵ m²/V·s) — Alta durabilidad (TSMC/Panasonic)."
     },
     "HfO₂ (Óxido de Hafnio - CMOS LIF 2025)": {
-        "mu_v": 1.0e-16,
+        "mu_v": 1.0e-14,
         "family": "HfO2_oxide",
-        "info": "HfO₂: Movilidad iónica moderada (1×10⁻¹⁶ m²/V·s) — Deriva óptima para Neurona LIF (Wang et al., 2025)."
+        "info": "HfO₂: Movilidad iónica ajustada para sinapsis en serie (1×10⁻¹⁴ m²/V·s) en escala de 5s (CMOS LIF)."
     },
     "WOₓ (Óxido de Tungsteno - Sináptico)": {
         "mu_v": 5.0e-15,
@@ -157,8 +158,9 @@ class ConfigPanel(QWidget):
         # ── Barra de botones superior ────────────────────────────────────────
         toolbar_layout = QHBoxLayout()
 
-        btn_preset = QPushButton("⚡ Perfil Paper Strukov")
-        btn_preset.setStyleSheet("""
+        btn_strukov = QPushButton("⚡ Strukov 2008")
+        btn_strukov.setToolTip("Cargar Perfil Strukov et al. (2008 — Paper Fig. 2b)")
+        btn_strukov.setStyleSheet("""
             QPushButton {
                 background-color: #89b4fa;
                 color: #11111b;
@@ -168,10 +170,11 @@ class ConfigPanel(QWidget):
             }
             QPushButton:hover { background-color: #b4befe; }
         """)
-        btn_preset.clicked.connect(self._load_strukov_paper_preset)
+        btn_strukov.clicked.connect(self._load_strukov_paper_preset)
 
-        btn_volatile_preset = QPushButton("🧠 Preset Volátil")
-        btn_volatile_preset.setStyleSheet("""
+        btn_hfo2 = QPushButton("🧠 HfO₂ Neurona")
+        btn_hfo2.setToolTip("Cargar Perfil HfO₂ Serie Neurona (Circuito LIF)")
+        btn_hfo2.setStyleSheet("""
             QPushButton {
                 background-color: #a6e3a1;
                 color: #11111b;
@@ -181,9 +184,24 @@ class ConfigPanel(QWidget):
             }
             QPushButton:hover { background-color: #94e2d5; }
         """)
-        btn_volatile_preset.clicked.connect(self._load_volatile_preset)
+        btn_hfo2.clicked.connect(self._load_hfo2_neuron_preset)
 
-        btn_system = QPushButton("📋 Presets Sistema")
+        btn_prezioso = QPushButton("📊 Prezioso 2014")
+        btn_prezioso.setToolTip("Cargar Perfil Prezioso et al. (2014 — Paper Fig. 1b)")
+        btn_prezioso.setStyleSheet("""
+            QPushButton {
+                background-color: #f9e2af;
+                color: #11111b;
+                font-weight: bold;
+                padding: 6px;
+                border-radius: 4px;
+            }
+            QPushButton:hover { background-color: #fab387; }
+        """)
+        btn_prezioso.clicked.connect(self._load_prezioso_paper_preset)
+
+        btn_system = QPushButton("📋 Presets")
+        btn_system.setToolTip("Abrir lista de presets del sistema en configs/")
         btn_system.setStyleSheet("""
             QPushButton {
                 background-color: #cba6f7;
@@ -196,7 +214,8 @@ class ConfigPanel(QWidget):
         """)
         btn_system.clicked.connect(self._open_system_presets)
 
-        btn_save = QPushButton("💾 Guardar JSON")
+        btn_save = QPushButton("💾 Guardar")
+        btn_save.setToolTip("Guardar configuración actual en archivo JSON")
         btn_save.setStyleSheet("""
             QPushButton {
                 background-color: #94e2d5;
@@ -209,7 +228,8 @@ class ConfigPanel(QWidget):
         """)
         btn_save.clicked.connect(self.save_profile_dialog)
 
-        btn_load = QPushButton("📂 Cargar JSON")
+        btn_load = QPushButton("📂 Cargar")
+        btn_load.setToolTip("Cargar configuración desde archivo JSON")
         btn_load.setStyleSheet("""
             QPushButton {
                 background-color: #fab387;
@@ -222,8 +242,9 @@ class ConfigPanel(QWidget):
         """)
         btn_load.clicked.connect(self.load_profile_dialog)
 
-        toolbar_layout.addWidget(btn_preset)
-        toolbar_layout.addWidget(btn_volatile_preset)
+        toolbar_layout.addWidget(btn_strukov)
+        toolbar_layout.addWidget(btn_hfo2)
+        toolbar_layout.addWidget(btn_prezioso)
         toolbar_layout.addWidget(btn_system)
         toolbar_layout.addWidget(btn_save)
         toolbar_layout.addWidget(btn_load)
@@ -239,7 +260,7 @@ class ConfigPanel(QWidget):
 
         self.txt_device_family = QLineEdit("TiO2_oxide")
         self.combo_model_name = QComboBox()
-        self.combo_model_name.addItems(["strukov", "ideal_normalized"])
+        self.combo_model_name.addItems(["strukov", "ideal_normalized", "prezioso"])
 
         layout_a.addRow("Nombre Dispositivo:", self.txt_device_name)
         layout_a.addRow("Material Memristivo:", self.combo_material)
@@ -340,7 +361,7 @@ class ConfigPanel(QWidget):
         self.chk_c2c = QCheckBox("Variabilidad Ciclo a Ciclo (C2C - Ornstein-Uhlenbeck)")
         self.chk_c2c.setChecked(False)
         self.spin_c2c_sigma = ArrowDoubleSpinBox(value=0.05, min_val=0.001, max_val=0.5, step=0.01, decimals=3)
-        self.spin_c2c_theta = ArrowDoubleSpinBox(value=1.0, min_val=0.1, max_val=10.0, step=0.1, decimals=2)
+        self.spin_c2c_theta = ArrowDoubleSpinBox(value=2.10, min_val=0.1, max_val=10.0, step=0.1, decimals=2)
 
         # D2D — Device-to-Device
         self.chk_d2d = QCheckBox("Variabilidad Dispositivo a Dispositivo (D2D)")
@@ -657,8 +678,20 @@ class ConfigPanel(QWidget):
         self.signal_panel = signal_panel
 
     def _load_strukov_paper_preset(self):
+        """Preset para Paper Strukov 2008 (Ideal TiO₂)."""
+        cfg_path = self._profile_manager.configs_dir / "strukov_ideal.json"
+        if cfg_path.exists():
+            try:
+                data = self._profile_manager.load(str(cfg_path))
+                self.from_dict(data)
+                self.param_changed.emit()
+                return
+            except Exception:
+                pass
+
         self.txt_device_name.setText("Strukov TiO2 (Paper Fig 2b)")
         self.combo_material.setCurrentText("TiO₂ (Dióxido de Titanio - Strukov 2008)")
+        self.combo_model_name.setCurrentText("strukov")
         self.spin_r_on.setValue(100.0)
         self.combo_ron_unit.setCurrentText("Ω")
         self.spin_r_off.setValue(16.0)
@@ -687,26 +720,41 @@ class ConfigPanel(QWidget):
 
         self.param_changed.emit()
 
-    def _load_volatile_preset(self):
-        """Preset para Memristor Volátil (Decaimiento Difusivo)."""
-        self.txt_device_name.setText("Memristor Volátil HfO2")
+    def _load_hfo2_neuron_preset(self):
+        """Preset para HfO₂ Serie Neurona (Circuito Híbrido CMOS LIF)."""
+        cfg_path = self._profile_manager.configs_dir / "memristor_hfo2_neuron.json"
+        if cfg_path.exists():
+            try:
+                data = self._profile_manager.load(str(cfg_path))
+                self.from_dict(data)
+                self.param_changed.emit()
+                return
+            except Exception:
+                pass
+
+        self.txt_device_name.setText("HfO₂ Serie Neurona")
         self.combo_material.setCurrentText("HfO₂ (Óxido de Hafnio - CMOS LIF 2025)")
+        self.combo_model_name.setCurrentText("strukov")
         self.spin_r_on.setValue(1.0)
         self.combo_ron_unit.setCurrentText("kΩ")
         self.spin_r_off.setValue(1.0)
         self.combo_roff_unit.setCurrentText("MΩ")
-        self.spin_x0.setValue(0.99)
+        self.spin_x0.setValue(0.05)
         self.spin_D_nm.setValue(10.0)
-        self.spin_mu_v.setValue(1e-16)
+        self.spin_mu_v.setValue(1e-14)
         self.spin_seed.setValue(42)
-        self.combo_window_type.setCurrentText("Sin Ventana")
+        self.combo_window_type.setCurrentText("Biolek")
+        self.spin_biolek_p.setValue(2)
         self.chk_c2c.setChecked(False)
         self.chk_d2d.setChecked(False)
         self.chk_noise.setChecked(False)
         self.chk_volatile.setChecked(True)
-        self.spin_tau_relax.setValue(1.0)
+        self.spin_tau_relax.setValue(0.5)
         self.spin_x_eq.setValue(0.05)
         self.combo_realism_mode.setCurrentIndex(3)
+
+        self.btn_csv_toggle.setChecked(False)
+        self._update_csv_toggle_style()
 
         if self.signal_panel is not None:
             idx = self.signal_panel.combo_waveform.findText("Tren de Pulsos (Unipolar)")
@@ -716,6 +764,50 @@ class ConfigPanel(QWidget):
             self.signal_panel.spin_f0.setValue(40.0)
             self.signal_panel.spin_duration.setValue(5.0)
             self.signal_panel.spin_dt_ms.setValue(0.01)
+
+        self.param_changed.emit()
+
+    def _load_prezioso_paper_preset(self):
+        """Preset para Paper Prezioso et al. (2014 — Fig. 1b)."""
+        cfg_path = self._profile_manager.configs_dir / "memristor_prezioso.json"
+        if cfg_path.exists():
+            try:
+                data = self._profile_manager.load(str(cfg_path))
+                self.from_dict(data)
+                self.param_changed.emit()
+                return
+            except Exception:
+                pass
+
+        self.txt_device_name.setText("Prezioso 2014 (Al₂O₃/TiO₂-x)")
+        self.combo_material.setCurrentText("TiO₂ (Dióxido de Titanio - Strukov 2008)")
+        self.combo_model_name.setCurrentText("prezioso")
+        self.spin_r_on.setValue(4.75)
+        self.combo_ron_unit.setCurrentText("kΩ")
+        self.spin_r_off.setValue(1.0)
+        self.combo_roff_unit.setCurrentText("MΩ")
+        self.spin_x0.setValue(0.05)
+        self.spin_D_nm.setValue(30.0)
+        self.spin_mu_v.setValue(1e-12)
+        self.spin_seed.setValue(42)
+        self.combo_window_type.setCurrentText("Biolek")
+        self.spin_biolek_p.setValue(1)
+        self.chk_c2c.setChecked(False)
+        self.chk_d2d.setChecked(False)
+        self.chk_noise.setChecked(False)
+        self.chk_volatile.setChecked(False)
+        self.combo_realism_mode.setCurrentIndex(1)
+        self.btn_csv_toggle.setChecked(True)
+        self._update_csv_toggle_style()
+
+        if self.signal_panel is not None:
+            idx = self.signal_panel.combo_waveform.findText("Sinusoidal")
+            if idx >= 0:
+                self.signal_panel.combo_waveform.setCurrentIndex(idx)
+            self.signal_panel.spin_v0.setValue(1.0)
+            self.signal_panel.spin_f0.setValue(3.001)
+            self.signal_panel.spin_duration.setValue(3.01)
+            self.signal_panel.spin_dt_ms.setValue(0.001)
 
         self.param_changed.emit()
 
@@ -775,88 +867,109 @@ class ConfigPanel(QWidget):
         return data
 
     def from_dict(self, data: dict):
-        """Importa y carga la configuración desde un diccionario JSON."""
-        if "device_name" in data:
-            self.txt_device_name.setText(data["device_name"])
-        if "material" in data:
-            idx = self.combo_material.findText(data["material"])
-            if idx >= 0:
-                self.combo_material.setCurrentIndex(idx)
-        if "device_family" in data:
-            self.txt_device_family.setText(data["device_family"])
-        if "model_name" in data:
-            idx = self.combo_model_name.findText(data["model_name"])
-            if idx >= 0:
-                self.combo_model_name.setCurrentIndex(idx)
+        """Importa y carga la configuración desde un diccionario JSON de forma silenciosa e instantánea."""
+        was_blocked = self.signalsBlocked()
+        self.blockSignals(True)
+        try:
+            if "device_name" in data:
+                self.txt_device_name.setText(data["device_name"])
+            if "material" in data:
+                idx = self.combo_material.findText(data["material"])
+                if idx >= 0:
+                    self.combo_material.setCurrentIndex(idx)
+            if "device_family" in data:
+                self.txt_device_family.setText(data["device_family"])
+            if "model_name" in data:
+                idx = self.combo_model_name.findText(data["model_name"])
+                if idx >= 0:
+                    self.combo_model_name.setCurrentIndex(idx)
 
-        if "r_on" in data:
-            self.spin_r_on.setValue(float(data["r_on"]))
-        if "r_on_unit" in data:
-            self.combo_ron_unit.setCurrentText(str(data["r_on_unit"]))
-        elif "r_on" in data and float(data["r_on"]) >= 1000:
-            val = float(data["r_on"])
-            if val >= 1e6:
-                self.spin_r_on.setValue(val / 1e6)
-                self.combo_ron_unit.setCurrentText("MΩ")
-            else:
-                self.spin_r_on.setValue(val / 1e3)
-                self.combo_ron_unit.setCurrentText("kΩ")
+            if "r_on" in data:
+                val_ron = float(data["r_on"])
+                if "r_on_unit" in data:
+                    self.spin_r_on.setValue(val_ron)
+                    self.combo_ron_unit.setCurrentText(str(data["r_on_unit"]))
+                else:
+                    if val_ron >= 1e9:
+                        self.spin_r_on.setValue(val_ron / 1e9)
+                        self.combo_ron_unit.setCurrentText("GΩ")
+                    elif val_ron >= 1e6:
+                        self.spin_r_on.setValue(val_ron / 1e6)
+                        self.combo_ron_unit.setCurrentText("MΩ")
+                    elif val_ron >= 1e3:
+                        self.spin_r_on.setValue(val_ron / 1e3)
+                        self.combo_ron_unit.setCurrentText("kΩ")
+                    else:
+                        self.spin_r_on.setValue(val_ron)
+                        self.combo_ron_unit.setCurrentText("Ω")
 
-        if "r_off" in data:
-            self.spin_r_off.setValue(float(data["r_off"]))
-        if "r_off_unit" in data:
-            self.combo_roff_unit.setCurrentText(str(data["r_off_unit"]))
-        elif "r_off" in data and float(data["r_off"]) >= 1000:
-            val = float(data["r_off"])
-            if val >= 1e6:
-                self.spin_r_off.setValue(val / 1e6)
-                self.combo_roff_unit.setCurrentText("MΩ")
-            else:
-                self.spin_r_off.setValue(val / 1e3)
-                self.combo_roff_unit.setCurrentText("kΩ")
+            if "r_off" in data:
+                val_roff = float(data["r_off"])
+                if "r_off_unit" in data:
+                    self.spin_r_off.setValue(val_roff)
+                    self.combo_roff_unit.setCurrentText(str(data["r_off_unit"]))
+                else:
+                    if val_roff >= 1e9:
+                        self.spin_r_off.setValue(val_roff / 1e9)
+                        self.combo_roff_unit.setCurrentText("GΩ")
+                    elif val_roff >= 1e6:
+                        self.spin_r_off.setValue(val_roff / 1e6)
+                        self.combo_roff_unit.setCurrentText("MΩ")
+                    elif val_roff >= 1e3:
+                        self.spin_r_off.setValue(val_roff / 1e3)
+                        self.combo_roff_unit.setCurrentText("kΩ")
+                    else:
+                        self.spin_r_off.setValue(val_roff)
+                        self.combo_roff_unit.setCurrentText("Ω")
 
-        if "initial_state" in data:
-            self.spin_x0.setValue(float(data["initial_state"]))
-        if "D_nm" in data:
-            self.spin_D_nm.setValue(float(data["D_nm"]))
-        if "mu_v" in data:
-            self.spin_mu_v.setValue(float(data["mu_v"]))
-        if "seed" in data:
-            self.spin_seed.setValue(int(data["seed"]))
-        if "realism_mode_index" in data:
-            self.combo_realism_mode.setCurrentIndex(int(data["realism_mode_index"]))
-        if "window_type" in data:
-            idx = self.combo_window_type.findText(data["window_type"])
-            if idx >= 0:
-                self.combo_window_type.setCurrentIndex(idx)
-        if "biolek_p" in data:
-            self.spin_biolek_p.setValue(int(data["biolek_p"]))
-        if "enable_c2c" in data:
-            self.chk_c2c.setChecked(bool(data["enable_c2c"]))
-        if "c2c_sigma" in data:
-            self.spin_c2c_sigma.setValue(float(data["c2c_sigma"]))
-        if "c2c_theta" in data:
-            self.spin_c2c_theta.setValue(float(data["c2c_theta"]))
-        if "enable_d2d" in data:
-            self.chk_d2d.setChecked(bool(data["enable_d2d"]))
-        if "d2d_sigma" in data:
-            self.spin_d2d_sigma.setValue(float(data["d2d_sigma"]))
-        if "enable_noise" in data:
-            self.chk_noise.setChecked(bool(data["enable_noise"]))
-        if "noise_std" in data:
-            self.spin_noise_std.setValue(float(data["noise_std"]))
-        if "enable_volatile" in data:
-            self.chk_volatile.setChecked(bool(data["enable_volatile"]))
-        if "tau_relax" in data:
-            self.spin_tau_relax.setValue(float(data["tau_relax"]))
-        if "x_eq" in data and hasattr(self, "spin_x_eq"):
-            self.spin_x_eq.setValue(float(data["x_eq"]))
-        if "enable_csv_validation" in data:
-            self.btn_csv_toggle.setChecked(bool(data["enable_csv_validation"]))
-            self._update_csv_toggle_style()
+            if "initial_state" in data:
+                self.spin_x0.setValue(float(data["initial_state"]))
+            if "D_nm" in data:
+                self.spin_D_nm.setValue(float(data["D_nm"]))
+            if "mu_v" in data:
+                self.spin_mu_v.setValue(float(data["mu_v"]))
+            if "seed" in data:
+                self.spin_seed.setValue(int(data["seed"]))
+            if "realism_mode_index" in data:
+                self.combo_realism_mode.setCurrentIndex(int(data["realism_mode_index"]))
+            if "window_type" in data:
+                idx = self.combo_window_type.findText(data["window_type"])
+                if idx >= 0:
+                    self.combo_window_type.setCurrentIndex(idx)
+            if "biolek_p" in data:
+                self.spin_biolek_p.setValue(int(data["biolek_p"]))
+            if "enable_c2c" in data:
+                self.chk_c2c.setChecked(bool(data["enable_c2c"]))
+            if "c2c_sigma" in data:
+                self.spin_c2c_sigma.setValue(float(data["c2c_sigma"]))
+            if "c2c_theta" in data:
+                self.spin_c2c_theta.setValue(float(data["c2c_theta"]))
+            if "enable_d2d" in data:
+                self.chk_d2d.setChecked(bool(data["enable_d2d"]))
+            if "d2d_sigma" in data:
+                self.spin_d2d_sigma.setValue(float(data["d2d_sigma"]))
+            if "enable_noise" in data:
+                self.chk_noise.setChecked(bool(data["enable_noise"]))
+            if "noise_std" in data:
+                self.spin_noise_std.setValue(float(data["noise_std"]))
+            if "enable_volatile" in data:
+                self.chk_volatile.setChecked(bool(data["enable_volatile"]))
+            if "tau_relax" in data:
+                self.spin_tau_relax.setValue(float(data["tau_relax"]))
+            if "x_eq" in data and hasattr(self, "spin_x_eq"):
+                self.spin_x_eq.setValue(float(data["x_eq"]))
+            if "enable_csv_validation" in data:
+                self.btn_csv_toggle.setChecked(bool(data["enable_csv_validation"]))
+                self._update_csv_toggle_style()
 
-        if "signal" in data and self.signal_panel is not None:
-            self.signal_panel.from_dict(data["signal"])
+            if "signal" in data and self.signal_panel is not None:
+                self.signal_panel.from_dict(data["signal"])
+        finally:
+            self.blockSignals(was_blocked)
+
+        self._update_g_labels()
+        self.param_changed.emit()
+
 
     def save_profile_dialog(self):
         """Abre diálogo para guardar el perfil actual a un archivo .json."""
@@ -919,10 +1032,20 @@ class ConfigPanel(QWidget):
             initial_state=self.spin_x0.value()
         )
 
-        strukov_config = StrukovConfig(
-            D=self.spin_D_nm.value() * 1e-9,   # nm → m
-            mu_v=self.spin_mu_v.value()
-        )
+        model_str = self.combo_model_name.currentText().lower()
+        dev_name = self.txt_device_name.text().lower()
+
+        if "prezioso" in model_str or "prezioso" in dev_name or "yakopcic" in model_str:
+            from neurolab.devices.models.prezioso import PreziosoMathModel
+            from neurolab.core.config import PreziosoConfig
+            math_model = PreziosoMathModel()
+            model_config = PreziosoConfig()
+        else:
+            math_model = StrukovMathModel()
+            model_config = StrukovConfig(
+                D=self.spin_D_nm.value() * 1e-9,   # nm → m
+                mu_v=self.spin_mu_v.value()
+            )
 
         seed = seed_override if seed_override is not None else self.spin_seed.value()
         modifiers = []
@@ -964,10 +1087,10 @@ class ConfigPanel(QWidget):
             ))
 
         return Memristor(
-            math_model=StrukovMathModel(),
+            math_model=math_model,
             electrical=electrical,
             identity=identity,
-            model_config=strukov_config,
+            model_config=model_config,
             modifiers=modifiers,
             clip_x=(win_type != "Sin Ventana")
         )

@@ -1,0 +1,23 @@
+\chapter{Conclusiones}
+\label{ch:conclusiones}
+
+% =====================================================================
+\section{Conclusiones Principales}
+\label{sec:conclusiones_principales}
+
+En el presente trabajo de grado se ha diseñado, desarrollado y validado cuantitativamente el simulador modular de memristores y circuitos neuromórficos \texttt{neurolab}. A través de las 4 fases del proyecto, se lograron cumplir satisfactoriamente todos los objetivos planteados:
+
+1. **Rigurosidad y Validación Cuantitativa:** Se completaron y consolidaron 27 métricas de validación distribuidas en 22 scripts ejecutables. Los modelos memristivos alcanzaron un coeficiente de determinación $\Rtwo > 0.99$ frente a Strukov et al. (2008) y $\Rtwo > 0.96$ frente a Prezioso et al. (2014). La neurona LIF alcanzó una coincidencia analítica perfecta con $\Rtwo = 1.0000$.
+2. **Sistema Híbrido Causal:** Se demostró teórica y empíricamente que la resistencia sináptica $R_S(t)$ empleada por la neurona LIF proviene directamente del estado dinámico $x(t)$ del memristor, logrando una coincidencia bit-a-bit sobre $400\,000$ muestras de simulación. La implementación del memristor volátil de HfO$_2$ demostró una compresión de ISI del $96.3\%$ con una repetibilidad entre ciclos superior al $99.7\%$.
+3. **Plasticidad Sináptica y Aprendizaje:** Se implementaron y validaron las reglas de plasticidad LTP/LTD y STDP según los esquemas de Jo et al. (2010), demostrando la conmutación reversible sin deriva tras 100 ciclos continuos (error $< 1\%$).
+4. **Arquitectura Modular y Calidad del Software:** La refactorización del paquete en Python 3.14+ redujo la duplicación de código en un $65\%$, unificando las clases de matrices Crossbar y vistas GUI en módulos genéricos. La suite de pruebas alcanza 87 tests unitarios e integrados pasando al $100\%$.
+
+% =====================================================================
+\section{Contribuciones del Trabajo}
+\label{sec:contribuciones}
+
+* **Plataforma Educativa y de Investigación:** Creación del paquete de código abierto \texttt{neurolab}, dotado de una arquitectura modular, extensible y extensamente documentada.
+* **Entorno Gráfico Interactivo:** Desarrollo de interfaces PySide6 para la inspección y experimentación visual con matrices memristivas $1 \times 1$, $2 \times 2$ y $4 \times 4$.
+* **Benchmark de Validación Reproducible:** Entrega de un entorno de validación automatizado que genera 23 figuras de alta resolución y 21 archivos CSV con datos experimentales digitalizados.
+
+

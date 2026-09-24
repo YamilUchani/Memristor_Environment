@@ -1,0 +1,42 @@
+{
+    "_meta": {
+        "schema_version": "1.0",
+        "app_version": "0.1.0",
+        "profile_name": "Prezioso 2014 (Al2O3/TiO2-x)",
+        "saved_at": "2026-09-14T13:56:12"
+    },
+    "device_name": "Prezioso 2014 (Al2O3/TiO2-x)",
+    "material": "Personalizado",
+    "device_family": "oxide_memristor",
+    "model_name": "prezioso",
+    "r_on": 4.75,
+    "r_on_unit": "kΩ",
+    "r_off": 1.0,
+    "r_off_unit": "MΩ",
+    "initial_state": 0.05,
+    "D_nm": 30.0,
+    "mu_v": 1e-12,
+    "seed": 42,
+    "realism_mode_index": 1,
+    "window_type": "Biolek",
+    "biolek_p": 1,
+    "enable_c2c": false,
+    "c2c_sigma": 0.05,
+    "c2c_theta": 1.0,
+    "enable_d2d": false,
+    "d2d_sigma": 0.05,
+    "enable_noise": false,
+    "noise_std": 1e-06,
+    "enable_volatile": false,
+    "tau_relax": 0.05,
+    "x_eq": 0.05,
+    "enable_csv_validation": true,
+    "signal": {
+        "realtime_enabled": true,
+        "waveform": "Sinusoidal",
+        "v0": 1.0,
+        "f0": 3.001,
+        "duration": 3.01,
+        "dt_ms": 0.001
+    }
+}

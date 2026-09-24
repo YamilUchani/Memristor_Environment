@@ -1,0 +1,27 @@
+\chapter*{Resumen}
+\addcontentsline{toc}{chapter}{Resumen}
+Este documento presenta la validación cuantitativa y cualitativa del simulador Neuromorphic Lab, una plataforma modular diseñada para el estudio de dispositivos memristivos y arquitecturas neuromórficas. El desarrollo se dividió en cuatro fases: modelado de la celda unitaria de Strukov, integración híbrida con neuronas Leaky Integrate-and-Fire (LIF), implementación de plasticidad sináptica (STDP, LTP/LTD) y escalamiento a matrices In-Memory Computing (Crossbar). Los resultados demuestran una altísima correlación ($R^2 > 0.93$) con datos empíricos de literatura científica de referencia (Strukov 2008, Jo 2010, Prezioso 2015, Wang 2025), validando la viabilidad del simulador como herramienta rigurosa para la investigación en hardware neuromórfico, logrando reproducir fielmente fenómenos de variabilidad estocástica, asimetría de conmutación y computación paralela analógica.
+
+\chapter*{Nomenclatura y Acrónimos}
+\addcontentsline{toc}{chapter}{Nomenclatura y Acrónimos}
+\section*{Acrónimos}
+\begin{itemize}
+    \item \textbf{C2C}: Cycle-to-Cycle (Variabilidad ciclo a ciclo)
+    \item \textbf{D2D}: Device-to-Device (Variabilidad dispositivo a dispositivo)
+    \item \textbf{ISI}: Inter-Spike Interval (Intervalo entre pulsos)
+    \item \textbf{LIF}: Leaky Integrate-and-Fire (Modelo neuronal)
+    \item \textbf{LTD}: Long-Term Depression (Depresión a largo plazo)
+    \item \textbf{LTP}: Long-Term Potentiation (Potenciación a largo plazo)
+    \item \textbf{STDP}: Spike-Timing-Dependent Plasticity (Plasticidad dependiente del tiempo)
+    \item \textbf{VMM}: Vector-Matrix Multiplication (Multiplicación vector-matriz)
+\end{itemize}
+
+\section*{Símbolos}
+\begin{itemize}
+    \item $G$: Conductancia ($\Omega^{-1}$ o Siemens)
+    \item $R_S$: Resistencia en serie ($\Omega$)
+    \item $V_{th}$: Voltaje de umbral (V)
+    \item $x$: Variable de estado interna (adimensional o nm)
+    \item $w$: Ancho de la región dopada (nm)
+    \item $D$: Espesor total del dispositivo (nm)
+\end{itemize}

@@ -1,0 +1,63 @@
+\section{Fase 3: Plasticidad Sináptica Memristiva}
+\label{sec:fase3_plasticidad}
+
+En esta sección se presenta la implementación y validación del módulo de plasticidad sináptica (\texttt{neurolab.synapses}), en el cual la conductancia eléctrica del memristor representa directamente el peso sináptico modificable:
+\begin{equation}
+    w_{ij} \propto G_{ij} = \frac{1}{R_{ij}}
+\end{equation}
+
+El peso normalizado $w \in [0, 1]$ se mapea de forma lineal según:
+\begin{equation}
+    w = \frac{G - G_{\min}}{G_{\max} - G_{\min}}
+\end{equation}
+
+\subsection{Evidencia Física Integrada: Análisis $V(t)$, $I(t)$, $R(t)$ y $G(t)$}
+Para verificar la validez física del modelo, se simularon $N=40$ pulsos cuadrados de amplitud $V = \pm 1.0\,\text{V}$ (fase activa y reposo a 50\% de ciclo útil). La corriente instantánea satisface en todo instante la ley de Ohm acoplada a la dinámica del estado interno:
+\begin{equation}
+    I(t) = \frac{V(t)}{R(x(t))}
+\end{equation}
+
+Durante la potenciación a largo plazo (LTP, $+1.0\,\text{V}$):
+\begin{itemize}
+    \item $I_{\text{mean}} \approx +69.95\,\mu\text{A}$.
+    \item $R$ disminuye monótonamente de $14.41\,\text{k}\Omega$ a $14.18\,\text{k}\Omega$.
+    \item $G$ aumenta de $69.40\,\mu\text{S}$ a $70.51\,\mu\text{S}$ ($\Delta G = +1.11\,\mu\text{S}$).
+\end{itemize}
+
+Durante la depresión a largo plazo (LTD, $-1.0\,\text{V}$):
+\begin{itemize}
+    \item $I_{\text{mean}} \approx -68.86\,\mu\text{A}$.
+    \item $R$ aumenta monótonamente de $14.41\,\text{k}\Omega$ a $14.63\,\text{k}\Omega$.
+    \item $G$ disminuye de $69.40\,\mu\text{S}$ a $68.33\,\mu\text{S}$ ($\Delta G = -1.07\,\mu\text{S}$).
+\end{itemize}
+
+\subsection{Trilogía de Caracterización STDP (Plasticidad por Tiempo de Disparo)}
+La validación de la regla STDP (Spike-Timing-Dependent Plasticity) se estructuró mediante tres niveles complementarios de caracterización:
+
+\begin{enumerate}
+    \item \textbf{Curva Característica Estática ($\Delta W$ vs. $\Delta t$):} Define la regla Hebbiana exponencial asimétrica:
+    \begin{equation}
+        \Delta W = \begin{cases}
+            A_+ \exp\left(-\frac{\Delta t}{\tau_+}\right) & \text{si } \Delta t > 0 \\[8pt]
+            A_- \exp\left(\frac{\Delta t}{\tau_-}\right) & \text{si } \Delta t < 0
+        \end{cases}
+    \end{equation}
+    donde $A_+ = 0.05$, $A_- = -0.025$, $\tau_+ = 17\,\text{ms}$, y $\tau_- = 34\,\text{ms}$.
+    \item \textbf{Formas de Onda Temporal de Spikes ($V_{\text{pre}}, V_{\text{post}}$):} Caracterización de las señales cuadradas presinápticas y postsinápticas para retardos $\Delta t = +20\,\text{ms}$ (LTP), $\Delta t = 0\,\text{ms}$ (Coincidencia nula), y $\Delta t = -20\,\text{ms}$ (LTD).
+    \item \textbf{Evolución Temporal del Peso $W(t)$:} Dinámica continua del peso ante una secuencia de 20 pares de spikes LTP seguidos de 20 pares LTD, demostrando el aprendizaje emergente y la reversibilidad de $W(t)$ acotado en $[0, 1]$.
+\end{enumerate}
+
+\begin{table}[h!]
+    \centering
+    \caption{Resumen de la Trilogía de Evidencia STDP y Plasticidad Sináptica}
+    \label{tab:stdp_trilogia}
+    \begin{tabular}{lcccc}
+        \toprule
+        \textbf{Componente STDP} & \textbf{Variable Medida} & \textbf{Valor / Rango} & \textbf{Respuesta del Peso} & \textbf{Estado} \\
+        \midrule
+        Curva Característica & $\Delta W_{\max}$ / $\Delta W_{\min}$ & $+0.0373$ / $-0.0216$ & Ventana Exponencial & Validado \\
+        Spikes PRE / POST & $\Delta t$ retardo & $+20, 0, -20\,\text{ms}$ & Pulsos Cuadrados $2.0\,\text{ms}$ & Validado \\
+        Dinámica Temporal $W(t)$ & $W_{\text{ini}} \rightarrow W_{\max} \rightarrow W_{\text{fin}}$ & $0.0062 \rightarrow 0.3275 \rightarrow 0.0567$ & Aprendizaje Dinámico & Validado \\
+        \bottomrule
+    \end{tabular}
+\end{table}

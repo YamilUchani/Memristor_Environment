@@ -7,6 +7,8 @@ from neurolab.devices.config import (
 )
 from neurolab.devices.base import BaseDevice, BaseMathModel, BaseRealismModifier
 from neurolab.devices.state import StateManager
+from neurolab.devices.strukov import MemristorStrukov
+from neurolab.devices.yakopcic import MemristorYakopcic, YakopcicVirginConfig
 
 __all__ = [
     "DeviceConfig",
@@ -18,5 +20,8 @@ __all__ = [
     "StrukovConfig",
     "BaseMathModel",
     "BaseRealismModifier",
-    "StateManager"
+    "StateManager",
+    "MemristorStrukov",
+    "MemristorYakopcic",
+    "YakopcicVirginConfig"
 ]

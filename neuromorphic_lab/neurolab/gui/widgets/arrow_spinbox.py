@@ -1,11 +1,18 @@
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QDoubleSpinBox, QSpinBox, QPushButton, QComboBox, QAbstractSpinBox
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QDoubleSpinBox, QSpinBox, QPushButton, QComboBox, QAbstractSpinBox, QLineEdit
 from PySide6.QtCore import Signal, Qt, QObject, QEvent
 
 
 class FocusDoubleSpinBox(QDoubleSpinBox):
     """QDoubleSpinBox que ignora la rueda del ratón a menos que tenga el foco activo (clic previo)."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setFocusPolicy(Qt.StrongFocus)
+
     def wheelEvent(self, event):
-        if self.hasFocus():
+        has_focus = self.hasFocus()
+        if hasattr(self, "lineEdit") and self.lineEdit():
+            has_focus = has_focus or self.lineEdit().hasFocus()
+        if has_focus:
             super().wheelEvent(event)
         else:
             event.ignore()
@@ -13,8 +20,15 @@ class FocusDoubleSpinBox(QDoubleSpinBox):
 
 class FocusSpinBox(QSpinBox):
     """QSpinBox que ignora la rueda del ratón a menos que tenga el foco activo (clic previo)."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setFocusPolicy(Qt.StrongFocus)
+
     def wheelEvent(self, event):
-        if self.hasFocus():
+        has_focus = self.hasFocus()
+        if hasattr(self, "lineEdit") and self.lineEdit():
+            has_focus = has_focus or self.lineEdit().hasFocus()
+        if has_focus:
             super().wheelEvent(event)
         else:
             event.ignore()
@@ -22,6 +36,10 @@ class FocusSpinBox(QSpinBox):
 
 class FocusComboBox(QComboBox):
     """QComboBox que ignora la rueda del ratón a menos que tenga el foco activo (clic previo)."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setFocusPolicy(Qt.StrongFocus)
+
     def wheelEvent(self, event):
         if self.hasFocus():
             super().wheelEvent(event)
@@ -32,15 +50,34 @@ class FocusComboBox(QComboBox):
 class NoUnfocusedWheelEventFilter(QObject):
     """
     Filtro de eventos Qt global que evita que cualquier control numérico o desplegable
-    cambie de valor al girar la rueda del ratón por encima sin haber hecho clic primero.
+    cambie de valor al girar la rueda del ratón por encima sin haber hecho clic primero,
+    PERO permitiendo que el evento pase al QScrollArea padre.
     """
     def eventFilter(self, obj, event):
         if event.type() == QEvent.Wheel:
-            if isinstance(obj, (QAbstractSpinBox, QComboBox, ArrowDoubleSpinBox, ArrowSpinBox)):
-                has_focus = obj.hasFocus() or (hasattr(obj, 'spin') and obj.spin.hasFocus())
+            target = obj
+            if target.inherits("QLineEdit") and target.parentWidget() and target.parentWidget().inherits("QAbstractSpinBox"):
+                target = target.parentWidget()
+
+            if target.inherits("QComboBox") or target.inherits("QAbstractSpinBox"):
+                has_focus = target.hasFocus()
+                if hasattr(target, "lineEdit") and target.lineEdit():
+                    has_focus = has_focus or target.lineEdit().hasFocus()
+                
+                if not has_focus:
+                    # Permitir que el evento se propague al parent (QScrollArea)
+                    event.ignore()
+                    return True # Consumimos el evento para el target, pero Qt no propaga eventos ignorados si retornamos True
+            
+            # Caso especial para ArrowSpinBox y ArrowDoubleSpinBox
+            if target.inherits("ArrowDoubleSpinBox") or target.inherits("ArrowSpinBox"):
+                has_focus = target.spin.hasFocus()
+                if hasattr(target.spin, "lineEdit") and target.spin.lineEdit():
+                    has_focus = has_focus or target.spin.lineEdit().hasFocus()
                 if not has_focus:
                     event.ignore()
                     return True
+                    
         return super().eventFilter(obj, event)
 
 
@@ -127,18 +164,23 @@ class ArrowDoubleSpinBox(QWidget):
         self.spin.valueChanged.connect(self.valueChanged.emit)
 
     def wheelEvent(self, event):
-        if self.spin.hasFocus():
+        has_focus = self.spin.hasFocus()
+        if hasattr(self.spin, "lineEdit") and self.spin.lineEdit():
+            has_focus = has_focus or self.spin.lineEdit().hasFocus()
+            
+        if has_focus:
             self.spin.wheelEvent(event)
         else:
             event.ignore()
 
     def _step_up(self):
-        new_val = min(self.max_val, self.spin.value() + self.step)
-        self.spin.setValue(new_val)
+        # En vez de stepUp nativo (que reduce magnitud en negativos), sumamos algebraicamente el step.
+        new_val = self.spin.value() + self.step
+        self.spin.setValue(min(self.max_val, new_val))
 
     def _step_down(self):
-        new_val = max(self.min_val, self.spin.value() - self.step)
-        self.spin.setValue(new_val)
+        new_val = self.spin.value() - self.step
+        self.spin.setValue(max(self.min_val, new_val))
 
     def value(self) -> float:
         return self.spin.value()
@@ -220,18 +262,22 @@ class ArrowSpinBox(QWidget):
         self.spin.valueChanged.connect(self.valueChanged.emit)
 
     def wheelEvent(self, event):
-        if self.spin.hasFocus():
+        has_focus = self.spin.hasFocus()
+        if hasattr(self.spin, "lineEdit") and self.spin.lineEdit():
+            has_focus = has_focus or self.spin.lineEdit().hasFocus()
+            
+        if has_focus:
             self.spin.wheelEvent(event)
         else:
             event.ignore()
 
     def _step_up(self):
-        new_val = min(self.max_val, self.spin.value() + self.step)
-        self.spin.setValue(new_val)
+        new_val = self.spin.value() + self.step
+        self.spin.setValue(min(self.max_val, new_val))
 
     def _step_down(self):
-        new_val = max(self.min_val, self.spin.value() - self.step)
-        self.spin.setValue(new_val)
+        new_val = self.spin.value() - self.step
+        self.spin.setValue(max(self.min_val, new_val))
 
     def value(self) -> int:
         return self.spin.value()

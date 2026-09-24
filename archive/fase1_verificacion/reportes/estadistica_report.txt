@@ -1,0 +1,54 @@
+================================================================================
+ VALIDACIÓN ESTADÍSTICA COMPLETA — CIERRE DE FASE 1
+================================================================================
+
+--- 1. Variabilidad Device-to-Device D2D (n = 100) ---
+=== R_ON (Ohm) (n = 100) ===
+  Media (μ):        99.853995
+  Desv. est. (σ):   4.509131
+  CV:               4.5157 %
+  Mín / Máx:        89.749139 / 110.708238
+  Mediana:          99.313465
+  IQR:              6.668208
+  IC 95% media:     [98.959286, 100.748705]
+  KS p-valor:       0.7092 (normal)
+
+=== R_OFF (Ohm) (n = 100) ===
+  Media (μ):        15989.238837
+  Desv. est. (σ):   781.299487
+  CV:               4.8864 %
+  Mín / Máx:        14294.362975 / 18331.089973
+  Mediana:          15940.781958
+  IQR:              905.771634
+  IC 95% media:     [15834.212068, 16144.265605]
+  KS p-valor:       0.8351 (normal)
+
+=== x_0 (adim.) (n = 100) ===
+  Media (μ):        0.096528
+  Desv. est. (σ):   0.044670
+  CV:               46.2765 %
+  Mín / Máx:        0.010000 / 0.245253
+  Mediana:          0.100768
+  IQR:              0.049402
+  IC 95% media:     [0.087664, 0.105391]
+  KS p-valor:       0.6187 (normal)
+
+--- 2. Variabilidad Cycle-to-Cycle C2C (Proceso OU, n = 490000) ---
+=== η(t) C2C (n = 490000) ===
+  Media (μ):        -0.000613
+  Desv. est. (σ):   0.035999
+  CV:               -5869.7594 %
+  Mín / Máx:        -0.142822 / 0.164323
+  Mediana:          -0.001660
+  IQR:              0.047246
+  IC 95% media:     [-0.000714, -0.000512]
+  KS p-valor:       0.0000 (NO normal)
+
+  Varianza teórica OU:  1.250000e-03
+  Varianza simulada OU: 1.295901e-03
+  Error relativo (%):   3.6721 % (PASADO < 5%)
+================================================================================
+
+[OK] Reporte y figuras guardados en:
+   - validacion_estadistica_completa.csv
+   - validacion_estadistica.png
