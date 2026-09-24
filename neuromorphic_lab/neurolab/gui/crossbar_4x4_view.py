@@ -649,7 +649,7 @@ class Crossbar4x4View(QWidget):
         self.sensor_spinboxes = [self.spin_v1, self.spin_v2, self.spin_v3, self.spin_v4]
 
         for i, sb in enumerate(self.sensor_spinboxes):
-            sb.setRange(0.0, 5.0)
+            sb.setRange(-5.0, 5.0)
             sb.setSingleStep(0.1)
             sb.setDecimals(2)
             sb.setValue(float(self.elements[f'S{i+1}'].params.get('V_out', 0.2)))

@@ -315,24 +315,23 @@ class BaseCrossbarCanvas(QWidget):
         painter.drawText(QRectF(x - 40, y + 6, 80, 18), Qt.AlignCenter,
                          f"{G_val:.1f} μS")
 
-        # Barra de traza (si STDP/R-STDP está activo)
+        # Barra de traza (si STDP/R-STDP está activo - Acotada limpiamente dentro de la tarjeta)
         parent_view = getattr(self, 'parent_view', view)
         if parent_view is not None and getattr(parent_view, 'plasticity_mode', 'off') != "off":
             stdp_rule = getattr(parent_view, 'stdp_rule', None)
             if stdp_rule and stdp_rule.trace_pre and stdp_rule.trace_post:
-                trace_pre_val = float(stdp_rule.trace_pre.values[r])
-                trace_post_val = float(stdp_rule.trace_post.values[c])
-                bar_w = 60
+                trace_pre_val = float(stdp_rule.trace_pre.values[r]) if r < len(stdp_rule.trace_pre.values) else 0.0
+                trace_post_val = float(stdp_rule.trace_post.values[c]) if c < len(stdp_rule.trace_post.values) else 0.0
                 bar_h = 3
-                pre_w = int(trace_pre_val * bar_w / 2)
-                post_w = int(trace_post_val * bar_w / 2)
+                pre_w = min(38, max(0, int(np.clip(trace_pre_val, 0.0, 1.0) * 38)))
+                post_w = min(38, max(0, int(np.clip(trace_post_val, 0.0, 1.0) * 38)))
                 painter.setPen(Qt.NoPen)
                 if pre_w > 0:
                     painter.setBrush(QBrush(QColor('#fbbf24')))
-                    painter.drawRect(QRectF(x - 30, y + 26, pre_w, bar_h))
+                    painter.drawRoundedRect(QRectF(x - 40, y + 23, pre_w, bar_h), 1, 1)
                 if post_w > 0:
                     painter.setBrush(QBrush(QColor('#ec4899')))
-                    painter.drawRect(QRectF(x, y + 26, post_w, bar_h))
+                    painter.drawRoundedRect(QRectF(x, y + 23, post_w, bar_h), 1, 1)
 
     def _draw_volatile_memristor(self, painter: QPainter, elem):
         """Dibuja un memristor volátil HfO₂ (M_v_i)."""
