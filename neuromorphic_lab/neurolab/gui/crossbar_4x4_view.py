@@ -874,11 +874,11 @@ class Crossbar4x4View(QWidget):
         self.btn_reward_plus.setEnabled(True)
         self.btn_reward_minus.setEnabled(True)
 
-    def _apply_reward(self, R: float):
+    def _apply_reward(self, R: float, is_auto: bool = False):
         """
         Aplica R-STDP (Aprendizaje por Refuerzo Modulado por Recompensa Global R):
         - R = +1.0 (Éxito / Recompensa): Induce LTP (+25.0 μS) en la celda target y celdas activas.
-        - R = -1.0 (Error / Castigo): Induce LTD (-25.0 μS) en la celda target y celdas activas.
+        - R = -1.0 (Error / Penalización): Induce LTD (-25.0 μS) en la celda target y celdas activas.
         """
         if self.plasticity_mode != "rstdp":
             self.mode = "read"
@@ -893,7 +893,7 @@ class Crossbar4x4View(QWidget):
         affected_cells = []
         max_dG_uS = 0.0
 
-        # Celdas a actualizar: celda objetivo M_ij + cualquier celda con sensor activo (V > 0.4V)
+        # Celdas a actualizar: celda objetivo M_ij + cualquier celda con sensor activo (V > 0.49V)
         target_keys = {f'M{tg_r+1}{tg_c+1}'}
         for i in range(4):
             v_s = float(self.elements[f'S{i+1}'].params.get('V_out', 0.2))
@@ -928,13 +928,14 @@ class Crossbar4x4View(QWidget):
                 if abs(dG_pulse) * 1e6 > abs(max_dG_uS):
                     max_dG_uS = dG_pulse * 1e6
 
-        tag = "✅ ÉXITO (+1)" if R > 0 else "❌ ERROR (−1)"
+        tag = "✅ ÉXITO (+1)" if R > 0 else "❌ PENALIZACIÓN ERROR (−1)"
+        auto_tag = " [AUTO-ENTORNO]" if is_auto else " [MANUAL]"
         cells_str = ", ".join(affected_cells[:4])
         target_mem = self.elements.get(f'M{tg_r+1}{tg_c+1}')
         g_target_uS = float(target_mem.params.get('G', 69.4e-6)) * 1e6 if target_mem else 0.0
 
         self.status_label.setText(
-            f"🎯 R-STDP {tag}: Recompensa R = {R:+.0f} │ ΔG = {max_dG_uS:+.1f} μS │ Celda target M{tg_r+1}{tg_c+1} G = {g_target_uS:.1f} μS │ Celdas actualizadas ({len(affected_cells)}): {cells_str}"
+            f"🎯 R-STDP Real{auto_tag} {tag}: Recompensa R = {R:+.0f} │ ΔG = {max_dG_uS:+.1f} μS │ Celda target M{tg_r+1}{tg_c+1} G = {g_target_uS:.1f} μS │ Celdas actualizadas ({len(affected_cells)}): {cells_str}"
         )
         self._update_mode_button_styles()
         self.canvas.update()
@@ -1283,6 +1284,16 @@ class Crossbar4x4View(QWidget):
 
         self._step_physics(dt)
 
+        # En Modo 4 (R-STDP), aplicar recompensas/penalizaciones estocásticas del entorno automáticamente cada ~0.5s
+        if self.plasticity_mode == "rstdp" and self.canvas.is_animating:
+            if not hasattr(self, '_rstdp_auto_counter'):
+                self._rstdp_auto_counter = 0
+            self._rstdp_auto_counter += 1
+            if self._rstdp_auto_counter >= 16:
+                self._rstdp_auto_counter = 0
+                auto_R = 1.0 if random.random() < 0.45 else -1.0
+                self._apply_reward(auto_R, is_auto=True)
+
         G = get_G_matrix(self.elements, 4, 4)
         I = compute_currents(G, self.V_rows)
 
@@ -1291,7 +1302,7 @@ class Crossbar4x4View(QWidget):
             LIF = self.elements[f'LIF_{j+1}']
             Act = self.elements[f'Act_{j+1}']
 
-            C_m = float(LIF.params.get('C_m', 100e-9))
+            C_m = float(LIF.params.get('C_m', 50e-9))
             R_leak = float(LIF.params.get('R_leak', 1e6))
             V_th = float(LIF.params.get('V_th', 2.5))
             V_m = float(LIF.params.get('V_m', 0.0))
@@ -1309,9 +1320,10 @@ class Crossbar4x4View(QWidget):
             LIF.params['V_m'] = V_m_next
             spikes_str.append(f"LIF_{j+1}={LIF.params['spike_count']}")
 
-        self.status_label.setText(
-            f"⚡ [4×4 REALTIME] t = {self._sim_time:.2f} s │ I_outs = [{I[0]*1e6:.1f}, {I[1]*1e6:.1f}, {I[2]*1e6:.1f}, {I[3]*1e6:.1f}] μA │ Spikes: {' '.join(spikes_str)}"
-        )
+        if not (self.plasticity_mode == "rstdp" and self.canvas.is_animating):
+            self.status_label.setText(
+                f"⚡ [4×4 REALTIME] t = {self._sim_time:.2f} s │ I_outs = [{I[0]*1e6:.1f}, {I[1]*1e6:.1f}, {I[2]*1e6:.1f}, {I[3]*1e6:.1f}] μA │ Spikes: {' '.join(spikes_str)}"
+            )
         self.canvas.update()
 
     def _on_simulate(self):
