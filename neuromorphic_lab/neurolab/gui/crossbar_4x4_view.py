@@ -357,6 +357,7 @@ class Crossbar4x4Canvas(BaseCrossbarCanvas):
                 painter.drawLine(int(LIF.x + 5), int(LIF.y - 45), int(LIF.x), int(LIF.y - 35))
 
         # Etiquetas de columna
+        # Etiquetas de columna (Posicionadas a y=88 sin solaparse con decodificadores ni título)
         painter.setFont(FONTS['subtitle'])
         for j in range(4):
             M1 = self.elements.get(f'M1{j+1}')
@@ -368,7 +369,7 @@ class Crossbar4x4Canvas(BaseCrossbarCanvas):
                 else:
                     col_str = get_qcolor('neuron')
                 painter.setPen(col_str)
-                painter.drawText(QRectF(M1.x - 70, M1.y - 82, 140, 20), Qt.AlignCenter,
+                painter.drawText(QRectF(M1.x - 70, 88, 140, 20), Qt.AlignCenter,
                                  f"COL {j+1} (V={v_c_val:+.2f}V)")
 
         # --- LIF → Actuador ---
@@ -409,56 +410,59 @@ class Crossbar4x4Canvas(BaseCrossbarCanvas):
                         painter.drawEllipse(QPointF(px, py), 4.0, 4.0)
 
     def _draw_extra(self, painter: QPainter):
-        """Decoders + drivers + título + ecuación matricial."""
+        """Decoders + drivers + título + ecuación matricial limpiamente distribuidos."""
         view = self.view
         if not view or not hasattr(view, 'row_decoder'):
             return
 
-        # Decoders y drivers
-        x_start = 300
-        y_top = 20
-
-        painter.setPen(QPen(QColor('#f9e2af'), 2))
-        painter.setBrush(QBrush(QColor('#1e1e2e')))
-        painter.drawRoundedRect(QRectF(x_start, y_top, 250, 32), 6, 6)
         painter.setFont(FONTS['small'])
-        painter.setPen(QColor('#f9e2af'))
-        addr_col_str = view.col_decoder.address_to_binary(view.col_decoder.last_address) \
-            if view.mode == 'program_v2' else "OFF"
-        painter.drawText(QRectF(x_start, y_top, 250, 32), Qt.AlignCenter,
-                         f"🎯 Decoder COL [{addr_col_str}] → Addr {view.col_decoder.last_address}")
 
-        painter.setPen(QPen(QColor('#f38ba8'), 2))
-        painter.setBrush(QBrush(QColor('#1e1e2e')))
-        painter.drawRoundedRect(QRectF(x_start + 260, y_top, 240, 32), 6, 6)
-        painter.setPen(QColor('#f38ba8'))
-        painter.drawText(QRectF(x_start + 260, y_top, 240, 32), Qt.AlignCenter,
-                         f"⚡ Driver COL (BL): {view.col_driver.V_active:+.2f}V")
-
-        y_side = 60
-        painter.setPen(QPen(QColor('#f9e2af'), 2))
-        painter.setBrush(QBrush(QColor('#1e1e2e')))
-        painter.drawRoundedRect(QRectF(10, y_side, 250, 32), 6, 6)
+        # 1. Decoders y Drivers Fila (Esquina superior izquierda)
+        painter.setPen(QPen(QColor('#f9e2af'), 1.5))
+        painter.setBrush(QBrush(QColor('#181825')))
+        painter.drawRoundedRect(QRectF(15, 10, 210, 24), 5, 5)
         painter.setPen(QColor('#f9e2af'))
         addr_row_str = view.row_decoder.address_to_binary(view.row_decoder.last_address) \
             if view.mode == 'program_v2' else "OFF"
-        painter.drawText(QRectF(10, y_side, 250, 32), Qt.AlignCenter,
+        painter.drawText(QRectF(15, 10, 210, 24), Qt.AlignCenter,
                          f"🎯 Decoder ROW [{addr_row_str}] → Addr {view.row_decoder.last_address}")
 
-        painter.setPen(QPen(QColor('#f38ba8'), 2))
-        painter.setBrush(QBrush(QColor('#1e1e2e')))
-        painter.drawRoundedRect(QRectF(10, y_side + 36, 250, 32), 6, 6)
+        painter.setPen(QPen(QColor('#f38ba8'), 1.5))
+        painter.setBrush(QBrush(QColor('#181825')))
+        painter.drawRoundedRect(QRectF(15, 38, 210, 24), 5, 5)
         painter.setPen(QColor('#f38ba8'))
-        painter.drawText(QRectF(10, y_side + 36, 250, 32), Qt.AlignCenter,
+        painter.drawText(QRectF(15, 38, 210, 24), Qt.AlignCenter,
                          f"⚡ Driver ROW (WL): {view.row_driver.V_active:+.2f}V")
 
-        # Título + ecuación
+        # 2. Decoders y Drivers Columna (Esquina superior derecha)
+        painter.setPen(QPen(QColor('#f9e2af'), 1.5))
+        painter.setBrush(QBrush(QColor('#181825')))
+        painter.drawRoundedRect(QRectF(750, 10, 220, 24), 5, 5)
+        painter.setPen(QColor('#f9e2af'))
+        addr_col_str = view.col_decoder.address_to_binary(view.col_decoder.last_address) \
+            if view.mode == 'program_v2' else "OFF"
+        painter.drawText(QRectF(750, 10, 220, 24), Qt.AlignCenter,
+                         f"🎯 Decoder COL [{addr_col_str}] → Addr {view.col_decoder.last_address}")
+
+        painter.setPen(QPen(QColor('#f38ba8'), 1.5))
+        painter.setBrush(QBrush(QColor('#181825')))
+        painter.drawRoundedRect(QRectF(750, 38, 220, 24), 5, 5)
+        painter.setPen(QColor('#f38ba8'))
+        painter.drawText(QRectF(750, 38, 220, 24), Qt.AlignCenter,
+                         f"⚡ Driver COL (BL): {view.col_driver.V_active:+.2f}V")
+
+        # 3. Badge Título Central (Limpio y sin solapamientos)
+        painter.setPen(QPen(QColor('#313244'), 1))
+        painter.setBrush(QBrush(QColor('#181825')))
+        painter.drawRoundedRect(QRectF(240, 14, 490, 28), 6, 6)
+
         painter.setFont(FONTS['subtitle'])
-        painter.setPen(get_qcolor('text_dim'))
-        mode_str = " — ⚡ ANIMACIÓN EN TIEMPO REAL ACTIVA" if self.is_animating else ""
-        painter.drawText(QRectF(0, 15, self.width(), 30), Qt.AlignCenter,
+        painter.setPen(get_qcolor('text'))
+        mode_str = " — ⚡ TIEMPO REAL ACTIVO" if self.is_animating else ""
+        painter.drawText(QRectF(240, 14, 490, 28), Qt.AlignCenter,
                          f"CROSSBAR 4×4 — MATRIZ DE 16 MEMRISTORES STRUKOV{mode_str}")
 
+        # 4. Ecuación matricial de lectura en la parte inferior
         G = get_G_matrix(self.elements, 4, 4)
         V = np.array([float(self.elements[f'S{i+1}'].params.get('V_out', 0.5))
                       for i in range(4)])
@@ -872,10 +876,9 @@ class Crossbar4x4View(QWidget):
 
     def _apply_reward(self, R: float):
         """
-        Aplica R-STDP Físico Real:
-        El reward R es global (+1 o -1).
-        El cambio ΔG es emergente y filtrado por coincidencia pre x post (eligibility trace >= 0.1).
-        Solo las 1-3 celdas activas en los últimos ~40ms sufren modulación.
+        Aplica R-STDP (Aprendizaje por Refuerzo Modulado por Recompensa Global R):
+        - R = +1.0 (Éxito / Recompensa): Induce LTP (+25.0 μS) en la celda target y celdas activas.
+        - R = -1.0 (Error / Castigo): Induce LTD (-25.0 μS) en la celda target y celdas activas.
         """
         if self.plasticity_mode != "rstdp":
             self.mode = "read"
@@ -883,58 +886,57 @@ class Crossbar4x4View(QWidget):
 
         self.reward = float(R)
         self.rstdp_rule.set_reward(R)
-        self.rstdp_rule.cfg.eta = 500.0  # Tasa de aprendizaje para cambio bien visible
 
-        dt_reward = 10e-3
-        G_matrix = get_G_matrix(self.elements, 4, 4)
+        tg_r, tg_c = self.target_cell
+        dG_pulse = R * 25.0e-6  # +25.0 uS para Éxito, -25.0 uS para Error
 
-        # Si no hay trazas activas en ningún canal, estimular la celda objetivo o filas activas
-        if self.rstdp_rule.trace_pre is None or np.max(self.rstdp_rule.trace_pre.values) < 1e-4:
-            tg_r, tg_c = self.target_cell
-            if self.rstdp_rule.trace_pre is not None:
-                self.rstdp_rule.trace_pre.values[tg_r] = 1.0
-            if self.rstdp_rule.trace_post is not None:
-                self.rstdp_rule.trace_post.values[tg_c] = 1.0
-
-        # R-STDP calcula ΔG físicamente para las 16 celdas
-        dG = self.rstdp_rule.apply(G_matrix, self.spike_pre, self.spike_post, dt_reward)
-
-        max_dG_uS = 0.0
         affected_cells = []
+        max_dG_uS = 0.0
 
+        # Celdas a actualizar: celda objetivo M_ij + cualquier celda con sensor activo (V > 0.4V)
+        target_keys = {f'M{tg_r+1}{tg_c+1}'}
         for i in range(4):
-            for j in range(4):
-                if abs(dG[i, j]) > 1e-12:
-                    mem = self.elements.get(f'M{i+1}{j+1}')
-                    if mem:
-                        G_old = float(mem.params.get('G', 69.4e-6))
-                        G_new = np.clip(
-                            G_old + dG[i, j],
-                            self.rstdp_rule.G_min,
-                            self.rstdp_rule.G_max,
-                        )
-                        RON = float(mem.params.get('RON', 100.0))
-                        ROFF = float(mem.params.get('ROFF', 16000.0))
-                        R_new = 1.0 / max(1e-12, G_new)
-                        x_calc = (ROFF - R_new) / (ROFF - RON) if ROFF != RON else 0.1
-                        x_calc = float(np.clip(x_calc, 0.01, 0.99))
-                        mem.params['x'] = x_calc
-                        mem.params['x0'] = x_calc
-                        mem.params['G'] = float(G_new)
-                        mem.params['G_11'] = float(G_new)
-                        mem.params['R'] = float(R_new)
-                        mem.params['R_11'] = float(R_new)
-                        affected_cells.append(f"M{i+1}{j+1}")
-                        if abs(dG[i, j]) * 1e6 >= abs(max_dG_uS):
-                            max_dG_uS = dG[i, j] * 1e6
-                        if hasattr(mem, 'on_params_changed'):
-                            mem.on_params_changed()
+            v_s = float(self.elements[f'S{i+1}'].params.get('V_out', 0.2))
+            if v_s > 0.49:
+                for j in range(4):
+                    target_keys.add(f'M{i+1}{j+1}')
+
+        for key in target_keys:
+            mem = self.elements.get(key)
+            if mem:
+                p = mem.params
+                G_old = float(p.get('G', 69.4e-6))
+                G_new = float(np.clip(G_old + dG_pulse, 1.0e-6, 500.0e-6))
+
+                RON = float(p.get('RON', 100.0))
+                ROFF = float(p.get('ROFF', 16000.0))
+                R_new = 1.0 / max(1e-12, G_new)
+                x_calc = (ROFF - R_new) / (ROFF - RON) if ROFF != RON else 0.1
+                x_calc = float(np.clip(x_calc, 0.01, 0.99))
+
+                p['x'] = x_calc
+                p['x0'] = x_calc
+                p['G'] = G_new
+                p['G_11'] = G_new
+                p['R'] = R_new
+                p['R_11'] = R_new
+
+                if hasattr(mem, 'on_params_changed'):
+                    mem.on_params_changed()
+
+                affected_cells.append(key)
+                if abs(dG_pulse) * 1e6 > abs(max_dG_uS):
+                    max_dG_uS = dG_pulse * 1e6
 
         tag = "✅ ÉXITO (+1)" if R > 0 else "❌ ERROR (−1)"
-        cell_str = ", ".join(affected_cells[:3]) if affected_cells else "ninguna (sin coincidencia reciente)"
+        cells_str = ", ".join(affected_cells[:4])
+        target_mem = self.elements.get(f'M{tg_r+1}{tg_c+1}')
+        g_target_uS = float(target_mem.params.get('G', 69.4e-6)) * 1e6 if target_mem else 0.0
+
         self.status_label.setText(
-            f"🎯 R-STDP Real {tag}: R = {R:+.0f} │ ΔG_max = {max_dG_uS:+.2f} μS │ Celdas emergentes ({len(affected_cells)}): {cell_str}"
+            f"🎯 R-STDP {tag}: Recompensa R = {R:+.0f} │ ΔG = {max_dG_uS:+.1f} μS │ Celda target M{tg_r+1}{tg_c+1} G = {g_target_uS:.1f} μS │ Celdas actualizadas ({len(affected_cells)}): {cells_str}"
         )
+        self._update_mode_button_styles()
         self.canvas.update()
 
 
