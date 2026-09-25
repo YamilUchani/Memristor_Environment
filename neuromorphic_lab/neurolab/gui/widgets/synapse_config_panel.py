@@ -106,8 +106,8 @@ class SynapseConfigPanel(QWidget):
         group_stdp = QGroupBox("🎯 Parámetros STDP y Excitación (Bi & Poo / Gerstner)")
         form_stdp = QFormLayout(group_stdp)
 
-        self.spin_aplus = ArrowDoubleSpinBox(value=0.20, min_val=-100.0, max_val=100.0, step=0.01, decimals=4)
-        self.spin_aminus = ArrowDoubleSpinBox(value=-0.20, min_val=-100.0, max_val=100.0, step=0.005, decimals=4)
+        self.spin_aplus = ArrowDoubleSpinBox(value=0.20, min_val=-100.0, max_val=100.0, step=0.01, decimals=4, suffix=" μS")
+        self.spin_aminus = ArrowDoubleSpinBox(value=-0.20, min_val=-100.0, max_val=100.0, step=0.005, decimals=4, suffix=" μS")
         self.spin_tauplus = ArrowDoubleSpinBox(value=30.0, min_val=0.1, max_val=10000.0, step=1.0, decimals=2, suffix=" ms")
         self.spin_tauminus = ArrowDoubleSpinBox(value=30.0, min_val=0.1, max_val=10000.0, step=1.0, decimals=2, suffix=" ms")
         self.spin_vamp = ArrowDoubleSpinBox(value=2.0, min_val=-100.0, max_val=100.0, step=0.1, decimals=2, suffix=" V")
