@@ -131,11 +131,16 @@ class Crossbar4x4Controller:
         # 2. Aplicar voltajes al backend físico del Crossbar
         self.crossbar.V_rows = V_rows
         self.crossbar.V_cols = V_cols
-        if mode == "program_v2":
-            active_rows = np.flatnonzero(np.abs(V_rows) > 1e-12)
-            active_cols = np.flatnonzero(np.abs(V_cols) > 1e-12)
-            if len(active_rows) and len(active_cols):
-                self.crossbar.programming_target = (int(active_rows[0]), int(active_cols[0]))
+        V_matrix = V_rows[:, None] - V_cols[None, :]
+        v_th_val = float(getattr(self.crossbar.cfg, 'V_th', 0.5))
+        has_high_voltage = np.any(np.abs(V_matrix) >= v_th_val)
+
+        if mode == "program_v2" or has_high_voltage:
+            if mode == "program_v2":
+                active_rows = np.flatnonzero(np.abs(V_rows) > 1e-12)
+                active_cols = np.flatnonzero(np.abs(V_cols) > 1e-12)
+                if len(active_rows) and len(active_cols):
+                    self.crossbar.programming_target = (int(active_rows[0]), int(active_cols[0]))
             self.crossbar.update_memristors(dt)
             self.crossbar.programming_target = None
 

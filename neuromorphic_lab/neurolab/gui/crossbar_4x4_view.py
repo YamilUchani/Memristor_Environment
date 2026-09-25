@@ -1121,6 +1121,11 @@ class Crossbar4x4View(QWidget):
             return
             
         tg_r, tg_c = self.target_cell
+        s_key = f'S{tg_r+1}'
+        v_sensor = float(self.elements[s_key].params.get('V_out', 0.2)) if s_key in self.elements else 0.2
+        if abs(v_sensor) > abs(v_pulse):
+            v_pulse = v_sensor if v_pulse > 0 else -v_sensor
+
         target_mem = self.elements.get(f'M{tg_r+1}{tg_c+1}')
         if not target_mem: return
         g_old = float(target_mem.params.get('G', 69.4e-6)) * 1e6
