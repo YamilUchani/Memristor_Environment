@@ -17,7 +17,7 @@ class LIFConfig:
     v_rest: float = 0.0       # Potencial de reposo (Voltios)
     v_th: float = 1.0         # Potencial de umbral actual (Voltios)
     v_th_base: float = 1.0    # Potencial de umbral base en reposo (Voltios)
-    v_adapt_inc: float = 0.15 # Incremento de umbral por spike (Adaptación de frecuencia, V)
+    v_adapt_inc: float = 0.0  # Incremento de umbral por spike (Adaptación de frecuencia, V; 0.0 = Desactivado por defecto)
     tau_adapt: float = 0.05   # Constante de tiempo de adaptación del umbral (Segundos)
     v_reset: float = 0.0      # Potencial de reinicio (Voltios)
     t_ref: float = 0.0        # Período refractario (Segundos)
@@ -34,6 +34,8 @@ class LIFConfig:
             raise ValueError("El potencial de umbral (v_th) debe ser superior al potencial de reinicio (v_reset).")
         if self.t_ref < 0:
             raise ValueError("El período refractario no puede ser negativo.")
+        if self.v_th_base != self.v_th and self.v_adapt_inc == 0.0:
+            self.v_th_base = self.v_th
 
     @property
     def r_eq(self) -> float:

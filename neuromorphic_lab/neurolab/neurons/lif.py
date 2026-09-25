@@ -28,7 +28,7 @@ class LIFNeuron(BaseNeuron):
     def __init__(self, config: LIFConfig = None):
         self.config = config or LIFConfig()
         self.v_membrane = self.config.v_rest
-        self.v_th = float(self.config.v_th_base)
+        self.v_th = float(self.config.v_th)
         self.refractory_time_left = 0.0
         
         # Variables de seguimiento temporal y eventos (Etapa 2.4)
@@ -53,7 +53,7 @@ class LIFNeuron(BaseNeuron):
         """Reinicia la neurona a su estado de reposo y limpia el historial."""
 
         self.v_membrane = self.config.v_rest
-        self.v_th = float(self.config.v_th_base)
+        self.v_th = float(self.config.v_th)
         self.refractory_time_left = 0.0
         self.t = 0.0
         self.spike_times.clear()
@@ -77,9 +77,11 @@ class LIFNeuron(BaseNeuron):
         # Reiniciamos el estado discreto de spike para este paso específico
         self.has_spiked = False
 
-        # --- Adaptación de Umbral (Spike-Frequency Adaptation) ---
-        decay_factor = dt / max(1e-4, self.config.tau_adapt)
-        self.v_th += (self.config.v_th_base - self.v_th) * decay_factor
+        # --- Adaptación de Umbral (Spike-Frequency Adaptation) sólo si v_adapt_inc > 0 ---
+        if self.config.v_adapt_inc > 0.0:
+            v_target = float(self.config.v_th_base if self.config.v_th_base is not None else self.config.v_th)
+            decay_factor = dt / max(1e-4, self.config.tau_adapt)
+            self.v_th += (v_target - self.v_th) * decay_factor
 
         # Control del Período Refractario
         is_refractory = False
@@ -112,7 +114,7 @@ class LIFNeuron(BaseNeuron):
         if is_refractory:
             return False
 
-        # --- Mecanismo de Disparo (Spike) y Reset con Umbral Adaptativo ---
+        # --- Mecanismo de Disparo (Spike) y Reset ---
         if self.v_membrane >= self.v_th:
             # 1. Registrar el evento de spike
             self.has_spiked = True
@@ -123,8 +125,9 @@ class LIFNeuron(BaseNeuron):
             # 3. Reiniciar el potencial de membrana
             self.v_membrane = self.config.v_reset
 
-            # 4. Incrementar umbral adaptativo (Auto-frenado homeostático)
-            self.v_th += self.config.v_adapt_inc
+            # 4. Incrementar umbral adaptativo (si está activo)
+            if self.config.v_adapt_inc > 0.0:
+                self.v_th += self.config.v_adapt_inc
             
             # 5. Iniciar periodo refractario (sólo si está configurado > 0)
             if self.config.t_ref > 0.0:
