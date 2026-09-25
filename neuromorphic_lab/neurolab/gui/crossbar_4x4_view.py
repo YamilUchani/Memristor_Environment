@@ -1331,31 +1331,34 @@ class Crossbar4x4View(QWidget):
             V_adapt_inc = float(LIF.params.get('V_adapt_inc', 0.02))
             V_m_next = float(LIF.params.get('_v_m_next', 0.0))
 
-            hold = int(Act.params.get('_winner_hold', 0))
-
-            if winner_j is not None and j == winner_j:
-                LIF.params['V_m'] = 0.0
-                LIF.params['V_th'] = V_th + V_adapt_inc  # Boost adaptativo moderado para el ganador
-                LIF.params['spike_count'] = int(LIF.params.get('spike_count', 0)) + 1
-                Act.params['action'] = '🏆 GANADOR (Spike!)'
-                Act.params['_winner_hold'] = 12  # Mantiene el resaltado durante 12 marcos (~0.36 s) para visibilidad perfecta
-                column_rewards[j] = +1.0  # Ganador recibe R = +1.0 (LTP / Recompensa)
-                self.spike_post[j] = 1.0
-            else:
-                if len(candidates) > 0:
-                    LIF.params['V_m'] = 0.0  # Inhibición lateral sobre los perdedores
+            if winner_j is not None:
+                if j == winner_j:
+                    LIF.params['V_m'] = 0.0
+                    LIF.params['V_th'] = V_th + V_adapt_inc  # Boost adaptativo moderado para el ganador
+                    LIF.params['spike_count'] = int(LIF.params.get('spike_count', 0)) + 1
+                    Act.params['action'] = '🏆 GANADOR'
+                    Act.params['_winner_hold'] = 15  # Resaltado exclusivo para el único ganador
+                    column_rewards[j] = +1.0  # Ganador recibe R = +1.0 (LTP / Recompensa)
+                    self.spike_post[j] = 1.0
                 else:
-                    LIF.params['V_m'] = V_m_next
-
+                    # Limpieza estricta de perdedores: garantiza que SOLO 1 actuador sea verde a la vez
+                    LIF.params['V_m'] = 0.0  # Inhibición lateral sobre perdedores
+                    Act.params['action'] = 'listo'
+                    Act.params['_winner_hold'] = 0
+                    column_rewards[j] = -1.0  # Perdedores reciben R = -1.0 (LTD / Penalización)
+                    self.spike_post[j] = 0.0
+            else:
+                # Si ningún candidato disparó en este tick, mantener retenido sólo al último ganador único
+                hold = int(Act.params.get('_winner_hold', 0))
                 if hold > 1:
                     Act.params['_winner_hold'] = hold - 1
-                    Act.params['action'] = '🏆 GANADOR (Hold)'
+                    Act.params['action'] = '🏆 GANADOR'
+                    column_rewards[j] = +1.0 if self.spike_post[j] > 0 else -1.0
                 else:
                     Act.params['_winner_hold'] = 0
                     Act.params['action'] = 'listo'
-
-                column_rewards[j] = -1.0  # Perdedores reciben R = -1.0 (LTD / Penalización)
-                self.spike_post[j] = 0.0
+                    column_rewards[j] = -1.0
+                    self.spike_post[j] = 0.0
 
             spikes_str.append(f"LIF_{j+1}={LIF.params['spike_count']}")
 
