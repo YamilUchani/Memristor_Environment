@@ -533,8 +533,13 @@ class Crossbar4x4View(QWidget):
         # --- Recompensa Causal por Columna (R local dependiente de la actividad) ---
         self.column_rewards = np.zeros(4)
         self.column_spike_history = np.zeros(4)
-        self._latched_winner = None
-        self._latched_hold = 0
+
+        # --- Acumulador de Evidencia (Winner Accumulator por Integración Leaky de Spikes, Gold & Shadlen 2007) ---
+        self.evidence_accumulator = np.zeros(4)   # Vector de evidencia por columna (cuantos)
+        self.tau_evidence = 100e-3                 # Constante de integración de evidencia (100 ms)
+        self.evidence_threshold = 3.0             # Umbral de evidencia acumulada para declarar ganador (3 cuantos)
+        self.winner_j = None                      # Columna del ganador activo
+        self.winner_lock_time = 0.0               # Instante físico hasta el que se mantiene la decisión firme (s)
 
         self.anim_timer = QTimer(self)
         self.anim_timer.setInterval(30)
@@ -1295,7 +1300,7 @@ class Crossbar4x4View(QWidget):
         I = compute_currents(G, self.V_rows)
 
         # 1. Integración de potencial de membrana y detección de candidatos a disparar
-        candidates = []
+        spikes_this_tick = np.zeros(4)
         for j in range(4):
             LIF = self.elements[f'LIF_{j+1}']
             C_m = float(LIF.params.get('C_m', 100e-9))
@@ -1313,24 +1318,27 @@ class Crossbar4x4View(QWidget):
             V_m_next = V_m + dVm
             LIF.params['_v_m_next'] = V_m_next
 
-            ratio = V_m_next / max(1e-3, V_th)
             if V_m_next >= V_th:
-                candidates.append((ratio, j))
+                spikes_this_tick[j] = 1.0
 
-        # 2. Competencia de Carrera Winner-Take-All (WTA) con retención de victoria estable (~1.05 s)
-        if self._latched_hold > 0 and self._latched_winner is not None:
-            self._latched_hold -= 1
-            winner_j = self._latched_winner
+        # 2. Integración Leaky del Acumulador de Evidencia (Gold & Shadlen 2007)
+        decay_ev = np.exp(-dt / self.tau_evidence)
+        self.evidence_accumulator = self.evidence_accumulator * decay_ev + spikes_this_tick
+
+        # 3. Decisión de Ganador por Acumulación de Evidencia (Winner Accumulator)
+        if self.winner_j is not None and self._sim_time < self.winner_lock_time:
+            # Mantener ganador firme mientras dure el candado de inercia de decisión (500 ms)
+            winner_j = self.winner_j
         else:
-            if len(candidates) > 0:
-                candidates.sort(key=lambda x: x[0], reverse=True)
-                winner_j = candidates[0][1]
-                self._latched_winner = winner_j
-                self._latched_hold = 35  # Mantiene al ganador estable durante 35 marcos (~1.05 s) por patrón
+            max_idx = int(np.argmax(self.evidence_accumulator))
+            if self.evidence_accumulator[max_idx] >= self.evidence_threshold:
+                self.winner_j = max_idx
+                self.winner_lock_time = self._sim_time + 0.50  # 500 ms de candado de inercia temporal
+                winner_j = max_idx
             else:
-                winner_j = None
-                self._latched_winner = None
-                self._latched_hold = 0
+                if self.winner_j is not None and self.evidence_accumulator[self.winner_j] < (self.evidence_threshold * 0.5):
+                    self.winner_j = None
+                winner_j = self.winner_j
 
         column_rewards = np.full(4, -1.0)
         spikes_str = []
@@ -1344,8 +1352,8 @@ class Crossbar4x4View(QWidget):
 
             if winner_j is not None and j == winner_j:
                 LIF.params['V_m'] = 0.0
-                LIF.params['V_th'] = V_th + V_adapt_inc  # Boost adaptativo moderado para el ganador
-                LIF.params['spike_count'] = int(LIF.params.get('spike_count', 0)) + 1
+                LIF.params['V_th'] = V_th + V_adapt_inc  # Auto-frenado homeostático por disparo
+                LIF.params['spike_count'] = int(LIF.params.get('spike_count', 0)) + int(spikes_this_tick[j])
                 Act.params['action'] = '🏆 GANADOR'
                 column_rewards[j] = +1.0  # Ganador recibe R = +1.0 (LTP / Recompensa)
                 self.spike_post[j] = 1.0
