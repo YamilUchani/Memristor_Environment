@@ -527,12 +527,14 @@ class Crossbar4x4View(QWidget):
 
         # --- Selectividad Secuencial (Decoder multiplexing por fila) ---
         self.sequence_index = 0
-        self.sequence_period_ticks = 30
+        self.sequence_period_ticks = 100  # 100 ticks (~3.0 s) por fila para observación clara y estable
         self._sequence_counter = 0
 
         # --- Recompensa Causal por Columna (R local dependiente de la actividad) ---
         self.column_rewards = np.zeros(4)
         self.column_spike_history = np.zeros(4)
+        self._latched_winner = None
+        self._latched_hold = 0
 
         self.anim_timer = QTimer(self)
         self.anim_timer.setInterval(30)
@@ -1315,11 +1317,20 @@ class Crossbar4x4View(QWidget):
             if V_m_next >= V_th:
                 candidates.append((ratio, j))
 
-        # 2. Competencia de Carrera Winner-Take-All (WTA): Solo 1 ganador por ciclo
-        winner_j = None
-        if len(candidates) > 0:
-            candidates.sort(key=lambda x: x[0], reverse=True)
-            winner_j = candidates[0][1]
+        # 2. Competencia de Carrera Winner-Take-All (WTA) con retención de victoria estable (~1.05 s)
+        if self._latched_hold > 0 and self._latched_winner is not None:
+            self._latched_hold -= 1
+            winner_j = self._latched_winner
+        else:
+            if len(candidates) > 0:
+                candidates.sort(key=lambda x: x[0], reverse=True)
+                winner_j = candidates[0][1]
+                self._latched_winner = winner_j
+                self._latched_hold = 35  # Mantiene al ganador estable durante 35 marcos (~1.05 s) por patrón
+            else:
+                winner_j = None
+                self._latched_winner = None
+                self._latched_hold = 0
 
         column_rewards = np.full(4, -1.0)
         spikes_str = []
@@ -1331,34 +1342,18 @@ class Crossbar4x4View(QWidget):
             V_adapt_inc = float(LIF.params.get('V_adapt_inc', 0.02))
             V_m_next = float(LIF.params.get('_v_m_next', 0.0))
 
-            if winner_j is not None:
-                if j == winner_j:
-                    LIF.params['V_m'] = 0.0
-                    LIF.params['V_th'] = V_th + V_adapt_inc  # Boost adaptativo moderado para el ganador
-                    LIF.params['spike_count'] = int(LIF.params.get('spike_count', 0)) + 1
-                    Act.params['action'] = '🏆 GANADOR'
-                    Act.params['_winner_hold'] = 15  # Resaltado exclusivo para el único ganador
-                    column_rewards[j] = +1.0  # Ganador recibe R = +1.0 (LTP / Recompensa)
-                    self.spike_post[j] = 1.0
-                else:
-                    # Limpieza estricta de perdedores: garantiza que SOLO 1 actuador sea verde a la vez
-                    LIF.params['V_m'] = 0.0  # Inhibición lateral sobre perdedores
-                    Act.params['action'] = 'listo'
-                    Act.params['_winner_hold'] = 0
-                    column_rewards[j] = -1.0  # Perdedores reciben R = -1.0 (LTD / Penalización)
-                    self.spike_post[j] = 0.0
+            if winner_j is not None and j == winner_j:
+                LIF.params['V_m'] = 0.0
+                LIF.params['V_th'] = V_th + V_adapt_inc  # Boost adaptativo moderado para el ganador
+                LIF.params['spike_count'] = int(LIF.params.get('spike_count', 0)) + 1
+                Act.params['action'] = '🏆 GANADOR'
+                column_rewards[j] = +1.0  # Ganador recibe R = +1.0 (LTP / Recompensa)
+                self.spike_post[j] = 1.0
             else:
-                # Si ningún candidato disparó en este tick, mantener retenido sólo al último ganador único
-                hold = int(Act.params.get('_winner_hold', 0))
-                if hold > 1:
-                    Act.params['_winner_hold'] = hold - 1
-                    Act.params['action'] = '🏆 GANADOR'
-                    column_rewards[j] = +1.0 if self.spike_post[j] > 0 else -1.0
-                else:
-                    Act.params['_winner_hold'] = 0
-                    Act.params['action'] = 'listo'
-                    column_rewards[j] = -1.0
-                    self.spike_post[j] = 0.0
+                LIF.params['V_m'] = 0.0 if winner_j is not None else V_m_next
+                Act.params['action'] = 'listo'
+                column_rewards[j] = -1.0  # Perdedores reciben R = -1.0 (LTD / Penalización)
+                self.spike_post[j] = 0.0
 
             spikes_str.append(f"LIF_{j+1}={LIF.params['spike_count']}")
 
