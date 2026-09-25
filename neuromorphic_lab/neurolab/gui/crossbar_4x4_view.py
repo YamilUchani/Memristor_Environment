@@ -525,6 +525,15 @@ class Crossbar4x4View(QWidget):
         self.spike_post = np.zeros(4)  # Spikes de LIF (columnas)
         self.reward = 0.0
 
+        # --- Selectividad Secuencial (Decoder multiplexing por fila) ---
+        self.sequence_index = 0
+        self.sequence_period_ticks = 30
+        self._sequence_counter = 0
+
+        # --- Recompensa Causal por Columna (R local dependiente de la actividad) ---
+        self.column_rewards = np.zeros(4)
+        self.column_spike_history = np.zeros(4)
+
         self.anim_timer = QTimer(self)
         self.anim_timer.setInterval(30)
         self.anim_timer.timeout.connect(self._anim_tick)
@@ -1154,6 +1163,17 @@ class Crossbar4x4View(QWidget):
             self.V_cols = np.zeros(4)
             self.V_rows[tg_r] = 1.0
             self.V_cols[tg_c] = -1.0
+        elif self.plasticity_mode in ("stdp", "rstdp") and self.canvas.is_animating:
+            # Selectividad Secuencial (address decoder multiplexing por fila)
+            self._sequence_counter += 1
+            if self._sequence_counter >= self.sequence_period_ticks:
+                self._sequence_counter = 0
+                self.sequence_index = (self.sequence_index + 1) % 4
+
+            self.V_rows = np.zeros(4)
+            s_val = float(self.elements[f'S{self.sequence_index+1}'].params.get('V_out', 0.8))
+            self.V_rows[self.sequence_index] = s_val if abs(s_val) > 0.1 else 0.8
+            self.V_cols = np.zeros(4)
         else:
             self.V_rows = np.array([float(self.elements[f'S{i+1}'].params.get('V_out', 0.2)) for i in range(4)])
             self.V_cols = np.zeros(4)
@@ -1269,15 +1289,12 @@ class Crossbar4x4View(QWidget):
 
         self._step_physics(dt)
 
-        # En Modo 4 (R-STDP), aplicar recompensas/penalizaciones estocásticas del entorno automáticamente cada ~0.5s
+        # En Modo 4 (R-STDP), aplicar recompensa causal dependiente de la actividad por columna (Estilo Loihi / DYNAP-SE)
         if self.plasticity_mode == "rstdp" and self.canvas.is_animating:
-            if not hasattr(self, '_rstdp_auto_counter'):
-                self._rstdp_auto_counter = 0
-            self._rstdp_auto_counter += 1
-            if self._rstdp_auto_counter >= 16:
-                self._rstdp_auto_counter = 0
-                auto_R = 1.0 if random.random() < 0.45 else -1.0
-                self._apply_reward(auto_R, is_auto=True)
+            spikes_this_tick = np.array([1.0 if self.spike_post[j] > 0 else 0.0 for j in range(4)])
+            self.column_spike_history = 0.95 * self.column_spike_history + 0.05 * spikes_this_tick
+            self.column_rewards = np.clip(2.0 * self.column_spike_history - 1.0, -1.0, 1.0)
+            self.rstdp_rule.set_reward(self.column_rewards)
 
         G = get_G_matrix(self.elements, 4, 4)
         I = compute_currents(G, self.V_rows)

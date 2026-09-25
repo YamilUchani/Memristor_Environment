@@ -145,24 +145,31 @@ class RSTDPRule(STDPRule):
         super().__init__(config or RSTDPConfig())
         self.cfg: RSTDPConfig = self.cfg
     
-    def set_reward(self, R: float):
-        """Establece la señal de recompensa (global)."""
-        self.cfg.R = float(R)
+    def set_reward(self, R):
+        """Establece la señal de recompensa (global escalar o vectorial por columna)."""
+        if isinstance(R, (list, tuple, np.ndarray)):
+            self.cfg.R = np.asarray(R, dtype=float)
+        else:
+            self.cfg.R = float(R)
     
     def apply(self, G_matrix, spike_pre, spike_post, dt):
         """
-        Aplica R-STDP global modulado por coincidencia temporal de trazas.
+        Aplica R-STDP modulado por coincidencia temporal de trazas y recompensa (escalar o por columna).
         """
         if self.trace_pre is None or self.trace_post is None:
             self.reset(len(spike_pre), len(spike_post))
 
-        if abs(self.cfg.R) < 1e-6:
+        R_val = np.asarray(self.cfg.R)
+        if np.all(np.abs(R_val) < 1e-6):
             self.trace_pre.step(spike_pre, dt)
             self.trace_post.step(spike_post, dt)
             return np.zeros_like(G_matrix)
 
         dG_base = self.compute_delta_G(spike_pre, spike_post)
-        dG = self.cfg.R * dG_base
+        if R_val.ndim > 0 and len(R_val) == G_matrix.shape[1]:
+            dG = dG_base * R_val[None, :]
+        else:
+            dG = float(self.cfg.R) * dG_base
 
         # Actualizar trazas (paso dt)
         self.trace_pre.step(spike_pre, dt)
