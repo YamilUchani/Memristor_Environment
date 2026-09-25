@@ -3,7 +3,7 @@
         "schema_version": "1.0",
         "app_version": "0.1.0",
         "profile_name": "[Última Sesión]",
-        "saved_at": "2026-09-25T16:47:53"
+        "saved_at": "2026-09-25T17:47:37"
     },
     "device_name": "HfO₂ Serie Neurona",
     "material": "HfO₂ (Óxido de Hafnio - CMOS LIF 2025)",
@@ -35,10 +35,10 @@
         "realtime_enabled": true,
         "waveform": "Sinusoidal",
         "v0": 1.0,
-        "f0": 0.5,
+        "f0": 3.001,
         "t_on": 1.0,
         "t_off": 1.0,
-        "duration": 6.0,
+        "duration": 3.01,
         "dt_ms": 0.001
     }
 }

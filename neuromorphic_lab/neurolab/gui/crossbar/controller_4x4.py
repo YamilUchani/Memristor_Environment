@@ -177,6 +177,22 @@ class Crossbar4x4Controller:
 
         self.spike_pre = spike_pre_arr
         
+        # Si estamos en modo de programación V/2, los LIF y la WTA están DESCONECTADOS
+        if mode == "program_v2":
+            self.winner_j = None
+            spike_post = np.zeros(4, dtype=bool)
+            for j in range(4):
+                LIF_ui = self.elements[f'LIF_{j+1}']
+                Act = self.elements[f'Act_{j+1}']
+                LIF_ui.params['is_winner'] = False
+                Act.params['is_winner'] = False
+                Act.params['action'] = '⚙️ PROG V/2'
+            return {
+                "I_cols": I_cols,
+                "spike_post": spike_post,
+                "winner_j": None,
+            }
+
         # Soft WTA e Inhibición Lateral Analógica Continuos
         winner_active = (self.winner_j is not None and self.sim_time < self.winner_lock_time)
 
@@ -288,6 +304,9 @@ class Crossbar4x4Controller:
                             x_calc = float(np.clip((ROFF - R_new) / (ROFF - RON), 0.01, 0.99)) if ROFF != RON else 0.1
                             mem.params['x'] = x_calc
                             mem.params['R'] = R_new
+                            mem.params['G_11'] = G_new
+                            mem.params['R_11'] = R_new
+                            self.crossbar.set_conductance(i, j, G_new)
 
         return {
             "I_cols": I_cols,
