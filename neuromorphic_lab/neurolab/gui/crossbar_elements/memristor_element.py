@@ -28,8 +28,8 @@ class MemristorElement(VisualElement):
             'reference': 'Strukov et al., Nature 453, 2008 / Prezioso et al., Nature 518, 2014',
 
             # --- Parámetros físicos ---
-            'RON': 100.0,            # Ω
-            'ROFF': 16_000.0,        # Ω
+            'RON': 2000.0,           # Ω (Corresponde a G_max = 500 μS)
+            'ROFF': 16_000.0,        # Ω (Corresponde a G_min = 62.5 μS)
             'x0': 0.10,              # adim.
             'D': 10e-9,              # m (10 nm)
             'mu_v': 1e-14,           # m²/(V·s)

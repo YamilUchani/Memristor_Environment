@@ -334,7 +334,6 @@ class BaseCrossbarCanvas(QWidget):
                     painter.drawRoundedRect(QRectF(x, y + 23, post_w, bar_h), 1, 1)
 
     def _draw_volatile_memristor(self, painter: QPainter, elem):
-        """Dibuja un memristor volátil HfO₂ (M_v_i)."""
         x, y = elem.x, elem.y
         color = get_qcolor('selected' if elem.selected
                            else ('hover' if elem.hover else 'memristor_v'))
@@ -353,9 +352,19 @@ class BaseCrossbarCanvas(QWidget):
         painter.setPen(get_qcolor('text_dim'))
         painter.drawText(QRectF(x - 40, y - 5, 80, 16), Qt.AlignCenter,
                          f"τ = {tau_rel:.2f} s")
+
+        # FIX VISUAL: Renderizar el estado de conductancia difusiva x_v
+        x_v = float(elem.params.get('x', 0.05))
         painter.setPen(get_qcolor('memristor_v'))
-        painter.drawText(QRectF(x - 40, y + 12, 80, 16), Qt.AlignCenter,
-                         "Volátil HfO₂")
+        painter.drawText(QRectF(x - 40, y + 10, 80, 16), Qt.AlignCenter,
+                         f"x_v: {x_v:.3f}")
+
+        # Barra de llenado físico en la base de la tarjeta
+        bar_w = min(80, max(0, int(np.clip(x_v, 0.0, 1.0) * 80)))
+        if bar_w > 0:
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QBrush(QColor(137, 180, 250, 180)))  # Azul difuso
+            painter.drawRoundedRect(QRectF(x - 40, y + 24, bar_w, 3), 1, 1)
 
     def _draw_neuron(self, painter: QPainter, elem):
         """Dibuja una neurona LIF (círculo) con marcado dramático de ganador/inhibida."""

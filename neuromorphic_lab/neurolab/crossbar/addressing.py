@@ -188,7 +188,7 @@ class ColumnDriver:
 class ReadConfig:
     """Configuración explícita del modo lectura."""
     V_read: float = 0.20      # Voltaje de lectura (V)
-    V_th: float = 0.50        # Umbral de programación (V)
+    V_th: float = 1.20        # Umbral de programación; evita disturbio half-select
     t_settle: float = 1e-3    # Tiempo de establecimiento (s)
     V_col: float = 0.0        # Voltaje de columnas en lectura (V)
     
@@ -207,7 +207,7 @@ class WriteConfig:
     """Configuración explícita del modo escritura."""
     # --- Voltajes ---
     V_program: float = 2.00    # Voltaje completo (target)
-    V_th: float = 0.50         # Umbral de programación
+    V_th: float = 1.20         # Umbral de programación; half-select queda por debajo
     # --- Esquema ---
     scheme: str = 'V2'         # 'row' | '1T1R' | 'V2' | 'V3'
     # --- Pulsos ---

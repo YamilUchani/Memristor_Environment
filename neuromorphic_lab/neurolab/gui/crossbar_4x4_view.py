@@ -42,6 +42,9 @@ from neurolab.crossbar.addressing import (
     AddressDecoder, RowDriver, ColumnDriver,
     ReadConfig, WriteConfig
 )
+from neurolab.crossbar.core import Crossbar
+from neurolab.gui.crossbar.controller_4x4 import Crossbar4x4Controller
+from neurolab.crossbar.configs import CrossbarConfig
 from neurolab.crossbar.plasticity import (
     STDPRule, RSTDPRule,
     STDPConfig, RSTDPConfig,
@@ -276,8 +279,8 @@ class BatchGridDialog(QDialog):
 class Crossbar4x4Canvas(BaseCrossbarCanvas):
     """Canvas del crossbar 4×4."""
 
-    MIN_WIDTH = 1400
-    MIN_HEIGHT = 750
+    MIN_WIDTH = 1100
+    MIN_HEIGHT = 1000
 
     def __init__(self, parent=None, elements=None, on_element_clicked=None, on_zoom_changed=None):
         super().__init__(parent, elements, on_element_clicked, on_zoom_changed)
@@ -508,17 +511,29 @@ class Crossbar4x4Canvas(BaseCrossbarCanvas):
                 painter.drawText(QRectF(LIF_1.x - 40, y_inhib - 48, (LIF_4.x - LIF_1.x) + 80, 18),
                                  Qt.AlignCenter, "⚡ BUS DE INHIBICIÓN LATERAL WTA (R-STDP LTD ACTIVO)")
 
-        # 5. Ecuación matricial de lectura en la parte inferior
+        # 5. Ecuación matricial de lectura en la parte inferior (telemetría en tiempo real)
         G = get_G_matrix(self.elements, 4, 4)
-        V = np.array([float(self.elements[f'S{i+1}'].params.get('V_out', 0.5))
-                      for i in range(4)])
+        view = getattr(self, 'view', None)
+
+        # FIX: Extraer rigurosamente el vector V_rows que inyecta el controlador
+        if view is not None and hasattr(view, 'V_rows') and view.V_rows is not None:
+            # En modo programación V/2, los drivers dominan el voltaje
+            if getattr(view, 'mode', 'read') == "program_v2":
+                tg_r = getattr(view, 'target_cell', (0, 0))[0]
+                V = np.zeros(4)
+                V[tg_r] = view.write_cfg.V_program / 2.0  # Usar voltaje del Driver real
+            else:
+                V = np.asarray(view.V_rows, dtype=float)
+        else:
+            V = np.zeros(4)
+
         I = compute_currents(G, V)
         painter.setFont(FONTS['mono'])
         painter.setPen(get_qcolor('success'))
         text_i = "   │   ".join([f"I_{j+1} = {I[j]*1e6:.1f} μA" for j in range(4)])
         painter.drawText(QRectF(0, self.height() - 35, self.width(), 25),
                          Qt.AlignCenter,
-                         f"⚡ Operación Matricial I = G^T · V:   {text_i}")
+                         f"⚡ Operación Matricial Real-Time I = G^T · V:   {text_i}")
 
 
 class Crossbar4x4View(QWidget):
@@ -527,7 +542,10 @@ class Crossbar4x4View(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.elements: Dict[str, VisualElement] = {}
-        self._sim_time = 0.0
+
+        # --- Crossbar Core Backend ---
+        self.crossbar = Crossbar(CrossbarConfig(n_rows=4, n_cols=4, enable_d2d=False))
+        self.controller = Crossbar4x4Controller(self.elements, self.crossbar)
 
         # --- Decodificadores y drivers explícitos de Hardware ---
         self.row_decoder = AddressDecoder(n_lines=4)
@@ -550,42 +568,65 @@ class Crossbar4x4View(QWidget):
         # ═══════════════════════════════════════════════════════════════
         self.plasticity_mode = "off"   # 'off' | 'stdp' | 'rstdp'
 
+        # Reglas: viven en el CONTROLLER, no en el view.
         stdp_cfg = STDPConfig(
-            A_plus=0.5e-6, A_minus=0.25e-6,
-            tau_plus=20e-3, tau_minus=20e-3,
-            eta=1.0, G_min=1e-6, G_max=500e-6,
+            A_plus=0.1e-6,
+            A_minus=0.08e-6,
+            G_min=1e-6,
+            G_max=500e-6,
+            tau_plus=20e-3,
+            tau_minus=20e-3,
         )
-        self.stdp_rule = STDPRule(stdp_cfg)
-        self.stdp_rule.reset(n_rows=4, n_cols=4)
+        self.controller.stdp_rule = STDPRule(stdp_cfg)
+        self.controller.stdp_rule.reset(4, 4)
 
         rstdp_cfg = RSTDPConfig(
-            A_plus=0.5e-6, A_minus=0.25e-6,
-            tau_plus=20e-3, tau_minus=20e-3,
-            eta=1.0, G_min=1e-6, G_max=500e-6,
+            A_plus=0.1e-6,
+            A_minus=0.08e-6,
+            G_min=1e-6,
+            G_max=500e-6,
             R=0.0,
         )
-        self.rstdp_rule = RSTDPRule(rstdp_cfg)
-        self.rstdp_rule.reset(n_rows=4, n_cols=4)
+        self.controller.rstdp_rule = RSTDPRule(rstdp_cfg)
+        self.controller.rstdp_rule.reset(4, 4)
 
-        self.spike_pre = np.zeros(4)   # Spikes de sensores (filas)
-        self.spike_post = np.zeros(4)  # Spikes de LIF (columnas)
+        # Eventos binarios por tick (NO niveles sostenidos)
+        self.spike_pre = np.zeros(4, dtype=bool)     # {0,1} por fila
+        self.spike_post = np.zeros(4, dtype=bool)    # {0,1} por columna
         self.reward = 0.0
 
-        # --- Selectividad Secuencial (Decoder multiplexing por fila) ---
+        # RNG dedicado a Poisson (reproducible, independiente del RNG de memristores)
+        self._spike_rng = np.random.default_rng(seed=12345)
+
+        # Tasa de disparo máxima a V_ref = 1V (Hz). Biológico: 10–200 Hz.
+        self.SENSOR_MAX_RATE_HZ = 100.0
+        self.SENSOR_MIN_RATE_HZ = 5.0
+        self.SENSOR_V_REF = 1.0
+        self.time_scale_factor = 1.0
+
+        # WTA first-to-fire (sin evidencia)
+        self.winner_j = None
+        self.winner_lock_time = 0.0
+        self.WINNER_LOCK_DURATION = 0.20   # 200 ms de lock
+        self.refractory_time = np.zeros(4)
+        self.REFRACTORY_DURATION = 0.15   # 150 ms
+
+        # Parámetros LIF (fijos, no se cambian por tick)
+        self.LIF_C_m = 10e-9           # 10 nF
+        self.LIF_R_leak = 100e6        # 100 MΩ
+        self.LIF_V_th_base = 1.0       # 1.0 V
+        self.LIF_V_adapt_inc = 0.5     # 0.5 V por spike (SPA fuerte)
+        self.LIF_tau_adapt = 0.05      # 50 ms decaimiento
+        self.LIF_I_scale = 1e-4        # Escalado de corriente
+
+        # Weight decay (LTD suave a perdedores)
+        self.G_base = 69.4e-6          # Conductancia base inicial
+        self.G_decay_rate = 0.005      # 0.5% por tick hacia base
+
+        # Secuencia de filas
         self.sequence_index = 0
-        self.sequence_period_ticks = 30   # 30 ticks (~0.9 s) por fila para multiplexación dinámica y fluida
+        self.sequence_period_ticks = 40   # 200 ms por fila (antes 30)
         self._sequence_counter = 0
-
-        # --- Recompensa Causal por Columna (R local dependiente de la actividad) ---
-        self.column_rewards = np.zeros(4)
-        self.column_spike_history = np.zeros(4)
-
-        # --- Acumulador de Evidencia (Winner Accumulator por Integración Leaky de Spikes, Gold & Shadlen 2007) ---
-        self.evidence_accumulator = np.zeros(4)   # Vector de evidencia por columna (cuantos)
-        self.tau_evidence = 100e-3                 # Constante de integración de evidencia (100 ms)
-        self.evidence_threshold = 3.0             # Umbral de evidencia acumulada para declarar ganador (3 cuantos)
-        self.winner_j = None                      # Columna del ganador activo
-        self.winner_lock_time = 0.0               # Instante físico hasta el que se mantiene la decisión firme (s)
 
         self.anim_timer = QTimer(self)
         self.anim_timer.setInterval(30)
@@ -595,10 +636,14 @@ class Crossbar4x4View(QWidget):
         self._init_ui()
 
 
+
     def _build_elements(self):
+        # Coordenadas generadas dinámicamente sin magic numbers quemados aleatoriamente
         x_sensores = 80
-        x_memristores = [300, 480, 660, 840]
-        y_filas = [150, 310, 470, 630]
+        x_spacing = 180
+        y_spacing = 160
+        x_memristores = [300 + j * x_spacing for j in range(4)]
+        y_filas = [150 + i * y_spacing for i in range(4)]
 
         # 4 Sensores (Filas 1 a 4)
         for i in range(4):
@@ -607,17 +652,17 @@ class Crossbar4x4View(QWidget):
             self.elements[key].params['name'] = f'Sensor {i+1}'
             self.elements[key].params['V_out'] = 0.8 if i == 0 else 0.4 if i == 1 else 0.3 if i == 2 else 0.2
 
-        # 16 Memristores Strukov (Matriz 4x4)
+        # 16 Memristores (Matriz 4x4)
         for i in range(4):
             for j in range(4):
                 key = f'M{i+1}{j+1}'
                 self.elements[key] = MemristorElement(key, row=i, col=j, x=x_memristores[j], y=y_filas[i])
 
-        # 4 Memristores Volátiles (HfO₂), 4 Neuronas LIF, 4 Actuadores (al final de cada columna)
+        y_volatiles = y_filas[-1] + 110
+        y_neuronas = y_volatiles + 110
+        y_actuadores = y_neuronas + 100
+
         acciones = ['girar_izq', 'girar_der', 'avanzar', 'retroceder']
-        y_volatiles = 740
-        y_neuronas = 850
-        y_actuadores = 950
 
         for j in range(4):
             key_mv = f'M_v{j+1}'
@@ -628,8 +673,8 @@ class Crossbar4x4View(QWidget):
             self.elements[key_lif] = NeuronElement(key_lif, x=x_memristores[j], y=y_neuronas)
             self.elements[key_lif].params['C_m'] = 100e-9
             self.elements[key_lif].params['R_leak'] = 1e6
-            self.elements[key_lif].params['V_th_base'] = 2.5
-            self.elements[key_lif].params['V_th'] = 2.5
+            self.elements[key_lif].params['V_th_base'] = 1.0
+            self.elements[key_lif].params['V_th'] = 1.0
             self.elements[key_lif].params['V_adapt_inc'] = 0.15
             self.elements[key_lif].params['tau_adapt'] = 0.05
             self.elements[key_lif].params['V_m'] = 0.0
@@ -639,17 +684,23 @@ class Crossbar4x4View(QWidget):
             self.elements[key_act] = ActuatorElement(key_act, x=x_memristores[j], y=y_actuadores)
             self.elements[key_act].params['action'] = acciones[j]
 
+    def closeEvent(self, event):
+        if hasattr(self, 'anim_timer') and self.anim_timer.isActive():
+            self.anim_timer.stop()
+        super().closeEvent(event)
+
     def _init_ui(self):
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setContentsMargins(8, 8, 8, 8)
+        main_layout.setSpacing(6)
 
         # ═══════════════════════════════════════════════════════════════
-        # FILA 1: BARRA DE LOS 4 MODOS UNIFICADOS
+        # FILA 1: MODOS Y SEÑALES DE PLASTICIDAD
         # ═══════════════════════════════════════════════════════════════
         toolbar_modes_main = QHBoxLayout()
 
-        lbl_m_title = QLabel("🔷 Modo del Crossbar:")
-        lbl_m_title.setStyleSheet("color: #89b4fa; font-weight: bold; font-size: 12px;")
+        lbl_m_title = QLabel("🔷 Modo:")
+        lbl_m_title.setStyleSheet("color: #89b4fa; font-weight: bold; font-size: 11px;")
         toolbar_modes_main.addWidget(lbl_m_title)
 
         self.btn_mode_read = QPushButton("📖 1. Lectura")
@@ -670,16 +721,16 @@ class Crossbar4x4View(QWidget):
 
         self.btn_pulse_ltp = QPushButton("➕ LTP (+2V)")
         self.btn_pulse_ltd = QPushButton("➖ LTD (-2V)")
-        self.btn_pulse_ltp.clicked.connect(lambda: self._apply_programming_pulse(2.0))
-        self.btn_pulse_ltd.clicked.connect(lambda: self._apply_programming_pulse(-2.0))
+        self.btn_pulse_ltp.clicked.connect(lambda: self._apply_programming_pulse(+self.write_cfg.V_program))
+        self.btn_pulse_ltd.clicked.connect(lambda: self._apply_programming_pulse(-self.write_cfg.V_program))
 
         self.btn_reward_plus = QPushButton("✅ Éxito (+1)")
         self.btn_reward_minus = QPushButton("❌ Error (−1)")
         self.btn_reward_plus.setStyleSheet(
-            "QPushButton { background-color: #a6e3a1; color: #11111b; font-weight: bold; padding: 5px 10px; border-radius: 4px; }"
+            "QPushButton { background-color: #a6e3a1; color: #11111b; font-weight: bold; padding: 4px 8px; border-radius: 4px; }"
         )
         self.btn_reward_minus.setStyleSheet(
-            "QPushButton { background-color: #f38ba8; color: #11111b; font-weight: bold; padding: 5px 10px; border-radius: 4px; }"
+            "QPushButton { background-color: #f38ba8; color: #11111b; font-weight: bold; padding: 4px 8px; border-radius: 4px; }"
         )
         self.btn_reward_plus.clicked.connect(lambda: self._apply_reward(+1.0))
         self.btn_reward_minus.clicked.connect(lambda: self._apply_reward(-1.0))
@@ -688,10 +739,10 @@ class Crossbar4x4View(QWidget):
         toolbar_modes_main.addWidget(self.btn_mode_prog)
         toolbar_modes_main.addWidget(self.btn_plast_stdp)
         toolbar_modes_main.addWidget(self.btn_plast_rstdp)
-        toolbar_modes_main.addSpacing(15)
+        toolbar_modes_main.addSpacing(10)
         toolbar_modes_main.addWidget(self.btn_pulse_ltp)
         toolbar_modes_main.addWidget(self.btn_pulse_ltd)
-        toolbar_modes_main.addSpacing(15)
+        toolbar_modes_main.addSpacing(10)
         toolbar_modes_main.addWidget(self.btn_reward_plus)
         toolbar_modes_main.addWidget(self.btn_reward_minus)
         toolbar_modes_main.addStretch()
@@ -699,13 +750,13 @@ class Crossbar4x4View(QWidget):
         main_layout.addLayout(toolbar_modes_main)
 
         # ═══════════════════════════════════════════════════════════════
-        # FILA 2: SENSORES Y ACCIONES DE SIMULACIÓN
+        # FILA 2: SENSORES S1..S4 Y PARÁMETROS TEMPORALES
         # ═══════════════════════════════════════════════════════════════
-        toolbar_controls_main = QHBoxLayout()
+        toolbar_sensors_main = QHBoxLayout()
 
         lbl_s_title = QLabel("⚡ Sensores S1..S4:")
         lbl_s_title.setStyleSheet("color: #a6e3a1; font-weight: bold; font-size: 11px;")
-        toolbar_controls_main.addWidget(lbl_s_title)
+        toolbar_sensors_main.addWidget(lbl_s_title)
 
         self.spin_v1 = QDoubleSpinBox()
         self.spin_v2 = QDoubleSpinBox()
@@ -728,33 +779,79 @@ class Crossbar4x4View(QWidget):
             """)
             idx = i
             sb.valueChanged.connect(lambda val, s_idx=idx: self._on_sensor_spinbox_changed(s_idx, val))
-            toolbar_controls_main.addWidget(sb)
+            toolbar_sensors_main.addWidget(sb)
+
+        # Refractory UI
+        lbl_refractory = QLabel("⏳ Refractario:")
+        lbl_refractory.setStyleSheet("color: #fab387; font-weight: bold; font-size: 11px;")
+        toolbar_sensors_main.addWidget(lbl_refractory)
+
+        self.spin_refractory = QDoubleSpinBox()
+        self.spin_refractory.setRange(0.0, 1.0)
+        self.spin_refractory.setSingleStep(0.05)
+        self.spin_refractory.setDecimals(2)
+        self.spin_refractory.setValue(self.REFRACTORY_DURATION)
+        self.spin_refractory.setSuffix(" s")
+        self.spin_refractory.setStyleSheet("""
+            QDoubleSpinBox {
+                background-color: #1e1e2e; color: #fab387; font-weight: bold;
+                border: 1px solid #45475a; border-radius: 4px; padding: 2px 4px; font-size: 11px;
+            }
+        """)
+        self.spin_refractory.valueChanged.connect(self._on_refractory_changed)
+        toolbar_sensors_main.addWidget(self.spin_refractory)
+
+        # Time Scale UI
+        lbl_scale = QLabel("⏱ Escala de Tiempo:")
+        lbl_scale.setStyleSheet("color: #f9e2af; font-weight: bold; font-size: 11px;")
+        toolbar_sensors_main.addWidget(lbl_scale)
+
+        self.combo_timescale = QComboBox()
+        self.combo_timescale.addItems(["Rápido (dt=30ms)", "Normal (dt=5ms)", "Lento (dt=1ms)"])
+        self.combo_timescale.currentIndexChanged.connect(self._on_timescale_changed)
+        self.combo_timescale.setCurrentIndex(1)  # Default Normal
+        self._on_timescale_changed(1)
+        self.combo_timescale.setStyleSheet("""
+            QComboBox {
+                background-color: #1e1e2e; color: #f9e2af; font-weight: bold;
+                border: 1px solid #45475a; border-radius: 4px; padding: 2px 4px; font-size: 11px;
+            }
+        """)
+        toolbar_sensors_main.addWidget(self.combo_timescale)
+        toolbar_sensors_main.addStretch()
+
+        main_layout.addLayout(toolbar_sensors_main)
+
+        # ═══════════════════════════════════════════════════════════════
+        # FILA 3: ACCIONES DE SIMULACIÓN Y NAVEGACIÓN
+        # ═══════════════════════════════════════════════════════════════
+        toolbar_actions_main = QHBoxLayout()
 
         btn_style_default = """
             QPushButton {
                 background-color: #313244; color: #cdd6f4; font-weight: bold;
-                padding: 5px 10px; border-radius: 4px; border: 1px solid #45475a;
+                padding: 4px 8px; border-radius: 4px; border: 1px solid #45475a; font-size: 11px;
             }
             QPushButton:hover { background-color: #45475a; color: #89b4fa; }
         """
         btn_style_primary = """
             QPushButton {
                 background-color: #89b4fa; color: #11111b; font-weight: bold;
-                padding: 5px 10px; border-radius: 4px;
+                padding: 4px 8px; border-radius: 4px; font-size: 11px;
             }
             QPushButton:hover { background-color: #b4befe; }
         """
         btn_style_warning = """
             QPushButton {
                 background-color: #f38ba8; color: #11111b; font-weight: bold;
-                padding: 5px 10px; border-radius: 4px;
+                padding: 4px 8px; border-radius: 4px; font-size: 11px;
             }
             QPushButton:hover { background-color: #f5e0dc; }
         """
         btn_style_accent = """
             QPushButton {
                 background-color: #cba6f7; color: #11111b; font-weight: bold;
-                padding: 5px 10px; border-radius: 4px;
+                padding: 4px 8px; border-radius: 4px; font-size: 11px;
             }
             QPushButton:hover { background-color: #f5c2e7; }
         """
@@ -780,12 +877,12 @@ class Crossbar4x4View(QWidget):
         self.btn_grid_config.clicked.connect(self._on_config_grid)
         self.btn_rw_config.clicked.connect(self._on_open_rw_config)
 
-        toolbar_controls_main.addWidget(self.btn_simulate)
-        toolbar_controls_main.addWidget(self.btn_realtime)
-        toolbar_controls_main.addWidget(self.btn_reset)
-        toolbar_controls_main.addWidget(self.btn_matrix)
-        toolbar_controls_main.addWidget(self.btn_grid_config)
-        toolbar_controls_main.addWidget(self.btn_rw_config)
+        toolbar_actions_main.addWidget(self.btn_simulate)
+        toolbar_actions_main.addWidget(self.btn_realtime)
+        toolbar_actions_main.addWidget(self.btn_reset)
+        toolbar_actions_main.addWidget(self.btn_matrix)
+        toolbar_actions_main.addWidget(self.btn_grid_config)
+        toolbar_actions_main.addWidget(self.btn_rw_config)
 
         self.btn_zoom_in = QPushButton("🔍 +")
         self.btn_zoom_out = QPushButton("🔍 -")
@@ -797,13 +894,13 @@ class Crossbar4x4View(QWidget):
         self.btn_zoom_reset.setStyleSheet(btn_style_default)
         self.lbl_zoom.setStyleSheet("color: #89b4fa; font-weight: bold; font-size: 11px;")
 
-        toolbar_controls_main.addWidget(self.btn_zoom_in)
-        toolbar_controls_main.addWidget(self.btn_zoom_out)
-        toolbar_controls_main.addWidget(self.btn_zoom_reset)
-        toolbar_controls_main.addWidget(self.lbl_zoom)
-        toolbar_controls_main.addStretch()
+        toolbar_actions_main.addWidget(self.btn_zoom_in)
+        toolbar_actions_main.addWidget(self.btn_zoom_out)
+        toolbar_actions_main.addWidget(self.btn_zoom_reset)
+        toolbar_actions_main.addWidget(self.lbl_zoom)
+        toolbar_actions_main.addStretch()
 
-        main_layout.addLayout(toolbar_controls_main)
+        main_layout.addLayout(toolbar_actions_main)
         self._update_mode_button_styles()
 
 
@@ -835,13 +932,17 @@ class Crossbar4x4View(QWidget):
     def _update_zoom_label(self, zoom: float):
         self.lbl_zoom.setText(f"{int(zoom * 100)}%")
 
+    def _on_timescale_changed(self, index: int):
+        """Convierte la selección visible en un paso de simulación coherente."""
+        self.time_scale_factor = (1.0, 6.0, 30.0)[max(0, min(2, index))]
+
     def _set_mode_1_read(self):
         """Modo 1: Lectura (Inferencia Pura - G no cambia)."""
         self.mode = "read"
         self.plasticity_mode = "off"
         self.reward = 0.0
-        if hasattr(self, 'rstdp_rule'):
-            self.rstdp_rule.set_reward(0.0)
+        if hasattr(self.controller, 'rstdp_rule') and self.controller.rstdp_rule:
+            self.controller.set_reward(0.0)
         self._update_mode_button_styles()
         self.status_label.setText("📖 Modo 1 [Lectura]: Voltajes V_i aplican inferencia I = G^T · V (Conductancias G persistentes e inalteradas).")
         self.canvas.update()
@@ -851,8 +952,8 @@ class Crossbar4x4View(QWidget):
         self.mode = "program_v2"
         self.plasticity_mode = "off"
         self.reward = 0.0
-        if hasattr(self, 'rstdp_rule'):
-            self.rstdp_rule.set_reward(0.0)
+        if hasattr(self.controller, 'rstdp_rule') and self.controller.rstdp_rule:
+            self.controller.set_reward(0.0)
         self._update_mode_button_styles()
         self._sync_sensors_to_mode()
         tg = self.target_cell
@@ -861,24 +962,30 @@ class Crossbar4x4View(QWidget):
 
     def _set_mode_3_stdp(self):
         """Modo 3: STDP (Aprendizaje No Supervisado Hebbiano)."""
-        self.mode = "read"  # Bug #1: Forzar modo física = "read"
+        self.mode = "read"  # Modo física = "read"
         self.plasticity_mode = "stdp"
         self.reward = 0.0
-        if hasattr(self, 'rstdp_rule'):
-            self.rstdp_rule.set_reward(0.0)
-        self.stdp_rule.reset(n_rows=4, n_cols=4)
+        if hasattr(self.controller, 'rstdp_rule') and self.controller.rstdp_rule:
+            self.controller.set_reward(0.0)
+        if hasattr(self.controller, 'stdp_rule') and self.controller.stdp_rule:
+            self.controller.stdp_rule.reset(4, 4)
+        if not self.canvas.is_animating:
+            self.toggle_realtime()
         self._update_mode_button_styles()
         self.status_label.setText("🧠 Modo 3 [STDP Activo]: Aprendizaje Hebbiano no supervisado por coincidencia temporal local (Sin decodificador).")
         self.canvas.update()
 
     def _set_mode_4_rstdp(self):
         """Modo 4: R-STDP (Aprendizaje por Refuerzo modulado por R)."""
-        self.mode = "read"  # Bug #2: Forzar modo física = "read"
+        self.mode = "read"  # Modo física = "read"
         self.plasticity_mode = "rstdp"
-        self.rstdp_rule.reset(n_rows=4, n_cols=4)
+        if hasattr(self.controller, 'rstdp_rule') and self.controller.rstdp_rule:
+            self.controller.rstdp_rule.reset(4, 4)
         self.reward = 0.0
-        if hasattr(self, 'rstdp_rule'):
-            self.rstdp_rule.set_reward(0.0)
+        if hasattr(self.controller, 'rstdp_rule') and self.controller.rstdp_rule:
+            self.controller.set_reward(0.0)
+        if not self.canvas.is_animating:
+            self.toggle_realtime()
         self._update_mode_button_styles()
         self.status_label.setText("🎯 Modo 4 [R-STDP Activo]: Aprendizaje por refuerzo — Presiona ✅ Éxito (+1) o ❌ Error (-1) para modular G.")
         self.canvas.update()
@@ -945,69 +1052,27 @@ class Crossbar4x4View(QWidget):
 
     def _apply_reward(self, R: float, is_auto: bool = False):
         """
-        Aplica R-STDP (Aprendizaje por Refuerzo Modulado por Recompensa Global R):
-        - Conmuta a Modo 4 si se activa desde otro modo.
+        Aplica recompensa R-STDP.
+        NO modifica G directamente: setea la recompensa en el RSTDPRule y deja
+        que el siguiente tick del _anim_tick haga la actualización real usando
+        las trazas pre/post acumuladas.
         """
         if self.plasticity_mode != "rstdp":
             self.mode = "read"
             self.plasticity_mode = "rstdp"
+            if hasattr(self.controller, 'rstdp_rule') and self.controller.rstdp_rule:
+                self.controller.rstdp_rule.reset(4, 4)
             self._update_mode_button_styles()
 
         self.reward = float(R)
-        self.rstdp_rule.set_reward(R)
-
-        self.reward = float(R)
-        self.rstdp_rule.set_reward(R)
-
-        tg_r, tg_c = self.target_cell
-        dG_pulse = R * 25.0e-6  # +25.0 uS para Éxito, -25.0 uS para Error
-
-        affected_cells = []
-        max_dG_uS = 0.0
-
-        # Celdas a actualizar: celda objetivo M_ij + cualquier celda con sensor activo (V > 0.49V)
-        target_keys = {f'M{tg_r+1}{tg_c+1}'}
-        for i in range(4):
-            v_s = float(self.elements[f'S{i+1}'].params.get('V_out', 0.2))
-            if v_s > 0.49:
-                for j in range(4):
-                    target_keys.add(f'M{i+1}{j+1}')
-
-        for key in target_keys:
-            mem = self.elements.get(key)
-            if mem:
-                p = mem.params
-                G_old = float(p.get('G', 69.4e-6))
-                G_new = float(np.clip(G_old + dG_pulse, 1.0e-6, 500.0e-6))
-
-                RON = float(p.get('RON', 100.0))
-                ROFF = float(p.get('ROFF', 16000.0))
-                R_new = 1.0 / max(1e-12, G_new)
-                x_calc = (ROFF - R_new) / (ROFF - RON) if ROFF != RON else 0.1
-                x_calc = float(np.clip(x_calc, 0.01, 0.99))
-
-                p['x'] = x_calc
-                p['x0'] = x_calc
-                p['G'] = G_new
-                p['G_11'] = G_new
-                p['R'] = R_new
-                p['R_11'] = R_new
-
-                if hasattr(mem, 'on_params_changed'):
-                    mem.on_params_changed()
-
-                affected_cells.append(key)
-                if abs(dG_pulse) * 1e6 > abs(max_dG_uS):
-                    max_dG_uS = dG_pulse * 1e6
+        self.controller.set_reward(R)
+        self._last_reward_time = getattr(self.controller, 'sim_time', 0.0)
 
         tag = "✅ ÉXITO (+1)" if R > 0 else "❌ PENALIZACIÓN ERROR (−1)"
         auto_tag = " [AUTO-ENTORNO]" if is_auto else " [MANUAL]"
-        cells_str = ", ".join(affected_cells[:4])
-        target_mem = self.elements.get(f'M{tg_r+1}{tg_c+1}')
-        g_target_uS = float(target_mem.params.get('G', 69.4e-6)) * 1e6 if target_mem else 0.0
-
         self.status_label.setText(
-            f"🎯 R-STDP Real{auto_tag} {tag}: Recompensa R = {R:+.0f} │ ΔG = {max_dG_uS:+.1f} μS │ Celda target M{tg_r+1}{tg_c+1} G = {g_target_uS:.1f} μS │ Celdas actualizadas ({len(affected_cells)}): {cells_str}"
+            f"🎯 R-STDP {tag}{auto_tag} │ R = {R:+.0f} │ "
+            f"La próxima actualización de G usará esta recompensa modulando las trazas acumuladas."
         )
         self._update_mode_button_styles()
         self.canvas.update()
@@ -1047,69 +1112,29 @@ class Crossbar4x4View(QWidget):
             self.btn_pulse_ltd.setEnabled(True)
 
 
+
+
     def _apply_programming_pulse(self, v_pulse: float):
-        """Aplica un pulso de programación V/2 (LTP o LTD) a la celda objetivo M_ij exclusivamente en Modo 2."""
         if self.mode != "program_v2":
             self.status_label.setText("⚠️ Los pulsos V/2 solo se aplican en Modo 2 (Programación V/2). Selecciona Modo 2 para usar este botón.")
             return
+            
         tg_r, tg_c = self.target_cell
         target_mem = self.elements.get(f'M{tg_r+1}{tg_c+1}')
-        if not target_mem:
-            return
-
+        if not target_mem: return
         g_old = float(target_mem.params.get('G', 69.4e-6)) * 1e6
 
-        self.V_rows = np.zeros(4)
-        self.V_cols = np.zeros(4)
-        self.V_rows[tg_r] = v_pulse / 2.0
-        self.V_cols[tg_c] = -v_pulse / 2.0
-
-        # Sub-pasos de evolución para un cambio claro y visible de G
-        for _ in range(5):
-            for i in range(4):
-                for j in range(4):
-                    mem = self.elements.get(f'M{i+1}{j+1}')
-                    if not mem:
-                        continue
-                    p = mem.params
-
-                    v_cell = float(self.V_rows[i]) - float(self.V_cols[j])
-                    v_abs = abs(v_cell)
-                    v_th = 0.5
-                    if v_abs > v_th:
-                        v_sign = 1.0 if v_cell > 0 else -1.0
-                        v_overdrive = v_abs - v_th
-                        x_curr = float(p.get('x', p.get('x0', 0.10)))
-                        p_exp = float(p.get('window_p', 2))
-                        st = 1.0 if v_cell > 0 else 0.0
-                        f_win = max(0.1, float(1.0 - (x_curr - st)**(2 * float(p_exp))))
-                        d2d_factor = float(p.get('d2d_factor', 1.0))
-                        k_rate = 0.35
-                        dxdt = v_sign * k_rate * (v_overdrive / 1.5) * f_win * d2d_factor
-
-                        x_next = float(np.clip(x_curr + dxdt * 0.1, 0.01, 0.99))
-                        p['x'] = x_next
-                        p['x0'] = x_next
-
-                        RON = float(p.get('RON', 100.0))
-                        ROFF = float(p.get('ROFF', 16000.0))
-                        R_val = RON * x_next + ROFF * (1.0 - x_next)
-                        G_val = 1.0 / max(1.0, R_val)
-                        p['R'] = R_val
-                        p['G'] = G_val
-                        p['G_11'] = G_val
-                        p['R_11'] = R_val
-                        if hasattr(mem, 'on_params_changed'):
-                            mem.on_params_changed()
-
+        # Delegate to Controller
+        n_pulses = max(1, int(self.write_cfg.n_pulses))
+        for _ in range(n_pulses):
+            self.controller.apply_programming_pulse(
+                tg_r, tg_c, v_pulse, dt_pulse=self.write_cfg.t_pulse
+            )
 
         g_new = float(target_mem.params.get('G', 69.4e-6)) * 1e6
-        tag = "➕ LTP (+2V)" if v_pulse > 0 else "➖ LTD (-2V)"
-        self.status_label.setText(
-            f"⚡ Pulso {tag} aplicado a M{tg_r+1}{tg_c+1}: G cambió de {g_old:.1f} μS → {g_new:.1f} μS │ (Cruz V/2 programada en Fila {tg_r+1} y Col {tg_c+1})"
-        )
+        tag = "➕ LTP" if v_pulse > 0 else "➖ LTD"
+        self.status_label.setText(f"⚡ Pulso {tag} aplicado a M{tg_r+1}{tg_c+1}: G cambió de {g_old:.1f} μS → {g_new:.1f} μS │ (Core Physics Delegated)")
         self.canvas.update()
-
 
     def _on_sensor_spinbox_changed(self, sensor_idx: int, val: float):
         s_key = f'S{sensor_idx+1}'
@@ -1118,14 +1143,15 @@ class Crossbar4x4View(QWidget):
 
             v_tag = "⚡ ESCRITURA" if abs(val) > 0.49 else "📖 LECTURA"
             self.status_label.setText(f"{v_tag} en {s_key}: Voltaje ajustado a {val:.2f} V")
-            if abs(val) > 0.49:
-                for _ in range(10):
-                    self._step_physics(0.02)
             self.canvas.update()
+
+    def _on_refractory_changed(self, val: float):
+        self.REFRACTORY_DURATION = val
+        self.status_label.setText(f"⏳ Período refractario ajustado a {val:.2f} s")
 
     def _set_all_sensors_read(self):
         for i, sb in enumerate(self.sensor_spinboxes):
-            sb.setValue(0.2)
+            sb.setValue(self.read_cfg.V_read)
         self.status_label.setText("📖 Todos los sensores ajustados a Voltaje de Lectura No Destructivo (0.20V)")
         self.canvas.update()
 
@@ -1165,9 +1191,6 @@ class Crossbar4x4View(QWidget):
                 msg = f"📖 Voltaje de LECTURA ({v_new:.2f}V) activo en {element.element_id}"
             element.params['V_out'] = v_new
             self._update_sensor_spinboxes()
-            if v_new > 0.49:
-                for _ in range(10):
-                    self._step_physics(0.02)
             self.status_label.setText(msg)
             self.canvas.update()
             return
@@ -1214,271 +1237,88 @@ class Crossbar4x4View(QWidget):
             """)
             self.status_label.setText("⚡ Simulación 4×4 en tiempo real activa... 💡 Haz clic en los Sensores (S1..S4) para simular detección!")
 
-    def _step_physics(self, dt: float):
-        """
-        Evolución física realista del Crossbar 4×4 con V_cell = V_row - V_col:
-        - Modo Lectura: V_col = 0. Si V_row <= 0.5V, G_ij permanece constante (lectura no destructiva).
-        - Modo Programación V/2: V_row[tg_r] = 1V, V_col[tg_c] = -1V. Target ve 2.0V, Cruz ve 1.0V.
-        """
+
+
+    def _anim_tick(self):
+        # 1. Reloj único: dt = intervalo real del timer, sin factores ocultos
+        dt_wall = self.anim_timer.interval() / 1000.0     # 0.030 s
+        dt = dt_wall / max(0.1, self.time_scale_factor)   # slow-motion explícito
+        self.canvas.anim_time += dt_wall                  # animación SIEMPRE en wall-clock
+
+        # 2. Estado de voltajes y eventos pre-spike según modo
+        self.spike_pre = np.zeros(4, dtype=bool)
+
         if self.mode == "program_v2":
             tg_r, tg_c = self.target_cell
             self.V_rows = np.zeros(4)
             self.V_cols = np.zeros(4)
-            self.V_rows[tg_r] = 1.0
-            self.V_cols[tg_c] = -1.0
+            self.V_rows[tg_r] = +self.write_cfg.V_program / 2.0
+            self.V_cols[tg_c] = -self.write_cfg.V_program / 2.0
+
         elif self.plasticity_mode in ("stdp", "rstdp") and self.canvas.is_animating:
-            # Selectividad Secuencial (address decoder multiplexing por fila)
-            self._sequence_counter += 1
-            if self._sequence_counter >= self.sequence_period_ticks:
-                self._sequence_counter = 0
-                self.sequence_index = (self.sequence_index + 1) % 4
+            for i in range(4):
+                v_i = float(self.elements[f'S{i+1}'].params.get('V_out', 0.0))
+                if abs(v_i) < 0.1:
+                    # Sensores inactivos (0V o lectura sub-umbral): 0 Hz, CERO SPIKES
+                    rate_hz = 0.0
+                else:
+                    v_norm = np.clip(abs(v_i) / self.SENSOR_V_REF, 0.0, 1.0)
+                    rate_hz = self.SENSOR_MIN_RATE_HZ + (self.SENSOR_MAX_RATE_HZ - self.SENSOR_MIN_RATE_HZ) * v_norm
+
+                if rate_hz > 0:
+                    p_spike = min(1.0, rate_hz * dt)
+                    if self._spike_rng.random() < p_spike:
+                        self.spike_pre[i] = True
 
             self.V_rows = np.zeros(4)
-            s_val = float(self.elements[f'S{self.sequence_index+1}'].params.get('V_out', 0.8))
-            self.V_rows[self.sequence_index] = s_val if abs(s_val) > 0.1 else 0.8
+            for i in range(4):
+                if self.spike_pre[i]:
+                    self.V_rows[i] = float(self.elements[f'S{i+1}'].params.get('V_out', 0.8))
             self.V_cols = np.zeros(4)
+
         else:
             self.V_rows = np.array([float(self.elements[f'S{i+1}'].params.get('V_out', 0.2)) for i in range(4)])
-            self.V_cols = np.zeros(4)
+            self.V_cols = np.full(4, self.read_cfg.V_col)
 
-        # 1. Memristores Strukov M_ij (Sobretensión de voltaje solo si plasticidad está OFF o en modo Programación)
-        if self.plasticity_mode == "off" or self.mode == "program_v2":
-            for i in range(4):
-                for j in range(4):
-                    mem = self.elements.get(f'M{i+1}{j+1}')
-                    if not mem:
-                        continue
-                    p = mem.params
+        # 3. Física: controller integra LIF + STDP/R-STDP
+        result = self.controller.step(
+            dt=dt,
+            mode=self.mode,
+            plasticity_mode=self.plasticity_mode,
+            is_animating=self.canvas.is_animating,
+            V_rows=self.V_rows,
+            V_cols=self.V_cols,
+            spike_pre=self.spike_pre,
+        )
 
-                    v_cell = float(self.V_rows[i]) - float(self.V_cols[j])
-                    v_th_write = 0.5
-                    if abs(v_cell) > v_th_write:
-                        x_curr = float(p.get('x', p.get('x0', 0.10)))
-                        p_exp = float(p.get('window_p', 2))
-                        st = 1.0 if v_cell > 0 else 0.0
-                        f_win = max(0.0, float(1.0 - (x_curr - st)**(2 * float(p_exp))))
-
-                        v_sign = 1.0 if v_cell > 0 else -1.0
-                        v_overdrive = abs(v_cell) - v_th_write
-                        k_rate = 0.10
-
-                        d2d_factor = float(p.get('d2d_factor', 1.0))
-
-                        if bool(p.get('chk_c2c', True)):
-                            c2c_sig = float(p.get('c2c_sigma', 0.05))
-                            c2c_noise = float(np.clip(np.random.normal(1.0, c2c_sig), 0.5, 1.5))
-                        else:
-                            c2c_noise = 1.0
-
-                        dxdt = v_sign * k_rate * (v_overdrive / 1.5) * f_win * d2d_factor * c2c_noise
-
-                        x_next = float(np.clip(x_curr + dxdt * dt, 0.01, 0.99))
-                        p['x'] = x_next
-                        RON = float(p.get('RON', 100.0))
-                        ROFF = float(p.get('ROFF', 16000.0))
-                        R_val = RON * x_next + ROFF * (1.0 - x_next)
-                        G_val = 1.0 / max(1.0, R_val)
-                        p['R'] = R_val
-                        p['G'] = G_val
-                        p['G_11'] = G_val
-                        p['R_11'] = R_val
-
-        # 2. Memristores Volátiles M_v1 .. M_v4 (Relajación difusiva)
-        G_mat = get_G_matrix(self.elements, 4, 4)
-        I_cols = compute_currents(G_mat, self.V_rows)
-
-        for j in range(4):
-            mv = self.elements.get(f'M_v{j+1}')
-            if not mv:
-                continue
-            p_v = mv.params
-            tau_rel = float(p_v.get('volatile_tau_relax', 0.3))
-            x_v = float(p_v.get('x', 0.05))
-            i_col = I_cols[j]
-
-            alpha_drive = 100.0
-            dxdt_v = alpha_drive * i_col - (x_v / max(1e-4, tau_rel))
-            x_v_next = float(np.clip(x_v + dxdt_v * dt, 0.001, 1.0))
-            p_v['x'] = x_v_next
-
-        # 3. Aplicar plasticidad (si está activa STDP o R-STDP Y el modo es "read")
-        if self.plasticity_mode in ("stdp", "rstdp") and self.mode == "read":
-            self.spike_pre = (self.V_rows > 0.5).astype(float)
-            G_matrix = get_G_matrix(self.elements, 4, 4)
-
-            if self.plasticity_mode == "stdp":
-                dG = self.stdp_rule.apply(G_matrix, self.spike_pre, self.spike_post, dt)
-            else:  # rstdp
-                dG = self.rstdp_rule.apply(G_matrix, self.spike_pre, self.spike_post, dt)
-
-            for i in range(4):
-                for j in range(4):
-                    if abs(dG[i, j]) > 1e-12:
-                        mem = self.elements.get(f'M{i+1}{j+1}')
-                        if mem:
-                            p = mem.params
-                            G_old = float(p.get('G', 69.4e-6))
-                            G_new = np.clip(G_old + dG[i, j], self.stdp_rule.G_min, self.stdp_rule.G_max)
-                            p['G'] = float(G_new)
-                            p['G_11'] = float(G_new)
-                            RON = float(p.get('RON', 100.0))
-                            ROFF = float(p.get('ROFF', 16000.0))
-                            R_new = 1.0 / max(1e-12, G_new)
-                            x_calc = float(np.clip((ROFF - R_new) / (ROFF - RON), 0.01, 0.99)) if ROFF != RON else 0.1
-                            p['x'] = x_calc
-                            p['R'] = R_new
-                            p['R_11'] = R_new
-                            if hasattr(mem, 'on_params_changed'):
-                                mem.on_params_changed()
-
-
-    def _anim_tick(self):
-        dt = 0.005
-        self._sim_time += dt
-        self.canvas.anim_time += 0.03
-
-        self._step_physics(dt)
-
-        G = get_G_matrix(self.elements, 4, 4)
-        I = compute_currents(G, self.V_rows)
-
-        # 1. Estado de inhibición previa o candado activo
-        current_winner = self.winner_j if (self.winner_j is not None and self._sim_time < self.winner_lock_time) else None
-
-        # 2. Integración de potencial de membrana con Inhibición Lateral WTA activa
-        spikes_this_tick = np.zeros(4)
-        for j in range(4):
-            LIF = self.elements[f'LIF_{j+1}']
-            C_m = float(LIF.params.get('C_m', 100e-9))
-            R_leak = float(LIF.params.get('R_leak', 1e6))
-            V_th_base = float(LIF.params.get('V_th_base', 2.5))
-            V_th = float(LIF.params.get('V_th', V_th_base))
-            tau_adapt = float(LIF.params.get('tau_adapt', 0.10))
-            V_m = float(LIF.params.get('V_m', 0.0))
-
-            # Decaimiento del umbral adaptativo hacia V_th_base
-            V_th += (V_th_base - V_th) * (dt / max(1e-4, tau_adapt))
-            LIF.params['V_th'] = V_th
-
-            # Si otra neurona es la ganadora activa, inhibición lateral clamp a 0V (I_effective = 0)
-            if current_winner is not None and j != current_winner:
-                V_m_next = 0.0
-                LIF.params['V_m'] = 0.0
-                LIF.params['_v_m_next'] = 0.0
-                spikes_this_tick[j] = 0.0
-            else:
-                dVm = ((I[j] - V_m / R_leak) / C_m) * dt
-                V_m_next = V_m + dVm
-                LIF.params['_v_m_next'] = V_m_next
-                if V_m_next >= V_th:
-                    spikes_this_tick[j] = 1.0
-
-        # 3. Integración Leaky del Acumulador de Evidencia (Gold & Shadlen 2007)
-        decay_ev = np.exp(-dt / self.tau_evidence)
-        self.evidence_accumulator = self.evidence_accumulator * decay_ev + spikes_this_tick
-
-        # 4. Decisión de Ganador por Acumulación de Evidencia (Winner Accumulator)
-        if current_winner is not None:
-            winner_j = current_winner
+        if isinstance(result, dict):
+            I_cols = result["I_cols"]
+            self.spike_post = result["spike_post"]
+            self.winner_j = result.get("winner_j", None)
         else:
-            max_idx = int(np.argmax(self.evidence_accumulator))
-            if self.evidence_accumulator[max_idx] >= self.evidence_threshold:
-                self.winner_j = max_idx
-                self.winner_lock_time = self._sim_time + 0.35  # 350 ms de candado de inercia temporal
-                winner_j = max_idx
-            else:
-                if self.winner_j is not None and self.evidence_accumulator[self.winner_j] < (self.evidence_threshold * 0.5):
-                    self.winner_j = None
-                winner_j = self.winner_j
+            I_cols = result
+            self.winner_j = self.controller.winner_j
 
-        # Margen de dominancia física
-        sorted_ev = np.sort(self.evidence_accumulator)
-        max_ev = sorted_ev[-1]
-        second_ev = sorted_ev[-2]
-        margin = max_ev / max(1e-6, second_ev)
-
-        column_rewards = np.full(4, -1.0)
-        spikes_str = []
-
-        for j in range(4):
-            LIF = self.elements[f'LIF_{j+1}']
-            Act = self.elements[f'Act_{j+1}']
-            V_th = float(LIF.params.get('V_th', 2.5))
-            V_adapt_inc = float(LIF.params.get('V_adapt_inc', 0.02))
-
-            if winner_j is not None and j == winner_j:
-                LIF.params['V_m'] = 0.0
-                LIF.params['V_th'] = V_th + V_adapt_inc  # Auto-frenado homeostático por disparo
-                LIF.params['spike_count'] = int(LIF.params.get('spike_count', 0)) + int(spikes_this_tick[j])
-                LIF.params['is_winner'] = True
-                Act.params['is_winner'] = True
-                Act.params['action'] = f'🏆 GANADOR (×{margin:.1f})'
-                column_rewards[j] = +1.0  # Ganador recibe R = +1.0 (LTP / Recompensa)
-                self.spike_post[j] = 1.0
-            else:
-                LIF.params['V_m'] = 0.0 if winner_j is not None else float(LIF.params.get('_v_m_next', 0.0))
-                LIF.params['is_winner'] = False
-                Act.params['is_winner'] = False
-                Act.params['action'] = '🚫 INHIBIDO' if winner_j is not None else 'listo'
-                column_rewards[j] = 0.0  # Perdedores reciben R = 0.0 (Sin recompensa / Sin cambio)
-                self.spike_post[j] = 0.0
-
-            spikes_str.append(f"LIF_{j+1}={LIF.params['spike_count']}")
-
-        # 5. Aplicar plasticidad STDP / R-STDP en tiempo real con spike_post activo del ganador
-        if self.plasticity_mode in ("stdp", "rstdp") and self.mode == "read" and self.canvas.is_animating:
-            self.spike_pre = (self.V_rows > 0.5).astype(float)
-            G_matrix = get_G_matrix(self.elements, 4, 4)
-
-            if self.plasticity_mode == "rstdp":
-                self.rstdp_rule.set_reward(column_rewards)
-                dG = self.rstdp_rule.apply(G_matrix, self.spike_pre, self.spike_post, dt)
-            else:  # stdp
-                dG = self.stdp_rule.apply(G_matrix, self.spike_pre, self.spike_post, dt)
-
-            for i in range(4):
-                for j in range(4):
-                    if abs(dG[i, j]) > 1e-12:
-                        mem = self.elements.get(f'M{i+1}{j+1}')
-                        if mem:
-                            p = mem.params
-                            G_old = float(p.get('G', 69.4e-6))
-                            G_new = np.clip(G_old + dG[i, j], self.stdp_rule.G_min, self.stdp_rule.G_max)
-                            p['G'] = float(G_new)
-                            p['G_11'] = float(G_new)
-                            RON = float(p.get('RON', 100.0))
-                            ROFF = float(p.get('ROFF', 16000.0))
-                            R_new = 1.0 / max(1e-12, G_new)
-                            x_calc = float(np.clip((ROFF - R_new) / (ROFF - RON), 0.01, 0.99)) if ROFF != RON else 0.1
-                            p['x'] = x_calc
-                            p['R'] = R_new
-                            p['R_11'] = R_new
-                            if hasattr(mem, 'on_params_changed'):
-                                mem.on_params_changed()
-
-        margin_info = f" │ Margen: ×{margin:.1f}" if winner_j is not None else ""
+        n_pre = int(self.spike_pre.sum())
+        n_post = int(self.spike_post.sum())
+        spikes_str = " ".join(f"LIF_{j+1}={self.elements[f'LIF_{j+1}'].params.get('spike_count', 0)}" for j in range(4))
         self.status_label.setText(
-            f"⚡ [4×4 REALTIME] t = {self._sim_time:.2f} s │ I_outs = [{I[0]*1e6:.1f}, {I[1]*1e6:.1f}, {I[2]*1e6:.1f}, {I[3]*1e6:.1f}] μA │ Spikes: {' '.join(spikes_str)}{margin_info}"
+            f"⚡ [4×4 RT] t_sim={self.controller.sim_time:.3f}s "
+            f"(dt={dt*1e3:.1f}ms, factor={self.time_scale_factor:.2f}×) │ "
+            f"spikes pre={n_pre} post={n_post} │ "
+            f"I=[{I_cols[0]*1e6:.1f}, {I_cols[1]*1e6:.1f}, {I_cols[2]*1e6:.1f}, {I_cols[3]*1e6:.1f}] μA │ "
+            f"{spikes_str}"
         )
         self.canvas.update()
 
     def _on_simulate(self):
+        # Ejecutar 1 tick de simulación estandarizado en lugar de matemática paralela
         dt = 0.01
-        self._step_physics(dt)
+        self._anim_tick()  # Fuerza un ciclo completo del motor principal
 
+        # Extraer la telemetría ya calculada
         G = get_G_matrix(self.elements, 4, 4)
         I = compute_currents(G, self.V_rows)
-
-        for j in range(4):
-            LIF = self.elements[f'LIF_{j+1}']
-            C_m = float(LIF.params.get('C_m', 100e-9))
-            V_m_inc = (I[j] * 1e-3) / C_m
-            LIF.params['V_m'] = min(LIF.params.get('V_m', 0.0) + V_m_inc, 2.5)
-
-            if LIF.params['V_m'] >= LIF.params.get('V_th', 2.5):
-                LIF.params['V_m'] = 0.0
-                LIF.params['spike_count'] = int(LIF.params.get('spike_count', 0)) + 1
-
         self.status_label.setText(
             f"▶ Simulación Paso Completa: I = [{I[0]*1e6:.1f}, {I[1]*1e6:.1f}, {I[2]*1e6:.1f}, {I[3]*1e6:.1f}] μA"
         )
@@ -1487,6 +1327,13 @@ class Crossbar4x4View(QWidget):
     def _on_reset(self):
         if self.canvas.is_animating:
             self.toggle_realtime()
+
+        self.controller.reset()
+        self.spike_pre = np.zeros(4, dtype=bool)
+        self.spike_post = np.zeros(4, dtype=bool)
+        self.reward = 0.0
+        self.V_rows = np.full(4, self.read_cfg.V_read)
+        self.V_cols = np.full(4, self.read_cfg.V_col)
 
         for elem in self.elements.values():
             elem.selected = False

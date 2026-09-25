@@ -81,3 +81,18 @@ def test_rstdp_rule_reward_gating():
     rstdp.set_reward(-1.0)
     dG_rminus = rstdp.apply(np.zeros((4,4)), np.array([0., 0., 0., 0.]), np.array([0., 1., 0., 0.]), dt=1e-3)
     assert dG_rminus[0, 1] < 0.0
+
+
+def test_rstdp_delayed_reward_uses_eligibility():
+    """Una recompensa posterior al par de spikes debe reforzar la elegibilidad."""
+    cfg = RSTDPConfig(A_plus=0.05, A_minus=0.025, R=0.0, tau_eligibility=1.0)
+    rstdp = RSTDPRule(cfg)
+    rstdp.reset(4, 4)
+
+    rstdp.apply(np.zeros((4, 4)), np.array([1., 0., 0., 0.]), np.zeros(4), dt=1e-3)
+    rstdp.apply(np.zeros((4, 4)), np.zeros(4), np.array([0., 1., 0., 0.]), dt=1e-3)
+    rstdp.set_reward(+1.0)
+    dG = rstdp.apply(np.zeros((4, 4)), np.zeros(4), np.zeros(4), dt=0.1)
+
+    assert dG[0, 1] > 0.0
+    assert rstdp.cfg.R == 0.0

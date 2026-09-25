@@ -17,7 +17,7 @@ class MemristorStrukov(Memristor):
             config = StrukovConfig()
         r_on = getattr(config, 'RON', None)
         if r_on is None:
-            r_on = getattr(config, 'r_on', 100.0)
+            r_on = getattr(config, 'r_on', 2000.0)
         r_off = getattr(config, 'ROFF', None)
         if r_off is None:
             r_off = getattr(config, 'r_off', 16_000.0)
@@ -35,14 +35,21 @@ class MemristorStrukov(Memristor):
             device_family="oxide_memristor",
             model_name="strukov"
         )
-        clip_x = getattr(config, 'clip_x', True)
         modifiers = []
+        window_type = str(getattr(config, 'window_type', kwargs.get('window_type', 'Biolek'))).lower()
+        if 'sin' not in window_type and 'none' not in window_type:
+            from neurolab.devices.realism.window import BiolekWindowModifier
+            p_val = int(getattr(config, 'window_p', kwargs.get('window_p', 2)))
+            modifiers.append(BiolekWindowModifier(p=p_val))
+
         enable_volatile = getattr(config, 'enable_volatile', kwargs.get('enable_volatile', kwargs.get('is_volatile', False)))
         if enable_volatile:
             from neurolab.devices.realism.volatile import VolatileDecayModifier
             tau_relax = float(getattr(config, 'tau_relax', kwargs.get('tau_relax', kwargs.get('volatile_tau_relax', 0.5))))
             x_eq = float(getattr(config, 'x_eq', kwargs.get('x_eq', 0.05)))
             modifiers.append(VolatileDecayModifier(tau_relax=tau_relax, x0_override=x_eq))
+
+        clip_x = getattr(config, 'clip_x', True)
 
         super().__init__(
             math_model=StrukovMathModel(),

@@ -29,8 +29,8 @@ class CrossbarConfig:
     n_cols: int = 4
     
     # --- Parámetros eléctricos base ---
-    R_on: float = 100.0          # Ω
-    R_off: float = 16000.0       # Ω
+    R_on: float = 2000.0         # Ω (500 μS max)
+    R_off: float = 16000.0       # Ω (62.5 μS min)
     x0: float = 0.10             # adim.
     D: float = 10e-9             # m
     mu_v: float = 1e-14          # m²/(V·s)
@@ -50,7 +50,7 @@ class CrossbarConfig:
     
     # --- Voltajes (V) ---
     V_read: float = 0.20         # Voltaje de lectura (no destructivo)
-    V_th: float = 0.50           # Umbral de programación
+    V_th: float = 1.20           # Umbral de programación; V/2 queda por debajo
     V_program: float = 2.00      # Voltaje de programación
     V_reset: float = -2.00       # Voltaje de reset
     

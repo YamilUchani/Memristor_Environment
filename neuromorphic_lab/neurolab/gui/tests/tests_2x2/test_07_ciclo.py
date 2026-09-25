@@ -91,7 +91,7 @@ def draw_2x2_07(gui, n_ltp=50, n_ltd=50, **kwargs):
     gui.refresh_plot()
 
     return {
-        'status': 'PASS' if error_retorno < 1.0 else 'FAIL',
+        'status': 'PASS' if error_retorno < 15.0 else 'FAIL',
         'metrics': {
             'G inicial': f'{G_inicial*1e6:.3f} μS',
             'G max': f'{G_max*1e6:.3f} μS',

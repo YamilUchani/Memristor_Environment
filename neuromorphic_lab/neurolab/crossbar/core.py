@@ -55,6 +55,7 @@ class Crossbar:
         self.V_rows = np.zeros(self.n_rows)
         self.V_cols = np.zeros(self.n_cols)
         self.I_out = np.zeros(self.n_cols)
+        self.programming_target = None
 
     @property
     def V_applied(self) -> np.ndarray:
@@ -93,7 +94,7 @@ class Crossbar:
                     self.cells[i][j] = MemristorYakopcic(cfg, G_0=G_0)
                 else:
                     cfg = StrukovConfig(
-                        RON=getattr(self.cfg, 'R_on', getattr(self.cfg, 'R_ON', 100.0)),
+                        RON=getattr(self.cfg, 'R_on', getattr(self.cfg, 'R_ON', 2000.0)),
                         ROFF=getattr(self.cfg, 'R_off', getattr(self.cfg, 'R_OFF', 16000.0)),
                         x0=getattr(self.cfg, 'x0', 0.1),
                         D=getattr(self.cfg, 'D', 10e-9),
@@ -290,7 +291,14 @@ class Crossbar:
 
     def update_memristors(self, dt: float) -> None:
         """Actualiza el estado de todos los memristores según V_applied."""
-        self._apply_voltages(self.V_rows[:, None] - self.V_cols[None, :], dt)
+        V_matrix = self.V_rows[:, None] - self.V_cols[None, :]
+        if self.programming_target is not None:
+            target_i, target_j = self.programming_target
+            threshold = float(getattr(self.cfg, 'V_th', 0.0))
+            selected = np.abs(V_matrix) >= threshold
+            selected[target_i, target_j] = True
+            V_matrix = np.where(selected, V_matrix, 0.0)
+        self._apply_voltages(V_matrix, dt)
 
     # ================================================================
     # PROGRAMACIÓN
@@ -342,7 +350,7 @@ class Crossbar:
             'mode': '1T1R', 'cell': (i, j), 'V': V_program, 'dt': dt,
         })
 
-    def program_V2(self, i_target: int, j_target: int, V_program: float = None, dt: float = None):
+    def program_V2(self, i_target: int, j_target: int, V_program: float = None, dt: float = None, isolate_half_select: bool = False):
         """Modo V/2: programa celda (i,j) con cruz de half-selected."""
         if V_program is None:
             V_program = self.cfg.V_program
@@ -357,6 +365,11 @@ class Crossbar:
             self.V_cols[j_target] = -V_program / 2.0
 
         V_matrix = self.V_rows[:, None] - self.V_cols[None, :]
+        if isolate_half_select:
+            threshold = float(getattr(self.cfg, 'V_th', 0.0))
+            selected = np.abs(V_matrix) >= threshold
+            selected[i_target, j_target] = True
+            V_matrix = np.where(selected, V_matrix, 0.0)
 
         self._apply_voltages(V_matrix, dt)
         self.last_operation = ('program_V2', i_target, j_target)

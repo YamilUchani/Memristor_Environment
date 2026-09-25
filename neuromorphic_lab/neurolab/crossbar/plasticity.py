@@ -46,16 +46,13 @@ class Trace:
     def step(self, spikes: np.ndarray, dt: float):
         """
         Actualiza las trazas con decaimiento + nuevos spikes.
-        
-        Parameters
-        ----------
-        spikes : ndarray (n_channels,)
-            Spikes en este paso (0 o 1 por canal).
-        dt : float
-            Paso temporal.
+        dt se clampa a [1μs, 1s] para estabilidad numérica.
         """
+        if dt <= 0.0:
+            return
+        dt = float(np.clip(dt, 1e-6, 1.0))
         decay = np.exp(-dt / self.tau)
-        self.values = self.values * decay + spikes
+        self.values = self.values * decay + np.asarray(spikes, dtype=float)
     
     def reset(self):
         """Reinicia todas las trazas a 0."""
@@ -69,8 +66,8 @@ class Trace:
 @dataclass
 class STDPConfig:
     """Configuración de STDP."""
-    A_plus: float = 0.5e-6       # Amplitud LTP (0.5 μS por evento para evolución gradual)
-    A_minus: float = 0.25e-6     # Amplitud LTD (0.25 μS por evento)
+    A_plus: float = 0.1e-6       # Amplitud LTP (0.1 μS por evento)
+    A_minus: float = 0.08e-6     # Amplitud LTD (0.08 μS por evento)
     tau_plus: float = 20e-3     # Constante pre (s)
     tau_minus: float = 20e-3    # Constante post (s)
     eta: float = 1.0            # Tasa de aprendizaje
@@ -99,11 +96,20 @@ class STDPRule:
     
     def compute_delta_G(self, spike_pre: np.ndarray,
                          spike_post: np.ndarray) -> np.ndarray:
+        """
+        Calcula dG (S) por evento.
+        IMPORTANTE: spike_pre y spike_post DEBEN ser eventos binarios del
+        MISMO tick. Si son niveles sostenidos, la traza satura y el
+        aprendizaje degenera.
+        """
         if self.trace_pre is None or self.trace_post is None:
             self.reset(len(spike_pre), len(spike_post))
 
-        term_ltp = np.outer(self.trace_pre.values, spike_post)
-        term_ltd = np.outer(spike_pre, self.trace_post.values)
+        pre = np.asarray(spike_pre, dtype=float)
+        post = np.asarray(spike_post, dtype=float)
+
+        term_ltp = np.outer(self.trace_pre.values, post)
+        term_ltd = np.outer(pre, self.trace_post.values)
 
         term_ltp[term_ltp < self.threshold_product] = 0.0
         term_ltd[term_ltd < self.threshold_product] = 0.0
@@ -119,9 +125,9 @@ class STDPRule:
         if self.trace_pre is None or self.trace_post is None:
             self.reset(len(spike_pre), len(spike_post))
 
-        dG = self.compute_delta_G(spike_pre, spike_post)
         self.trace_pre.step(spike_pre, dt)
         self.trace_post.step(spike_post, dt)
+        dG = self.compute_delta_G(spike_pre, spike_post)
         return dG
 
 
@@ -134,47 +140,76 @@ class RSTDPConfig(STDPConfig):
     """Configuración de R-STDP (extiende STDPConfig)."""
     R: float = 0.0              # Recompensa (+1, 0, -1)
     use_reward: bool = True     # Activar modulación por recompensa
+    tau_eligibility: float = 1.0  # Persistencia de elegibilidad para recompensa retrasada (s)
 
 
 class RSTDPRule(STDPRule):
     """
     Regla R-STDP: STDP modulada por recompensa global R.
     """
-    
+
     def __init__(self, config: RSTDPConfig = None):
         super().__init__(config or RSTDPConfig())
         self.cfg: RSTDPConfig = self.cfg
-    
+        self.eligibility = None
+        self._pending_reward = 0.0
+
+    def reset(self, n_rows: int, n_cols: int):
+        """Reinicia trazas temporales y la elegibilidad por sinapsis."""
+        super().reset(n_rows, n_cols)
+        self.eligibility = np.zeros((n_rows, n_cols), dtype=float)
+        self._pending_reward = 0.0
+
     def set_reward(self, R):
         """Establece la señal de recompensa (global escalar o vectorial por columna)."""
         if isinstance(R, (list, tuple, np.ndarray)):
             self.cfg.R = np.asarray(R, dtype=float)
         else:
             self.cfg.R = float(R)
-    
+
     def apply(self, G_matrix, spike_pre, spike_post, dt):
         """
-        Aplica R-STDP modulado por coincidencia temporal de trazas y recompensa (escalar o por columna).
+        Aplica R-STDP modulado por coincidencia temporal de trazas y recompensa.
         """
         if self.trace_pre is None or self.trace_post is None:
             self.reset(len(spike_pre), len(spike_post))
 
-        R_val = np.asarray(self.cfg.R)
-        if np.all(np.abs(R_val) < 1e-6):
-            self.trace_pre.step(spike_pre, dt)
-            self.trace_post.step(spike_post, dt)
-            return np.zeros_like(G_matrix)
-
-        dG_base = self.compute_delta_G(spike_pre, spike_post)
-        if R_val.ndim > 0 and len(R_val) == G_matrix.shape[1]:
-            dG = dG_base * R_val[None, :]
-        else:
-            dG = float(self.cfg.R) * dG_base
-
-        # Actualizar trazas (paso dt)
+        # 1. Actualizar trazas primero
         self.trace_pre.step(spike_pre, dt)
         self.trace_post.step(spike_post, dt)
-        
-        return dG
+
+        # 2. Calcular dG base con trazas pobladas y conservar elegibilidad.
+        dG_base = self.compute_delta_G(spike_pre, spike_post)
+        if self.eligibility is None or self.eligibility.shape != dG_base.shape:
+            self.eligibility = np.zeros_like(dG_base)
+        tau_e = max(1e-6, float(self.cfg.tau_eligibility))
+        self.eligibility *= np.exp(-float(np.clip(dt, 1e-6, 1.0)) / tau_e)
+        self.eligibility += dG_base
+
+        # 3. Modular por recompensa
+        R_val = np.asarray(self.cfg.R)
+        if np.all(np.abs(R_val) < 1e-6):
+            R_val = np.asarray(self._pending_reward)
+            if np.all(np.abs(R_val) < 1e-6):
+                return np.zeros_like(G_matrix)
+
+        # Una recompensa pulsada desde la GUI puede llegar antes del spike
+        # post. Se conserva hasta que haya elegibilidad que modular.
+        if not np.any(np.abs(self.eligibility) > 1e-15):
+            self._pending_reward = R_val.item() if R_val.ndim == 0 else R_val.copy()
+            self.cfg.R = 0.0
+            return np.zeros_like(G_matrix)
+
+        if R_val.ndim > 0 and len(R_val) == G_matrix.shape[1]:
+            dG_final = self.eligibility * R_val[None, :]
+        else:
+            dG_final = float(self.cfg.R) * self.eligibility
+
+        # Consumir la recompensa para que actúe en este tick
+        self.cfg.R = 0.0
+        self._pending_reward = 0.0
+        self.eligibility.fill(0.0)
+
+        return dG_final
 
 

@@ -55,7 +55,7 @@ def test_1x1_sweep_conductance():
     cb = CrossbarIdeal(config)
 
     V_in = 0.5
-    for G_target in [62.5e-6, 100e-6, 200e-6, 500e-6, 1000e-6]:
+    for G_target in [62.5e-6, 100e-6, 200e-6, 350e-6, 500e-6]:
         cb.set_conductance(0, 0, G_target)
         I_out = cb.read_single(V_in)
         I_expected = G_target * V_in

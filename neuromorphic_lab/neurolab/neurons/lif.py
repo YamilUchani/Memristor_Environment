@@ -59,7 +59,7 @@ class LIFNeuron(BaseNeuron):
         self.spike_times.clear()
         self.has_spiked = False
 
-    def step(self, current_input: float = 0.0, dt: float = 1e-4, voltage_input: float = None) -> bool:
+    def step(self, current_input: float = 0.0, dt: float = 1e-4, voltage_input: float = None, t: float = None) -> bool:
         """
         Ejecuta un paso de integración usando el método de Euler explícito.
         
@@ -67,12 +67,15 @@ class LIFNeuron(BaseNeuron):
             current_input: Corriente de entrada (I_in) en Amperios (modo corriente).
             dt: Incremento temporal en Segundos.
             voltage_input: Voltaje de entrada (V_in) en Voltios (modo circuito serie-paralelo).
+            t: Instante global (s), opcional. Si se pasa, sincroniza self.t.
             
         Returns:
             bool: True si se generó un spike en este paso, False en caso contrario.
         """
-        # Actualizamos el reloj interno de la neurona
-        self.t += dt
+        if t is not None:
+            self.t = float(t)
+        else:
+            self.t += dt
         
         # Reiniciamos el estado discreto de spike para este paso específico
         self.has_spiked = False

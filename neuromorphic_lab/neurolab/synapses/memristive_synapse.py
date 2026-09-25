@@ -43,7 +43,7 @@ class MemristiveSynapse(Synapse):
         """Resistencia mínima (ON) del memristor en Ohmios."""
         if hasattr(self.memristor, "electrical"):
             return float(self.memristor.electrical.r_on)
-        return float(getattr(self.memristor, "RON", getattr(self.memristor, "r_on", 100.0)))
+        return float(getattr(self.memristor, "RON", getattr(self.memristor, "r_on", 2000.0)))
 
     @property
     def G_min(self) -> float:

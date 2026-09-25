@@ -1,0 +1,280 @@
+
+import numpy as np
+from typing import Dict, Any, Optional
+from neurolab.gui.crossbar_elements import VisualElement, get_G_matrix, compute_currents
+from neurolab.crossbar.plasticity import STDPRule, RSTDPRule, STDPConfig, RSTDPConfig
+from neurolab.neurons.lif import LIFNeuron
+from neurolab.neurons.config import LIFConfig
+
+class Crossbar4x4Controller:
+    """
+    Controlador separado (Patrón MVC) para aislar la lógica del motor físico,
+    la integración de neuronas LIF, el algoritmo WTA y la plasticidad (STDP).
+    """
+    def __init__(self, elements: Dict[str, VisualElement], crossbar_core):
+        self.elements = elements
+        self.crossbar = crossbar_core
+        self.sim_time = 0.0
+
+        # STDP con tasas realistas
+        stdp_cfg = STDPConfig(
+            A_plus=0.1e-6, A_minus=0.08e-6, G_min=1e-6, G_max=500e-6,
+            tau_plus=20e-3, tau_minus=20e-3
+        )
+        self.stdp_rule = STDPRule(stdp_cfg)
+        self.stdp_rule.reset(4, 4)
+
+        rstdp_cfg = RSTDPConfig(
+            A_plus=0.1e-6, A_minus=0.08e-6, G_min=1e-6, G_max=500e-6, R=0.0
+        )
+        self.rstdp_rule = RSTDPRule(rstdp_cfg)
+        self.rstdp_rule.reset(4, 4)
+
+        self.spike_pre = np.zeros(4)
+        self.spike_post = np.zeros(4)
+
+        # WTA first-to-fire
+        self.winner_j = None
+        self.winner_lock_time = 0.0
+        self.WINNER_LOCK_DURATION = 0.20
+        self.refractory_time = np.zeros(4)
+        self.REFRACTORY_DURATION = 0.15
+
+        # Motor Físico Neuronas LIF Reales
+        lif_cfg = LIFConfig(
+            c_m=100e-9, r_leak=1e6, v_th_base=1.0, v_th=1.0,
+            v_adapt_inc=0.15, tau_adapt=0.05, t_ref=0.15, v_rest=0.0, v_reset=0.0
+        )
+        self.lif_neurons = [LIFNeuron(lif_cfg) for _ in range(4)]
+        # El crossbar entrega corrientes de cientos de microamperios. Esta
+        # conversión mantiene el punto de operación de la LIF cerca de 1 V.
+        # Con G ~= 70 uS y V ~= 1 V, I_cols ~= 70 uA. Con R_leak=1 Mohm
+        # la escala debe producir V_inf=I_syn*R_leak por encima de V_th.
+        self.LIF_I_scale = 0.02
+
+        # Weight decay
+        self.G_base = 69.4e-6
+        self.G_decay_rate = 0.005
+
+    def reset(self):
+        self.sim_time = 0.0
+        self.winner_j = None
+        self.winner_lock_time = 0.0
+        self.refractory_time = np.zeros(4)
+        for neuron in self.lif_neurons:
+            neuron.reset()
+        self.stdp_rule.reset(4, 4)
+        self.rstdp_rule.reset(4, 4)
+
+    def set_reward(self, reward: float):
+        self.rstdp_rule.set_reward(reward)
+
+    def apply_programming_pulse(self, tg_r: int, tg_c: int, v_pulse: float, dt_pulse: float = None):
+        """Aplica un pulso delegando a Crossbar y actualizando la UI."""
+        if dt_pulse is None:
+            dt_pulse = 0.03
+        dt_pulse = max(1e-6, float(dt_pulse))
+
+        for i in range(4):
+            for j in range(4):
+                m = self.elements.get(f'M{i+1}{j+1}')
+                if m: self.crossbar.set_conductance(i, j, float(m.params.get('G', 69.4e-6)))
+
+        self.crossbar.program_V2(
+            tg_r, tg_c, V_program=v_pulse, dt=dt_pulse,
+            isolate_half_select=True
+        )
+
+        G_mat = self.crossbar.G_matrix
+        for i in range(4):
+            for j in range(4):
+                m = self.elements.get(f'M{i+1}{j+1}')
+                if m:
+                    G_new = G_mat[i, j]
+                    m.params['G'] = G_new
+                    m.params['G_11'] = G_new
+                    R_new = 1.0 / max(1e-12, G_new)
+                    m.params['R'] = R_new
+                    RON = float(m.params.get('RON', 2000.0))
+                    ROFF = float(m.params.get('ROFF', 16000.0))
+                    x_calc = (ROFF - R_new) / (ROFF - RON) if ROFF != RON else 0.1
+                    m.params['x'] = float(np.clip(x_calc, 0.01, 0.99))
+
+    def step(self, dt: float, mode: str, plasticity_mode: str, is_animating: bool, V_rows: np.ndarray, V_cols: np.ndarray, spike_pre: Optional[np.ndarray] = None) -> Dict[str, Any]:
+        self.sim_time += dt
+
+        if spike_pre is None:
+            spike_pre_arr = (V_rows > 0.5).astype(float)
+        else:
+            spike_pre_arr = np.asarray(spike_pre, dtype=float)
+
+        # 1. Sincronizar el core sólo cuando la física de escritura lo usa.
+        if mode == "program_v2":
+            for i in range(4):
+                for j in range(4):
+                    mem = self.elements.get(f'M{i+1}{j+1}')
+                    if mem:
+                        self.crossbar.set_conductance(i, j, float(mem.params.get('G', 69.4e-6)))
+
+        # 2. Update Memristors in Core (Física Strukov: integración dw/dt activa ante pulsos sobre-umbral)
+        self.crossbar.V_rows = V_rows
+        self.crossbar.V_cols = V_cols
+        v_net_mat = V_rows[:, None] - V_cols[None, :]
+        if mode == "program_v2":
+            active_rows = np.flatnonzero(np.abs(V_rows) > 1e-12)
+            active_cols = np.flatnonzero(np.abs(V_cols) > 1e-12)
+            if len(active_rows) and len(active_cols):
+                self.crossbar.programming_target = (int(active_rows[0]), int(active_cols[0]))
+            self.crossbar.update_memristors(dt)
+            self.crossbar.programming_target = None
+
+        # 3. Sync GUI
+        G_mat = self.crossbar.G_matrix if mode == "program_v2" else get_G_matrix(self.elements, 4, 4)
+        for i in range(4):
+            for j in range(4):
+                mem = self.elements.get(f'M{i+1}{j+1}')
+                if mem:
+                    G_new = G_mat[i, j]
+                    mem.params['G'] = G_new
+                    mem.params['G_11'] = G_new
+                    R_new = 1.0 / max(1e-12, G_new)
+                    mem.params['R'] = R_new
+                    mem.params['R_11'] = R_new
+                    RON = float(mem.params.get('RON', 2000.0))
+                    ROFF = float(mem.params.get('ROFF', 16000.0))
+                    x_calc = (ROFF - R_new) / (ROFF - RON) if ROFF != RON else 0.1
+                    mem.params['x'] = float(np.clip(x_calc, 0.01, 0.99))
+
+        # Volatiles
+        # Cada columna ve la diferencia de potencial fila-columna. Esto
+        # conserva la lectura ideal cuando V_cols=0 y evita ignorar V_col.
+        I_cols = np.sum(G_mat * (V_rows[:, None] - V_cols[None, :]), axis=0)
+        for j in range(4):
+            mv = self.elements.get(f'M_v{j+1}')
+            if not mv: continue
+            p_v = mv.params
+            tau_rel = float(p_v.get('volatile_tau_relax', 0.3))
+            x_v = float(p_v.get('x', 0.05))
+            x_eq = float(p_v.get('x0', 0.05))
+
+            # FIX: Restaurar hacia x_eq, no hacia 0
+            dxdt_v = 100.0 * I_cols[j] - ((x_v - x_eq) / max(1e-4, tau_rel))
+            p_v['x'] = float(np.clip(x_v + dxdt_v * dt, 0.001, 1.0))
+
+        self.spike_pre = spike_pre_arr
+        
+        # LIF & WTA delegando al motor neuronal LIFNeuron
+        spike_post = np.zeros(4, dtype=bool)
+        spikes_this_tick = np.zeros(4)
+        winner_active = (self.winner_j is not None and self.sim_time < self.winner_lock_time)
+
+        for j in range(4):
+            LIF_ui = self.elements[f'LIF_{j+1}']
+            neuron = self.lif_neurons[j]
+
+            # Manejo de inhibición lateral
+            if winner_active and j != self.winner_j:
+                neuron.V_m = 0.0
+                LIF_ui.params['V_m'] = 0.0
+                continue
+
+            # Inyectar corriente física al motor
+            I_syn = I_cols[j] * self.LIF_I_scale
+            has_spiked = neuron.step(current_input=I_syn, dt=dt, t=self.sim_time)
+
+            # Sincronizar UI con el motor físico
+            LIF_ui.params['V_m'] = neuron.V_m
+            LIF_ui.params['V_th'] = neuron.v_th
+
+            if has_spiked:
+                spikes_this_tick[j] = 1.0
+                spike_post[j] = True
+                LIF_ui.params['spike_count'] = int(LIF_ui.params.get('spike_count', 0)) + 1
+                self.refractory_time[j] = self.sim_time + neuron.config.t_ref
+
+        if self.winner_j is None:
+            fired = np.where(spikes_this_tick > 0.5)[0]
+            if len(fired) > 0:
+                self.winner_j = int(fired[0])
+                self.winner_lock_time = self.sim_time + self.WINNER_LOCK_DURATION
+
+        if self.winner_j is not None and self.sim_time >= self.winner_lock_time:
+            self.winner_j = None
+            for j in range(4):
+                LIF = self.elements[f'LIF_{j+1}']
+                LIF.params['V_m'] = 0.0
+
+        for j in range(4):
+            LIF = self.elements[f'LIF_{j+1}']
+            Act = self.elements[f'Act_{j+1}']
+            if self.winner_j is not None and j == self.winner_j:
+                LIF.params['is_winner'] = True
+                Act.params['is_winner'] = True
+                Act.params['action'] = '🏆 GANADOR'
+            else:
+                LIF.params['is_winner'] = False
+                Act.params['is_winner'] = False
+                is_refractory = self.sim_time < self.refractory_time[j]
+                if is_refractory:
+                    Act.params['action'] = '⏳ REFRACTARIO'
+                elif self.winner_j is not None:
+                    Act.params['action'] = '🚫 INHIBIDO'
+                else:
+                    Act.params['action'] = 'listo'
+
+        # Plasticity STDP / R-STDP
+        if plasticity_mode in ("stdp", "rstdp") and mode == "read":
+            G_matrix = get_G_matrix(self.elements, 4, 4)
+            self.spike_post = spikes_this_tick.copy()
+
+            if plasticity_mode == "rstdp":
+                dG = self.rstdp_rule.apply(G_matrix, self.spike_pre, self.spike_post, dt)
+            else:
+                dG = self.stdp_rule.apply(G_matrix, self.spike_pre, self.spike_post, dt)
+
+            G_min = self.stdp_rule.G_min
+            G_max = self.stdp_rule.G_max
+            
+            for i in range(4):
+                for j in range(4):
+                    if abs(dG[i, j]) > 1e-12:
+                        mem = self.elements.get(f'M{i+1}{j+1}')
+                        if mem:
+                            G_old = float(mem.params.get('G', self.G_base))
+                            saturation = max(0.0, (G_max - G_old) / (G_max - G_min)) if dG[i, j] > 0 else max(0.0, (G_old - G_min) / (G_max - G_min))
+                            G_new = float(np.clip(G_old + dG[i, j] * saturation, G_min, G_max))
+                            R_new = 1.0 / max(1e-12, G_new)
+                            RON = float(mem.params.get('RON', 2000.0))
+                            ROFF = float(mem.params.get('ROFF', 16000.0))
+                            x_calc = float(np.clip((ROFF - R_new) / (ROFF - RON), 0.01, 0.99)) if ROFF != RON else 0.1
+                            
+                            mem.params['G'] = G_new
+                            mem.params['G_11'] = G_new
+                            mem.params['R'] = R_new
+                            mem.params['R_11'] = R_new
+                            mem.params['x'] = x_calc
+                            mem.params['x0'] = x_calc
+                            self.crossbar.set_conductance(i, j, G_new)
+
+        # Weight Decay
+        if plasticity_mode in ("stdp", "rstdp") and self.winner_j is not None:
+            for i in range(4):
+                for j in range(4):
+                    if j != self.winner_j:
+                        mem = self.elements.get(f'M{i+1}{j+1}')
+                        if mem:
+                            G_old = float(mem.params.get('G', self.G_base))
+                            G_new = G_old + self.G_decay_rate * (self.G_base - G_old)
+                            mem.params['G'] = float(G_new)
+                            R_new = 1.0 / max(1e-12, G_new)
+                            RON = float(mem.params.get('RON', 2000.0))
+                            ROFF = float(mem.params.get('ROFF', 16000.0))
+                            x_calc = float(np.clip((ROFF - R_new) / (ROFF - RON), 0.01, 0.99)) if ROFF != RON else 0.1
+                            mem.params['x'] = x_calc
+                            mem.params['R'] = R_new
+
+        return {
+            "I_cols": I_cols,
+            "spike_post": spike_post,
+            "winner_j": self.winner_j,
+        }
