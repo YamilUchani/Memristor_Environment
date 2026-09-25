@@ -1216,8 +1216,8 @@ class Crossbar4x4View(QWidget):
             self.V_cols = np.zeros(4)
             self.V_rows[tg_r] = 1.0
             self.V_cols[tg_c] = -1.0
-        elif getattr(self, 'use_sequential_multiplexing', False) and self.canvas.is_animating:
-            # Selectividad Secuencial Opcional (solo si se activa explícitamente)
+        elif self.plasticity_mode in ("stdp", "rstdp") and self.canvas.is_animating:
+            # Selectividad Secuencial (address decoder multiplexing por fila)
             self._sequence_counter += 1
             if self._sequence_counter >= self.sequence_period_ticks:
                 self._sequence_counter = 0
@@ -1228,50 +1228,50 @@ class Crossbar4x4View(QWidget):
             self.V_rows[self.sequence_index] = s_val if abs(s_val) > 0.1 else 0.8
             self.V_cols = np.zeros(4)
         else:
-            # Alimentación Paralela Neuromórfica Continua (Sensores S1..S4 simultáneos)
             self.V_rows = np.array([float(self.elements[f'S{i+1}'].params.get('V_out', 0.2)) for i in range(4)])
             self.V_cols = np.zeros(4)
 
-        # 1. Memristores Strukov M_ij
-        for i in range(4):
-            for j in range(4):
-                mem = self.elements.get(f'M{i+1}{j+1}')
-                if not mem:
-                    continue
-                p = mem.params
+        # 1. Memristores Strukov M_ij (Sobretensión de voltaje solo si plasticidad está OFF o en modo Programación)
+        if self.plasticity_mode == "off" or self.mode == "program_v2":
+            for i in range(4):
+                for j in range(4):
+                    mem = self.elements.get(f'M{i+1}{j+1}')
+                    if not mem:
+                        continue
+                    p = mem.params
 
-                v_cell = float(self.V_rows[i]) - float(self.V_cols[j])
-                v_th_write = 0.5
-                if abs(v_cell) > v_th_write:
-                    x_curr = float(p.get('x', p.get('x0', 0.10)))
-                    p_exp = float(p.get('window_p', 2))
-                    st = 1.0 if v_cell > 0 else 0.0
-                    f_win = max(0.0, float(1.0 - (x_curr - st)**(2 * float(p_exp))))
+                    v_cell = float(self.V_rows[i]) - float(self.V_cols[j])
+                    v_th_write = 0.5
+                    if abs(v_cell) > v_th_write:
+                        x_curr = float(p.get('x', p.get('x0', 0.10)))
+                        p_exp = float(p.get('window_p', 2))
+                        st = 1.0 if v_cell > 0 else 0.0
+                        f_win = max(0.0, float(1.0 - (x_curr - st)**(2 * float(p_exp))))
 
-                    v_sign = 1.0 if v_cell > 0 else -1.0
-                    v_overdrive = abs(v_cell) - v_th_write
-                    k_rate = 0.10
+                        v_sign = 1.0 if v_cell > 0 else -1.0
+                        v_overdrive = abs(v_cell) - v_th_write
+                        k_rate = 0.10
 
-                    d2d_factor = float(p.get('d2d_factor', 1.0))
+                        d2d_factor = float(p.get('d2d_factor', 1.0))
 
-                    if bool(p.get('chk_c2c', True)):
-                        c2c_sig = float(p.get('c2c_sigma', 0.05))
-                        c2c_noise = float(np.clip(np.random.normal(1.0, c2c_sig), 0.5, 1.5))
-                    else:
-                        c2c_noise = 1.0
+                        if bool(p.get('chk_c2c', True)):
+                            c2c_sig = float(p.get('c2c_sigma', 0.05))
+                            c2c_noise = float(np.clip(np.random.normal(1.0, c2c_sig), 0.5, 1.5))
+                        else:
+                            c2c_noise = 1.0
 
-                    dxdt = v_sign * k_rate * (v_overdrive / 1.5) * f_win * d2d_factor * c2c_noise
+                        dxdt = v_sign * k_rate * (v_overdrive / 1.5) * f_win * d2d_factor * c2c_noise
 
-                    x_next = float(np.clip(x_curr + dxdt * dt, 0.01, 0.99))
-                    p['x'] = x_next
-                    RON = float(p.get('RON', 100.0))
-                    ROFF = float(p.get('ROFF', 16000.0))
-                    R_val = RON * x_next + ROFF * (1.0 - x_next)
-                    G_val = 1.0 / max(1.0, R_val)
-                    p['R'] = R_val
-                    p['G'] = G_val
-                    p['G_11'] = G_val
-                    p['R_11'] = R_val
+                        x_next = float(np.clip(x_curr + dxdt * dt, 0.01, 0.99))
+                        p['x'] = x_next
+                        RON = float(p.get('RON', 100.0))
+                        ROFF = float(p.get('ROFF', 16000.0))
+                        R_val = RON * x_next + ROFF * (1.0 - x_next)
+                        G_val = 1.0 / max(1.0, R_val)
+                        p['R'] = R_val
+                        p['G'] = G_val
+                        p['G_11'] = G_val
+                        p['R_11'] = R_val
 
         # 2. Memristores Volátiles M_v1 .. M_v4 (Relajación difusiva)
         G_mat = get_G_matrix(self.elements, 4, 4)
