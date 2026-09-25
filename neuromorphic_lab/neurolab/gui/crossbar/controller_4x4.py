@@ -93,7 +93,7 @@ class Crossbar4x4Controller:
 
         self.crossbar.program_V2(
             tg_r, tg_c, V_program=v_pulse, dt=dt_pulse,
-            isolate_half_select=True
+            isolate_half_select=False
         )
 
         G_mat = self.crossbar.G_matrix

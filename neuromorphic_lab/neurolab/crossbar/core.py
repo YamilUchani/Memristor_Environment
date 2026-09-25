@@ -317,11 +317,8 @@ class Crossbar:
         """Actualiza el estado de todos los memristores según V_applied."""
         V_matrix = self.V_rows[:, None] - self.V_cols[None, :]
         if self.programming_target is not None:
-            target_i, target_j = self.programming_target
-            threshold = float(getattr(self.cfg, 'V_th', 0.0))
-            selected = np.abs(V_matrix) >= threshold
-            selected[target_i, target_j] = True
-            V_matrix = np.where(selected, V_matrix, 0.0)
+            # Calibrar dt físico a ancho de pulso de programación (1ms) para evitar sobredosis por marco de GUI
+            dt = min(dt, float(getattr(self.cfg, 'dt_pulse', 1e-3)))
         self._apply_voltages(V_matrix, dt)
 
     # ================================================================
