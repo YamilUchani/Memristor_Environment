@@ -258,6 +258,11 @@ class Crossbar4x4Controller:
         if plasticity_mode in ("stdp", "rstdp") and mode == "read":
             G_matrix = get_G_matrix(self.elements, 4, 4)
             self.spike_post = spikes_this_tick.copy()
+            # En STDP competitivo (WTA), la inhibición lateral suprime los spikes post-sinápticos de las columnas no ganadoras
+            if self.winner_j is not None:
+                for j in range(4):
+                    if j != self.winner_j:
+                        self.spike_post[j] = 0.0
 
             if plasticity_mode == "rstdp":
                 dG = self.rstdp_rule.apply(G_matrix, self.spike_pre, self.spike_post, dt)
