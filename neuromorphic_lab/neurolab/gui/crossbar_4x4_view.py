@@ -599,8 +599,14 @@ class Crossbar4x4View(QWidget):
         self.auto_rl_enabled = False
         self.auto_rl_target_col = 0
         self.auto_rl_switch_time = 0.0
-        self.auto_rl_interval = 3.0   # Cambia la meta cada 3 segundos
+        self.auto_rl_interval = 4.0   # Cambia la meta cada 4 segundos
         self.auto_rl_last_applied_time = 0.0
+
+        # Intercalado de Fases y Patrones Estocásticos en R-STDP
+        self.rstdp_phase = "read"    # 'read' (Inferencia/Lectura) | 'write' (Modulación R-STDP) | 'rest' (Reposo 0V)
+        self.rstdp_phase_timer = 0.0
+        self.rstdp_active_sensors = np.array([True, True, True, True], dtype=bool)
+        self.RSTDP_PHASE_DURATIONS = {'read': 2.0, 'write': 0.5, 'rest': 1.0}
 
         # RNG dedicado a Poisson (reproducible, independiente del RNG de memristores)
         self._spike_rng = np.random.default_rng(seed=12345)
@@ -998,10 +1004,16 @@ class Crossbar4x4View(QWidget):
         self.reward = 0.0
         if hasattr(self.controller, 'rstdp_rule') and self.controller.rstdp_rule:
             self.controller.set_reward(0.0)
+
+        # Iniciar ciclo intercalado de fases y sensores activos
+        self.rstdp_phase = "read"
+        self.rstdp_phase_timer = getattr(self.controller, 'sim_time', 0.0)
+        self._select_random_active_sensors()
+
         if not self.canvas.is_animating:
             self.toggle_realtime()
         self._update_mode_button_styles()
-        self.status_label.setText("🎯 Modo 4 [R-STDP Activo]: Aprendizaje por refuerzo — Presiona ✅ Éxito (+1) o ❌ Error (-1) para modular G.")
+        self.status_label.setText("🎯 Modo 4 [R-STDP Activo]: Intercalando Lectura (Estimulación) ➔ Escritura (Recompensa) ➔ Reposo (0V).")
         self.canvas.update()
 
     def _set_mode_read(self):
@@ -1110,14 +1122,31 @@ class Crossbar4x4View(QWidget):
             sim_t = getattr(self.controller, 'sim_time', 0.0)
             self.auto_rl_target_col = int(self._spike_rng.integers(0, 4))
             self.auto_rl_switch_time = sim_t + self.auto_rl_interval
+            self.rstdp_phase = "read"
+            self.rstdp_phase_timer = sim_t
+            self._select_random_active_sensors()
             self.status_label.setText(
                 f"🎲 Auto-RL ACTIVADO │ Meta Objetivo Inicial: Columna {self.auto_rl_target_col+1} "
-                f"│ Cambiará al azar cada {self.auto_rl_interval:.1f}s."
+                f"│ Intercalando fases y variación estocástica de sensores."
             )
         else:
             self.status_label.setText("🎲 Auto-RL DESACTIVADO │ Control de recompensa manual restaurado.")
         self._update_mode_button_styles()
         self.canvas.update()
+
+    def _select_random_active_sensors(self):
+        """Selecciona de 1 a 3 sensores activos al azar para variar el patrón de entrada."""
+        k = int(self._spike_rng.integers(1, 4))  # Activar entre 1 y 3 filas al azar
+        active_indices = self._spike_rng.choice(4, size=k, replace=False)
+        mask = np.zeros(4, dtype=bool)
+        mask[active_indices] = True
+        self.rstdp_active_sensors = mask
+
+        # Sincronizar UI de sensores
+        for i in range(4):
+            v_val = 0.70 if mask[i] else 0.0
+            self.elements[f'S{i+1}'].params['V_out'] = v_val
+        self._update_sensor_spinboxes()
 
 
 
@@ -1302,11 +1331,66 @@ class Crossbar4x4View(QWidget):
             self.V_rows[tg_r] = +self.write_cfg.V_program / 2.0
             self.V_cols[tg_c] = -self.write_cfg.V_program / 2.0
 
-        elif self.plasticity_mode in ("stdp", "rstdp") and self.canvas.is_animating:
+        elif self.plasticity_mode == "rstdp" and self.canvas.is_animating:
+            sim_t = self.controller.sim_time
+            dt_phase = sim_t - getattr(self, 'rstdp_phase_timer', 0.0)
+            target_duration = self.RSTDP_PHASE_DURATIONS.get(self.rstdp_phase, 1.0)
+
+            # Transición entre Fases Intercaladas (Lectura -> Escritura -> Reposo 0V)
+            if dt_phase >= target_duration:
+                self.rstdp_phase_timer = sim_t
+                if self.rstdp_phase == "read":
+                    self.rstdp_phase = "write"
+                    # Aplicar evaluación de recompensa si Auto-RL está activo
+                    if getattr(self, 'auto_rl_enabled', False) and self.winner_j is not None:
+                        if self.winner_j == self.auto_rl_target_col:
+                            self._apply_reward(+1.0, is_auto=True)
+                        else:
+                            self._apply_reward(-1.0, is_auto=True)
+                elif self.rstdp_phase == "write":
+                    self.rstdp_phase = "rest"
+                    # Apagar temporalmente todos los sensores en la fase de reposo
+                    for i in range(4):
+                        self.elements[f'S{i+1}'].params['V_out'] = 0.0
+                    self._update_sensor_spinboxes()
+                else:  # "rest" -> regresar a "read"
+                    self.rstdp_phase = "read"
+                    # Cambiar meta de Auto-RL si expiró el intervalo
+                    if getattr(self, 'auto_rl_enabled', False) and sim_t >= getattr(self, 'auto_rl_switch_time', 0.0):
+                        cols = [c for c in range(4) if c != self.auto_rl_target_col]
+                        self.auto_rl_target_col = int(self._spike_rng.choice(cols))
+                        self.auto_rl_switch_time = sim_t + self.auto_rl_interval
+                        self._update_mode_button_styles()
+
+                    # Seleccionar nuevo patrón de sensores activos
+                    self._select_random_active_sensors()
+
+            # Configuración de voltajes y spikes según la fase actual
+            if self.rstdp_phase == "rest":
+                self.V_rows = np.zeros(4)
+                self.V_cols = np.zeros(4)
+                self.spike_pre = np.zeros(4, dtype=bool)
+            else:
+                for i in range(4):
+                    v_i = float(self.elements[f'S{i+1}'].params.get('V_out', 0.0))
+                    if abs(v_i) < 0.1:
+                        rate_hz = 0.0
+                    else:
+                        v_norm = np.clip(abs(v_i) / self.SENSOR_V_REF, 0.0, 1.0)
+                        rate_hz = self.SENSOR_MIN_RATE_HZ + (self.SENSOR_MAX_RATE_HZ - self.SENSOR_MIN_RATE_HZ) * v_norm
+
+                    if rate_hz > 0:
+                        p_spike = min(1.0, rate_hz * dt)
+                        if self._spike_rng.random() < p_spike:
+                            self.spike_pre[i] = True
+
+                self.V_rows = np.array([float(self.elements[f'S{i+1}'].params.get('V_out', 0.0)) for i in range(4)])
+                self.V_cols = np.zeros(4)
+
+        elif self.plasticity_mode == "stdp" and self.canvas.is_animating:
             for i in range(4):
                 v_i = float(self.elements[f'S{i+1}'].params.get('V_out', 0.0))
                 if abs(v_i) < 0.1:
-                    # Sensores inactivos (0V o lectura sub-umbral): 0 Hz, CERO SPIKES
                     rate_hz = 0.0
                 else:
                     v_norm = np.clip(abs(v_i) / self.SENSOR_V_REF, 0.0, 1.0)
@@ -1400,6 +1484,9 @@ class Crossbar4x4View(QWidget):
         self.auto_rl_target_col = 0
         self.auto_rl_switch_time = 0.0
         self.auto_rl_last_applied_time = 0.0
+        self.rstdp_phase = "read"
+        self.rstdp_phase_timer = 0.0
+        self.rstdp_active_sensors = np.array([True, True, True, True], dtype=bool)
         self.V_rows = np.full(4, self.read_cfg.V_read)
         self.V_cols = np.full(4, self.read_cfg.V_col)
 
