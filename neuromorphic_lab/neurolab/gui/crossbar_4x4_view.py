@@ -1270,10 +1270,7 @@ class Crossbar4x4View(QWidget):
                     if self._spike_rng.random() < p_spike:
                         self.spike_pre[i] = True
 
-            self.V_rows = np.zeros(4)
-            for i in range(4):
-                if self.spike_pre[i]:
-                    self.V_rows[i] = float(self.elements[f'S{i+1}'].params.get('V_out', 0.8))
+            self.V_rows = np.array([float(self.elements[f'S{i+1}'].params.get('V_out', 0.2)) for i in range(4)])
             self.V_cols = np.zeros(4)
 
         else:

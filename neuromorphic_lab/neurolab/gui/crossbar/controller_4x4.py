@@ -49,7 +49,7 @@ class Crossbar4x4Controller:
         
         # Factores de escala con unidades explícitas
         # Ref: modelo fenomenológico dW/dt = a*I - W/tau (Strukov 2008 adaptado)
-        self.MEM_VOLATILE_A = 100.0     # [1/(V·s)]  ganancia de programación
+        self.MEM_VOLATILE_A = 5000.0    # [1/(A·s)]  ganancia de programación calibrada para uA
         self.MEM_VOLATILE_TAU = 1e-3    # [s]        tiempo de relajación
         self.TIA_R = 50e3               # [Ω]        transimpedancia (50 kΩ)
         self.LIF_R_IN = 1e6             # [Ω]        resistencia de entrada LIF
@@ -169,7 +169,7 @@ class Crossbar4x4Controller:
             x_v = float(p_v.get('x', 0.05))
             x_eq = float(p_v.get('x0', 0.05))
 
-            # FIX: Restaurar hacia x_eq, no hacia 0
+            # FIX: Restaurar hacia x_eq con ganancia calibrada
             dxdt_v = self.MEM_VOLATILE_A * I_cols[j] - ((x_v - x_eq) / max(1e-4, tau_rel))
             p_v['x'] = float(np.clip(x_v + dxdt_v * dt, 0.001, 1.0))
 
@@ -183,6 +183,8 @@ class Crossbar4x4Controller:
         for j in range(4):
             LIF_ui = self.elements[f'LIF_{j+1}']
             neuron = self.lif_neurons[j]
+            mv = self.elements.get(f'M_v{j+1}')
+            x_v = float(mv.params.get('x', 0.05)) if mv else 1.0
 
             # Manejo de inhibición lateral
             if winner_active and j != self.winner_j:
@@ -190,8 +192,9 @@ class Crossbar4x4Controller:
                 LIF_ui.params['V_m'] = 0.0
                 continue
 
-            # Inyectar corriente física al motor TIA + R_IN
-            V_TIA = I_cols[j] * self.TIA_R          # [V]
+            # Inyectar corriente física modulada por la celda volátil M_v en serie
+            I_col_eff = I_cols[j] * (0.1 + 0.9 * x_v)
+            V_TIA = I_col_eff * self.TIA_R          # [V]
             I_syn = V_TIA / self.LIF_R_IN           # [A] = V/R
             has_spiked = neuron.step(current_input=I_syn, dt=dt, t=self.sim_time)
 
@@ -208,7 +211,8 @@ class Crossbar4x4Controller:
         if self.winner_j is None:
             fired = np.where(spikes_this_tick > 0.5)[0]
             if len(fired) > 0:
-                self.winner_j = int(fired[0])
+                # Seleccionar la columna de mayor corriente entre las que dispararon
+                self.winner_j = int(fired[np.argmax([I_cols[j] for j in fired])])
                 self.winner_lock_time = self.sim_time + self.WINNER_LOCK_DURATION
 
         if self.winner_j is not None and self.sim_time >= self.winner_lock_time:
