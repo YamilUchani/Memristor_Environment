@@ -54,7 +54,7 @@ def draw_4x4_14(gui, **kwargs):
     ax2 = fig.add_subplot(1, 2, 2)
     gui._style_axis(ax2)
 
-    ax2.hist(G_matrix_uS, bins=10, color='#047857', edgecolor='white', alpha=0.8)
+    ax2.hist(G_matrix_uS, bins=10, range=(G_target_uS * 0.9, G_target_uS * 1.1), color='#047857', edgecolor='white', alpha=0.8)
     ax2.axvline(mean_G, color='#dc2626', linestyle='--', linewidth=2, label=f'Media = {mean_G:.2f} μS')
 
     ax2.set_xlabel('Conductancia G (μS)', color=text_color)

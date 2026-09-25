@@ -1,42 +1,32 @@
 """
 neurolab.gui.tests.tests_4x4.test_20_comparacion
 =================================================
-Prueba 4x4_20: Comparación Consolidada 1×1 vs 2×2 vs 4×4.
-
-CORRECCIÓN (v2):
-    Error de Sneak Paths ahora calculado con CrossbarSneak (modelo de vecinos corregido):
-        1×1  →  0 vecinos  →  0.0 %
-        2×2  →  ~1 vecino  → ~10.0 %
-        4×4  →  ~2 vecinos → ~20.0 %
-    Escala monótonamente creciente (físicamente correcto).
-
-    Los valores de sneak se calculan dinámicamente con el modelo corregido,
-    no son hardcoded.
+Prueba 4x4_20: Comparación Consolidada y Validación Analítica (1×1 vs 2×2 vs 4×4).
 """
 
 import numpy as np
-from neurolab.crossbar import CrossbarConfig
-from neurolab.crossbar import CrossbarSneak
+from neurolab.crossbar import Crossbar
 
 
 def draw_4x4_20(gui, **kwargs):
-    """Resumen consolidado comparando las tres arquitecturas Crossbar (1x1, 2x2, 4x4)."""
-    sizes = ['1×1', '2×2', '4×4']
-    dims = [(1, 1), (2, 2), (4, 4)]
-    n_memristors = [1, 4, 16]
-    max_current_uA = [160.0, 400.0, 1600.0]
-    ir_drop_pct = [0.0, 3.5, 9.8]
+    """Resumen comparativo validado cuantitativamente contra modelo analítico."""
+    resultados = {}
+    for N in [1, 2, 4]:
+        cb = Crossbar(N, N)
+        cb.set_uniform_conductance(69.4e-6)
+        cb.apply_voltages(np.ones(N) * 1.0)
+        I = cb.read_currents()
+        resultados[N] = {
+            'max_current_uA': float(np.max(I) * 1e6),
+            'ir_drop_pct': float(cb.compute_ir_drop_pct()),
+        }
 
-    # ✅ Bug 3 corregido: calcular sneak error dinámicamente con CrossbarSneak
-    sneak_error_pct = []
-    for nr, nc in dims:
-        cfg = CrossbarConfig(n_rows=nr, n_cols=nc)
-        cb = CrossbarSneak(cfg)
-        cb.set_uniform_conductance(200e-6)
-        # Voltaje de prueba uniforme
-        V_test = np.ones(nr) * 0.8
-        cb.apply_voltages(V_test)
-        sneak_error_pct.append(cb.sneak_error_pct())
+    # Comparación contra modelo analítico ideal (I_ideal = G * V * N)
+    for N, r in resultados.items():
+        I_ideal = 69.4e-6 * 1.0 * N
+        assert r['max_current_uA'] < I_ideal * 1e6 * 1.05, (
+            f"N={N}: corriente {r['max_current_uA']:.2f} μA excede el ideal analítico ({I_ideal*1e6:.2f} μS)"
+        )
 
     fig = gui.figure
     fig.clear()
@@ -47,69 +37,55 @@ def draw_4x4_20(gui, **kwargs):
     title_color = '#f3f4f6' if is_dark else '#1e3a8a'
     text_color = '#e5e7eb' if is_dark else '#1f2937'
 
+    sizes = ['1×1', '2×2', '4×4']
+    x_pos = np.arange(3)
+    max_currents = [resultados[N]['max_current_uA'] for N in [1, 2, 4]]
+    ir_drops = [resultados[N]['ir_drop_pct'] for N in [1, 2, 4]]
+
     # PANEL 1: Capacidad de Corriente Total
     ax1 = fig.add_subplot(1, 2, 1)
     gui._style_axis(ax1)
 
-    x_pos = np.arange(3)
-    ax1.bar(x_pos, max_current_uA, color=['#2563eb', '#d97706', '#047857'], edgecolor='white', width=0.45)
-
-    max_c = np.max(max_current_uA)
-    for k in range(3):
-        ax1.text(k, max_current_uA[k] + (max_c * 0.03), f'{max_current_uA[k]:.0f} μA',
+    ax1.bar(x_pos, max_currents, color=['#2563eb', '#d97706', '#047857'], edgecolor='white', width=0.45)
+    max_c = max(max_currents)
+    for k, N in enumerate([1, 2, 4]):
+        ax1.text(k, max_currents[k] + (max_c * 0.03), f'{max_currents[k]:.1f} μA',
                  ha='center', color=text_color, fontsize=9, fontweight='bold')
 
     ax1.set_xticks(x_pos)
-    ax1.set_xticklabels([f'{s}\n({n_memristors[k]} mem)' for k, s in enumerate(sizes)])
+    ax1.set_xticklabels([f'{s}\n(N={N})' for k, (s, N) in enumerate(zip(sizes, [1, 2, 4]))])
     ax1.set_ylabel('Corriente Máxima de Salida (μA)', color=text_color)
     ax1.set_title('Capacidad de Corriente Agregada (N×N)', color=title_color, fontsize=11, fontweight='bold')
     ax1.set_ylim(0, max_c * 1.25)
 
-    # PANEL 2: No Idealidades — Sneak Paths y IR Drop
+    # PANEL 2: IR Drop % según Escala
     ax2 = fig.add_subplot(1, 2, 2)
     gui._style_axis(ax2)
 
-    width = 0.35
-    bars1 = ax2.bar(x_pos - width/2, sneak_error_pct, width,
-                    label='Error Sneak Paths (%)', color='#dc2626', edgecolor='white')
-    bars2 = ax2.bar(x_pos + width/2, ir_drop_pct, width,
-                    label='Caída IR Drop R_línea (%)', color='#9333ea', edgecolor='white')
-
-    for k in range(3):
-        ax2.text(k - width/2, sneak_error_pct[k] + 0.5, f'{sneak_error_pct[k]:.1f}%',
-                 ha='center', color=text_color, fontsize=8, fontweight='bold')
-        ax2.text(k + width/2, ir_drop_pct[k] + 0.5, f'{ir_drop_pct[k]:.1f}%',
-                 ha='center', color=text_color, fontsize=8, fontweight='bold')
+    ax2.bar(x_pos, ir_drops, color='#9333ea', edgecolor='white', width=0.45)
+    for k, val in enumerate(ir_drops):
+        ax2.text(k, val + 0.1, f'{val:.2f}%', ha='center', color=text_color, fontsize=9, fontweight='bold')
 
     ax2.set_xticks(x_pos)
     ax2.set_xticklabels(sizes)
-    ax2.set_ylabel('Error Relativo (%)', color=text_color)
-    ax2.set_title('Impacto de No-Idealidades según Escala\n(Sneak: escala monótonamente con N)',
-                  color=title_color, fontsize=10, fontweight='bold')
-    ax2.legend(loc='upper left')
-    max_err = max(max(sneak_error_pct), max(ir_drop_pct))
-    ax2.set_ylim(0, max_err * 1.4 + 2)
+    ax2.set_ylabel('Caída IR Drop R_línea (%)', color=text_color)
+    ax2.set_title('Caída IR Drop según Escala', color=title_color, fontsize=11, fontweight='bold')
+    ax2.set_ylim(0, max(max(ir_drops) * 1.3, 1.0))
 
-    # Anotación: progresión correcta
-    ax2.annotate('↑ Crece con N', xy=(2, sneak_error_pct[2]),
-                 xytext=(1.5, sneak_error_pct[2] * 0.6 + max_err * 0.15),
-                 arrowprops=dict(arrowstyle='->', color='#dc2626', lw=1.2),
-                 color='#dc2626', fontsize=8, fontweight='bold')
-
-    fig.suptitle('Prueba 4×4_20: Comparación Consolidada de Arquitecturas Crossbar 1×1 / 2×2 / 4×4',
+    fig.suptitle('Prueba 4×4_20: Comparación Consolidada Validada Analíticamente',
                  color=title_color, fontsize=12, fontweight='bold', y=0.98)
 
     fig.tight_layout(rect=[0, 0.02, 1, 0.95])
     gui.canvas.draw()
 
+    metrics_formatted = {
+        f"Capacidad {N}x{N}": f"{resultados[N]['max_current_uA']:.1f} μA"
+        for N in [1, 2, 4]
+    }
+    for N in [1, 2, 4]:
+        metrics_formatted[f"IR Drop {N}x{N}"] = f"{resultados[N]['ir_drop_pct']:.2f} %"
+
     return {
         'status': 'PASS',
-        'metrics': {
-            'Capacidad 1x1': '160 μA (1 mem)',
-            'Capacidad 2x2': '400 μA (4 mems)',
-            'Capacidad 4x4': '1600 μA (16 mems)',
-            'Sneak Error 1x1': f'{sneak_error_pct[0]:.1f} %',
-            'Sneak Error 2x2': f'{sneak_error_pct[1]:.1f} %',
-            'Sneak Error 4x4': f'{sneak_error_pct[2]:.1f} %  ← escala correctamente',
-        }
+        'metrics': metrics_formatted
     }

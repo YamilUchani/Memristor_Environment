@@ -23,10 +23,21 @@ class Crossbar:
     Crossbar memristivo N×M unificado.
     """
 
-    def __init__(self, config: CrossbarConfig = None, **kwargs):
+    def __init__(self, config: Optional[CrossbarConfig] = None, n_rows: Optional[int] = None, n_cols: Optional[int] = None, **kwargs):
         """Inicializa el crossbar."""
-        if config is None:
+        if isinstance(config, int):
+            actual_n_rows = config
+            actual_n_cols = n_rows if isinstance(n_rows, int) else actual_n_rows
+            config = CrossbarConfig(n_rows=actual_n_rows, n_cols=actual_n_cols, **kwargs)
+        elif config is None:
+            if n_rows is not None:
+                kwargs['n_rows'] = n_rows
+            if n_cols is not None:
+                kwargs['n_cols'] = n_cols
             config = CrossbarConfig(**kwargs)
+        elif not isinstance(config, CrossbarConfig):
+            config = CrossbarConfig(**kwargs)
+
         self.cfg = config
         self.config = config  # Alias para compatibilidad
 
@@ -120,6 +131,13 @@ class Crossbar:
             R = 1.0 / max(1e-15, float(G))
             r_on = getattr(cell, 'r_on', getattr(getattr(cell, 'electrical', None), 'r_on', 100.0))
             r_off = getattr(cell, 'r_off', getattr(getattr(cell, 'electrical', None), 'r_off', 16000.0))
+            if hasattr(cell, 'electrical'):
+                if R < cell.electrical.r_on:
+                    cell.electrical.r_on = R
+                    r_on = R
+                if R > cell.electrical.r_off:
+                    cell.electrical.r_off = R
+                    r_off = R
             if abs(r_off - r_on) > 1e-12:
                 x = (r_off - R) / (r_off - r_on)
             else:
@@ -193,23 +211,17 @@ class Crossbar:
         return self.I_out
 
     def read_with_sneak_paths(self, V_rows: np.ndarray = None) -> np.ndarray:
-        """Lectura con Sneak Paths (modelo de vecinos)."""
+        """Lectura con Sneak Paths y resistencia de línea (Kirchhoff MNA Nodal Solver)."""
+        from neurolab.crossbar.nodal_solver import solve_crossbar_nodal
         if V_rows is None:
             V_rows = self.V_rows
-        G = self.G_matrix
         V = np.asarray(V_rows, dtype=float)
         self.V_rows = V.copy()
         self.V_cols = np.zeros(self.n_cols)
-        I_target = G.T @ V
-
-        alpha = getattr(self.cfg, 'R_sneak_factor', 0.05)
-        V_mean = float(np.mean(np.abs(V))) if len(V) > 0 else 0.0
-        I_sneak = np.zeros(self.n_cols)
-        for j in range(self.n_cols):
-            for i in range(self.n_rows):
-                neighbors = int(i > 0) + int(i < self.n_rows - 1)
-                I_sneak[j] += alpha * G[i, j] * V_mean * neighbors
-        self.I_out = I_target + I_sneak
+        R_wire = float(getattr(self.cfg, 'R_sneak_factor', getattr(self.cfg, 'line_resistance', 1e-3)))
+        if R_wire <= 0:
+            R_wire = 1e-3
+        self.I_out = solve_crossbar_nodal(self.G_matrix, V, R_wire=R_wire)
         return self.I_out
 
     def read_with_line_resistance(self, V_rows: np.ndarray = None) -> np.ndarray:
@@ -265,6 +277,18 @@ class Crossbar:
         if norm < 1e-15:
             return 0.0
         return float(np.linalg.norm(I_total - I_ideal) / norm * 100.0)
+
+    def compute_ir_drop_pct(self, V_rows: np.ndarray = None) -> float:
+        """Calcula el porcentaje de caída IR drop respecto a la corriente ideal."""
+        if V_rows is None:
+            V_rows = self.V_rows
+        I_ideal = self.read_objective_only(V_rows)
+        I_real = self.read_with_line_resistance(V_rows)
+        norm_ideal = np.linalg.norm(I_ideal)
+        if norm_ideal < 1e-15:
+            return 0.0
+        return float(np.linalg.norm(I_ideal - I_real) / norm_ideal * 100.0)
+
 
     def _effective_voltage(self, V_row: float, position: int) -> float:
         """Voltaje efectivo en la posición `position` de la fila considerando IR drop."""

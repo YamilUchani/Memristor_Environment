@@ -105,3 +105,34 @@ def test_crossbar_4x4_read_mode_does_not_inflate_conductance(qapp):
     view.close()
     view.deleteLater()
 
+
+def test_read_mode_uses_core_physics(qapp):
+    """
+    FASE 1 VERIFICACIÓN: Verifica que el controlador en modo lectura pase por la física del core.
+    Al cambiar enable_sneak_paths en el core, la corriente leída DEBE cambiar.
+    """
+    view = Crossbar4x4View()
+    ctrl = view.controller
+
+    V_rows = np.array([1.0, 0.5, 0.5, 0.5])
+    V_cols = np.zeros(4)
+
+    # 1. Sin sneak paths
+    ctrl.crossbar.cfg.enable_sneak_paths = False
+    ctrl.crossbar.cfg.R_sneak_factor = 0.5
+    res_no_sneak = ctrl.step(dt=0.03, mode="read", plasticity_mode="off", is_animating=True, V_rows=V_rows, V_cols=V_cols)
+    I_without_sneak = res_no_sneak["I_cols"]
+
+    # 2. Con sneak paths
+    ctrl.crossbar.cfg.enable_sneak_paths = True
+    res_sneak = ctrl.step(dt=0.03, mode="read", plasticity_mode="off", is_animating=True, V_rows=V_rows, V_cols=V_cols)
+    I_with_sneak = res_sneak["I_cols"]
+
+    assert not np.allclose(I_with_sneak, I_without_sneak), (
+        "El modo read ignora enable_sneak_paths (no está enrutando por la física del core)"
+    )
+
+    view.close()
+    view.deleteLater()
+
+

@@ -46,15 +46,23 @@ class Crossbar4x4Controller:
             v_adapt_inc=0.15, tau_adapt=0.05, t_ref=0.15, v_rest=0.0, v_reset=0.0
         )
         self.lif_neurons = [LIFNeuron(lif_cfg) for _ in range(4)]
-        # El crossbar entrega corrientes de cientos de microamperios. Esta
-        # conversión mantiene el punto de operación de la LIF cerca de 1 V.
-        # Con G ~= 70 uS y V ~= 1 V, I_cols ~= 70 uA. Con R_leak=1 Mohm
-        # la escala debe producir V_inf=I_syn*R_leak por encima de V_th.
-        self.LIF_I_scale = 0.02
+        
+        # Factores de escala con unidades explícitas
+        # Ref: modelo fenomenológico dW/dt = a*I - W/tau (Strukov 2008 adaptado)
+        self.MEM_VOLATILE_A = 100.0     # [1/(V·s)]  ganancia de programación
+        self.MEM_VOLATILE_TAU = 1e-3    # [s]        tiempo de relajación
+        self.TIA_R = 50e3               # [Ω]        transimpedancia (50 kΩ)
+        self.LIF_R_IN = 1e6             # [Ω]        resistencia de entrada LIF
+        self.LIF_I_scale = self.TIA_R / self.LIF_R_IN
 
         # Weight decay
         self.G_base = 69.4e-6
         self.G_decay_rate = 0.005
+        self._gui_dirty = True
+
+    def mark_gui_dirty(self):
+        """Marca que la GUI ha actualizado conductancias manualmente."""
+        self._gui_dirty = True
 
     def reset(self):
         self.sim_time = 0.0
@@ -65,6 +73,7 @@ class Crossbar4x4Controller:
             neuron.reset()
         self.stdp_rule.reset(4, 4)
         self.rstdp_rule.reset(4, 4)
+        self._gui_dirty = True
 
     def set_reward(self, reward: float):
         self.rstdp_rule.set_reward(reward)
@@ -108,18 +117,18 @@ class Crossbar4x4Controller:
         else:
             spike_pre_arr = np.asarray(spike_pre, dtype=float)
 
-        # 1. Sincronizar el core sólo cuando la física de escritura lo usa.
-        if mode == "program_v2":
+        # 1. Sincronizar conductancias GUI -> Core solo si la GUI fue editada manualmente o al inicio
+        if self._gui_dirty or mode == "program_v2":
             for i in range(4):
                 for j in range(4):
                     mem = self.elements.get(f'M{i+1}{j+1}')
                     if mem:
                         self.crossbar.set_conductance(i, j, float(mem.params.get('G', 69.4e-6)))
+            self._gui_dirty = False
 
-        # 2. Update Memristors in Core (Física Strukov: integración dw/dt activa ante pulsos sobre-umbral)
+        # 2. Aplicar voltajes al backend físico del Crossbar
         self.crossbar.V_rows = V_rows
         self.crossbar.V_cols = V_cols
-        v_net_mat = V_rows[:, None] - V_cols[None, :]
         if mode == "program_v2":
             active_rows = np.flatnonzero(np.abs(V_rows) > 1e-12)
             active_cols = np.flatnonzero(np.abs(V_cols) > 1e-12)
@@ -128,8 +137,16 @@ class Crossbar4x4Controller:
             self.crossbar.update_memristors(dt)
             self.crossbar.programming_target = None
 
-        # 3. Sync GUI
-        G_mat = self.crossbar.G_matrix if mode == "program_v2" else get_G_matrix(self.elements, 4, 4)
+        # 3. LECTURA SIEMPRE A TRAVÉS DEL CORE (ÚNICA FUENTE DE VERDAD)
+        if np.all(V_cols == 0):
+            I_cols = self.crossbar.read(V_rows)
+        else:
+            I_cols = self.crossbar.read(V_rows - V_cols)
+        self.crossbar.V_rows = V_rows
+        self.crossbar.V_cols = V_cols
+
+        # 4. Sincronizar conductancias y estado Core -> GUI
+        G_mat = self.crossbar.G_matrix
         for i in range(4):
             for j in range(4):
                 mem = self.elements.get(f'M{i+1}{j+1}')
@@ -144,21 +161,16 @@ class Crossbar4x4Controller:
                     ROFF = float(mem.params.get('ROFF', 16000.0))
                     x_calc = (ROFF - R_new) / (ROFF - RON) if ROFF != RON else 0.1
                     mem.params['x'] = float(np.clip(x_calc, 0.01, 0.99))
-
-        # Volatiles
-        # Cada columna ve la diferencia de potencial fila-columna. Esto
-        # conserva la lectura ideal cuando V_cols=0 y evita ignorar V_col.
-        I_cols = np.sum(G_mat * (V_rows[:, None] - V_cols[None, :]), axis=0)
         for j in range(4):
             mv = self.elements.get(f'M_v{j+1}')
             if not mv: continue
             p_v = mv.params
-            tau_rel = float(p_v.get('volatile_tau_relax', 0.3))
+            tau_rel = float(p_v.get('volatile_tau_relax', self.MEM_VOLATILE_TAU))
             x_v = float(p_v.get('x', 0.05))
             x_eq = float(p_v.get('x0', 0.05))
 
             # FIX: Restaurar hacia x_eq, no hacia 0
-            dxdt_v = 100.0 * I_cols[j] - ((x_v - x_eq) / max(1e-4, tau_rel))
+            dxdt_v = self.MEM_VOLATILE_A * I_cols[j] - ((x_v - x_eq) / max(1e-4, tau_rel))
             p_v['x'] = float(np.clip(x_v + dxdt_v * dt, 0.001, 1.0))
 
         self.spike_pre = spike_pre_arr
@@ -178,8 +190,9 @@ class Crossbar4x4Controller:
                 LIF_ui.params['V_m'] = 0.0
                 continue
 
-            # Inyectar corriente física al motor
-            I_syn = I_cols[j] * self.LIF_I_scale
+            # Inyectar corriente física al motor TIA + R_IN
+            V_TIA = I_cols[j] * self.TIA_R          # [V]
+            I_syn = V_TIA / self.LIF_R_IN           # [A] = V/R
             has_spiked = neuron.step(current_input=I_syn, dt=dt, t=self.sim_time)
 
             # Sincronizar UI con el motor físico

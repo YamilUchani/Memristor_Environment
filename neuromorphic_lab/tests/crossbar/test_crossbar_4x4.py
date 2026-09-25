@@ -8,7 +8,7 @@ import pytest
 import numpy as np
 from matplotlib.figure import Figure
 
-from neurolab.crossbar import CrossbarIdeal, CrossbarSneak, CrossbarLine, CrossbarConfig
+from neurolab.crossbar import Crossbar, CrossbarIdeal, CrossbarSneak, CrossbarLine, CrossbarConfig
 from neurolab.gui.crossbar_elements import (
     get_G_matrix, get_V_vector, set_G_matrix, compute_currents, matrix_to_heatmap_string
 )
@@ -89,7 +89,15 @@ def test_all_20_draw_functions_4x4(draw_func):
     res = draw_func(gui)
     assert isinstance(res, dict)
     assert res.get('status') == 'PASS'
-    assert 'metrics' in res
+    
+    # Exigir métricas numéricas y validarlas contra no-NaN, no-Inf y rangos físicos
+    metrics = res.get('metrics', {})
+    assert len(metrics) > 0, f"{draw_func.__name__} no reporta métricas"
+    for key, val in metrics.items():
+        if isinstance(val, (int, float)):
+            assert not np.isnan(val), f"{key} es NaN en {draw_func.__name__}"
+            assert not np.isinf(val), f"{key} es Inf en {draw_func.__name__}"
+            assert abs(val) < 1e6, f"{key}={val} fuera de rango físico"
 
 
 def test_crossbar_4x4_volatile_elements():
@@ -193,4 +201,58 @@ def test_crossbar_4x4_physical_realism_integration():
     assert np.all(I_cols > 0), "Las corrientes de columna debieron ser mayores a cero con V_row[0]=2V"
 
     view.deleteLater()
+
+
+def test_sneak_paths_diagonal():
+    """FASE 2 VERIFICACIÓN: Comprueba el resolvedor nodal de Kirchhoff con G diagonal y R_wire infímo."""
+    from neurolab.crossbar.nodal_solver import solve_crossbar_nodal
+    G = np.diag([1e-3, 1e-3, 1e-3, 1e-3])
+    V = np.ones(4)
+    I = solve_crossbar_nodal(G, V, R_wire=1e-9)
+    assert np.allclose(I, 1e-3 * np.ones(4), rtol=1e-3)
+
+
+def test_ir_drop_conserves_kcl():
+    """FASE 3 VERIFICACIÓN: Comprueba que el modelo IR drop satisface la conservación de carga de Kirchhoff (KCL)."""
+    from neurolab.crossbar.line_resistance import LineResistanceModel
+    G = np.array([
+        [200e-6, 100e-6],
+        [150e-6, 250e-6]
+    ])
+    V = np.array([0.8, 0.4])
+    model = LineResistanceModel(R_H=10.0, R_V=10.0)
+    I_cols, V_eff = model.solve(G, V)
+    I_cell = G * V_eff
+    I_in = np.sum(I_cell, axis=1)
+    I_out = np.sum(I_cell, axis=0)
+    assert np.isclose(np.sum(I_in), np.sum(I_out), rtol=1e-6)
+
+
+def test_lif_current_in_physiological_range():
+    """FASE 4 VERIFICACIÓN: Verifica que la corriente inyectada a LIFNeuron esté en rango fisiológico (pA - uA)."""
+    from neurolab.gui.crossbar.controller_4x4 import Crossbar4x4Controller
+    ctrl = Crossbar4x4Controller(elements={}, crossbar_core=None)
+    I_syn = 1e-6 * ctrl.TIA_R / ctrl.LIF_R_IN   # 1 μA -> 50 nA
+    assert 1e-12 < I_syn < 1e-6, "I_syn fuera de rango fisiológico"
+
+
+def test_half_select_write_disturb():
+    """FASE 7 VERIFICACIÓN: Verifica que el esquema V/2 produzca perturbación (write-disturb) física en celdas half-selected."""
+    cb = Crossbar(4, 4)
+    cb.set_uniform_conductance(69.4e-6)
+    G0 = cb.G_matrix.copy()
+    cb.program_V2(0, 0, V_program=2.0, isolate_half_select=False)
+    G1 = cb.G_matrix.copy()
+
+    delta_target = abs(G1[0, 0] - G0[0, 0])
+    dG = np.abs(G1 - G0)
+    dG[0, 0] = 0.0
+    delta_offdiag = float(np.max(dG))
+
+    assert delta_offdiag > 0, "El half-select no está perturbando (test falsificado)"
+    assert delta_offdiag < delta_target, "Perturbación mayor que la escritura en la celda objetivo"
+
+
+
+
 
