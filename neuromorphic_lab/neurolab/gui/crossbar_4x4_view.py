@@ -1335,18 +1335,36 @@ class Crossbar4x4View(QWidget):
         for elem in self.elements.values():
             elem.selected = False
             elem.hover = False
-            if isinstance(elem, (MemristorElement, VolatileMemristorElement)):
-                elem.params['seed'] = random.randint(10000, 999999)
-                if hasattr(elem, 'on_params_changed'):
-                    elem.on_params_changed()
+
+        for i in range(4):
+            for j in range(4):
+                mem = self.elements.get(f'M{i+1}{j+1}')
+                if mem:
+                    x0 = float(mem.params.get('x0', 0.10))
+                    mem.params['x'] = x0
+                    mem.params['seed'] = random.randint(10000, 999999)
+                    mem.on_params_changed()
+                    self.controller.crossbar.set_conductance(i, j, float(mem.params.get('G', 69.4e-6)))
+
+        for j in range(4):
+            mv = self.elements.get(f'M_v{j+1}')
+            if mv:
+                x0_v = float(mv.params.get('x0', 0.05))
+                mv.params['x'] = x0_v
+                mv.params['seed'] = random.randint(10000, 999999)
+                if hasattr(mv, 'on_params_changed'):
+                    mv.on_params_changed()
 
         for i in range(4):
             lif = self.elements[f'LIF_{i+1}']
             lif.params['V_m'] = 0.0
-            lif.params['V_th'] = float(lif.params.get('V_th_base', 2.5))
+            lif.params['V_th'] = float(lif.params.get('V_th_base', 1.0))
             lif.params['spike_count'] = 0
+            act = self.elements[f'Act_{i+1}']
+            act.params['is_winner'] = False
+            act.params['action'] = 'listo'
 
-        self.status_label.setText("⏹ Reset completo (Semillas estocásticas renovadas)")
+        self.status_label.setText("⏹ Reset completo: Conductancias restauradas a estado inicial x0 (~69.4 μS) con variabilidad D2D.")
         self.canvas.update()
 
     def _on_reset_matrix(self):
