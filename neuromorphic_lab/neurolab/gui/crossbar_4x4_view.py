@@ -1420,7 +1420,7 @@ class Crossbar4x4View(QWidget):
                 LIF.params['is_winner'] = False
                 Act.params['is_winner'] = False
                 Act.params['action'] = '🚫 INHIBIDO' if winner_j is not None else 'listo'
-                column_rewards[j] = -1.0  # Perdedores reciben R = -1.0 (LTD / Penalización)
+                column_rewards[j] = 0.0  # Perdedores reciben R = 0.0 (Sin recompensa / Sin cambio)
                 self.spike_post[j] = 0.0
 
             spikes_str.append(f"LIF_{j+1}={LIF.params['spike_count']}")

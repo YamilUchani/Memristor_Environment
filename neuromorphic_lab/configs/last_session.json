@@ -3,7 +3,7 @@
         "schema_version": "1.0",
         "app_version": "0.1.0",
         "profile_name": "[Última Sesión]",
-        "saved_at": "2026-09-24T23:37:13"
+        "saved_at": "2026-09-24T23:55:49"
     },
     "device_name": "HfO₂ Serie Neurona",
     "material": "HfO₂ (Óxido de Hafnio - CMOS LIF 2025)",
@@ -17,7 +17,7 @@
     "D_nm": 10.0,
     "mu_v": 1e-14,
     "seed": 42,
-    "realism_mode_index": 4,
+    "realism_mode_index": 3,
     "window_type": "Biolek",
     "biolek_p": 2,
     "enable_c2c": false,
