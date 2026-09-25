@@ -333,7 +333,8 @@ class Crossbar4x4Canvas(BaseCrossbarCanvas):
                                  f"FILA {i+1} (V={v_r_val:+.2f}V)")
 
         # --- COLUMNAS (VERTICALES / POST - VERDE) ---
-        painter.setPen(pen_col)
+        winner_col = getattr(view, 'winner_j', None)
+
         for j in range(4):
             M1 = self.elements.get(f'M1{j+1}')
             M4 = self.elements.get(f'M4{j+1}')
@@ -342,8 +343,17 @@ class Crossbar4x4Canvas(BaseCrossbarCanvas):
             if M1 and M4 and Mv and LIF:
                 if is_prog and j == getattr(view, 'target_cell', (0, 0))[1]:
                     painter.setPen(QPen(QColor('#f38ba8'), wire_w))
+                elif winner_col is not None:
+                    if j == winner_col:
+                        glow_pen = QPen(QColor(166, 227, 161, 80), 9)
+                        painter.setPen(glow_pen)
+                        painter.drawLine(int(M1.x), int(M1.y - 60), int(M1.x), int(LIF.y - 35))
+                        painter.setPen(QPen(QColor('#a6e3a1'), 5))
+                    else:
+                        painter.setPen(QPen(QColor('#313244'), 1.5))
                 else:
                     painter.setPen(pen_col)
+
                 painter.drawLine(int(M1.x), int(M1.y - 60), int(M1.x), int(M1.y - 30))
                 for i in range(3):
                     Ma = self.elements.get(f'M{i+1}{j+1}')
@@ -351,13 +361,18 @@ class Crossbar4x4Canvas(BaseCrossbarCanvas):
                     if Ma and Mb:
                         painter.drawLine(int(Ma.x), int(Ma.y + 30), int(Mb.x), int(Mb.y - 30))
                 painter.drawLine(int(M4.x), int(M4.y + 30), int(Mv.x), int(Mv.y - 25))
-                painter.setPen(pen_col)
+
+                if winner_col is not None:
+                    col_wire_pen = QPen(QColor('#a6e3a1'), 5) if j == winner_col else QPen(QColor('#313244'), 1.5)
+                    painter.setPen(col_wire_pen)
+                else:
+                    painter.setPen(pen_col)
+
                 painter.drawLine(int(Mv.x), int(Mv.y + 25), int(LIF.x), int(LIF.y - 35))
                 painter.drawLine(int(LIF.x - 5), int(LIF.y - 45), int(LIF.x), int(LIF.y - 35))
                 painter.drawLine(int(LIF.x + 5), int(LIF.y - 45), int(LIF.x), int(LIF.y - 35))
 
         # Etiquetas de columna
-        # Etiquetas de columna (Posicionadas a y=88 sin solaparse con decodificadores ni título)
         painter.setFont(FONTS['subtitle'])
         for j in range(4):
             M1 = self.elements.get(f'M1{j+1}')
@@ -366,18 +381,31 @@ class Crossbar4x4Canvas(BaseCrossbarCanvas):
                 if is_prog:
                     _, tg_c = getattr(view, 'target_cell', (0, 0))
                     col_str = QColor('#f38ba8') if j == tg_c else get_qcolor('neuron')
+                    lbl_col = f"COL {j+1} (V={v_c_val:+.2f}V)"
+                elif winner_col is not None:
+                    if j == winner_col:
+                        col_str = QColor('#f9e2af')
+                        lbl_col = f"🏆 COL {j+1} (GANADORA)"
+                    else:
+                        col_str = QColor('#6c7086')
+                        lbl_col = f"COL {j+1} (INHIBIDA)"
                 else:
                     col_str = get_qcolor('neuron')
+                    lbl_col = f"COL {j+1} (V={v_c_val:+.2f}V)"
+
                 painter.setPen(col_str)
-                painter.drawText(QRectF(M1.x - 70, 88, 140, 20), Qt.AlignCenter,
-                                 f"COL {j+1} (V={v_c_val:+.2f}V)")
+                painter.drawText(QRectF(M1.x - 85, 88, 170, 20), Qt.AlignCenter, lbl_col)
 
         # --- LIF → Actuador ---
-        painter.setPen(pen_act)
         for j in range(4):
             LIF = self.elements.get(f'LIF_{j+1}')
             Act = self.elements.get(f'Act_{j+1}')
             if LIF and Act:
+                if winner_col is not None:
+                    act_pen = QPen(QColor('#a6e3a1'), 4) if j == winner_col else QPen(QColor('#313244'), 1.5)
+                else:
+                    act_pen = pen_act
+                painter.setPen(act_pen)
                 painter.drawLine(int(LIF.x), int(LIF.y + 35), int(Act.x), int(Act.y - 30))
                 painter.drawLine(int(Act.x - 5), int(Act.y - 40), int(Act.x), int(Act.y - 30))
                 painter.drawLine(int(Act.x + 5), int(Act.y - 40), int(Act.x), int(Act.y - 30))
@@ -406,7 +434,8 @@ class Crossbar4x4Canvas(BaseCrossbarCanvas):
                         px = M1.x
                         py = y_start + offset * (y_end - y_start)
                         painter.setPen(Qt.NoPen)
-                        painter.setBrush(QBrush(QColor(166, 227, 161, 230)))
+                        particle_col = QColor(166, 227, 161, 240) if (winner_col is None or j == winner_col) else QColor(108, 112, 134, 100)
+                        painter.setBrush(QBrush(particle_col))
                         painter.drawEllipse(QPointF(px, py), 4.0, 4.0)
 
     def _draw_extra(self, painter: QPainter):
@@ -462,7 +491,24 @@ class Crossbar4x4Canvas(BaseCrossbarCanvas):
         painter.drawText(QRectF(240, 14, 490, 28), Qt.AlignCenter,
                          f"CROSSBAR 4×4 — MATRIZ DE 16 MEMRISTORES STRUKOV{mode_str}")
 
-        # 4. Ecuación matricial de lectura en la parte inferior
+        # 4. Bus de Inhibición Lateral Interneuronal WTA (si hay un ganador activo)
+        winner_j = getattr(view, 'winner_j', None)
+        if winner_j is not None:
+            LIF_win = self.elements.get(f'LIF_{winner_j+1}')
+            LIF_1 = self.elements.get('LIF_1')
+            LIF_4 = self.elements.get('LIF_4')
+            if LIF_win and LIF_1 and LIF_4:
+                y_inhib = LIF_win.y
+                pen_inhib = QPen(QColor('#f38ba8'), 2, Qt.DashLine)
+                painter.setPen(pen_inhib)
+                painter.drawLine(int(LIF_1.x - 30), int(y_inhib), int(LIF_4.x + 30), int(y_inhib))
+
+                painter.setFont(FONTS['small'])
+                painter.setPen(QColor('#f38ba8'))
+                painter.drawText(QRectF(LIF_1.x - 40, y_inhib - 48, (LIF_4.x - LIF_1.x) + 80, 18),
+                                 Qt.AlignCenter, "⚡ BUS DE INHIBICIÓN LATERAL WTA (R-STDP LTD ACTIVO)")
+
+        # 5. Ecuación matricial de lectura en la parte inferior
         G = get_G_matrix(self.elements, 4, 4)
         V = np.array([float(self.elements[f'S{i+1}'].params.get('V_out', 0.5))
                       for i in range(4)])
@@ -1299,7 +1345,10 @@ class Crossbar4x4View(QWidget):
         G = get_G_matrix(self.elements, 4, 4)
         I = compute_currents(G, self.V_rows)
 
-        # 1. Integración de potencial de membrana y detección de candidatos a disparar
+        # 1. Estado de inhibición previa o candado activo
+        current_winner = self.winner_j if (self.winner_j is not None and self._sim_time < self.winner_lock_time) else None
+
+        # 2. Integración de potencial de membrana con Inhibición Lateral WTA activa
         spikes_this_tick = np.zeros(4)
         for j in range(4):
             LIF = self.elements[f'LIF_{j+1}']
@@ -1314,21 +1363,26 @@ class Crossbar4x4View(QWidget):
             V_th += (V_th_base - V_th) * (dt / max(1e-4, tau_adapt))
             LIF.params['V_th'] = V_th
 
-            dVm = ((I[j] - V_m / R_leak) / C_m) * dt
-            V_m_next = V_m + dVm
-            LIF.params['_v_m_next'] = V_m_next
+            # Si otra neurona es la ganadora activa, inhibición lateral clamp a 0V (I_effective = 0)
+            if current_winner is not None and j != current_winner:
+                V_m_next = 0.0
+                LIF.params['V_m'] = 0.0
+                LIF.params['_v_m_next'] = 0.0
+                spikes_this_tick[j] = 0.0
+            else:
+                dVm = ((I[j] - V_m / R_leak) / C_m) * dt
+                V_m_next = V_m + dVm
+                LIF.params['_v_m_next'] = V_m_next
+                if V_m_next >= V_th:
+                    spikes_this_tick[j] = 1.0
 
-            if V_m_next >= V_th:
-                spikes_this_tick[j] = 1.0
-
-        # 2. Integración Leaky del Acumulador de Evidencia (Gold & Shadlen 2007)
+        # 3. Integración Leaky del Acumulador de Evidencia (Gold & Shadlen 2007)
         decay_ev = np.exp(-dt / self.tau_evidence)
         self.evidence_accumulator = self.evidence_accumulator * decay_ev + spikes_this_tick
 
-        # 3. Decisión de Ganador por Acumulación de Evidencia (Winner Accumulator)
-        if self.winner_j is not None and self._sim_time < self.winner_lock_time:
-            # Mantener ganador firme mientras dure el candado de inercia de decisión (500 ms)
-            winner_j = self.winner_j
+        # 4. Decisión de Ganador por Acumulación de Evidencia (Winner Accumulator)
+        if current_winner is not None:
+            winner_j = current_winner
         else:
             max_idx = int(np.argmax(self.evidence_accumulator))
             if self.evidence_accumulator[max_idx] >= self.evidence_threshold:
@@ -1340,6 +1394,12 @@ class Crossbar4x4View(QWidget):
                     self.winner_j = None
                 winner_j = self.winner_j
 
+        # Margen de dominancia física
+        sorted_ev = np.sort(self.evidence_accumulator)
+        max_ev = sorted_ev[-1]
+        second_ev = sorted_ev[-2]
+        margin = max_ev / max(1e-6, second_ev)
+
         column_rewards = np.full(4, -1.0)
         spikes_str = []
 
@@ -1348,31 +1408,36 @@ class Crossbar4x4View(QWidget):
             Act = self.elements[f'Act_{j+1}']
             V_th = float(LIF.params.get('V_th', 2.5))
             V_adapt_inc = float(LIF.params.get('V_adapt_inc', 0.02))
-            V_m_next = float(LIF.params.get('_v_m_next', 0.0))
 
             if winner_j is not None and j == winner_j:
                 LIF.params['V_m'] = 0.0
                 LIF.params['V_th'] = V_th + V_adapt_inc  # Auto-frenado homeostático por disparo
                 LIF.params['spike_count'] = int(LIF.params.get('spike_count', 0)) + int(spikes_this_tick[j])
-                Act.params['action'] = '🏆 GANADOR'
+                LIF.params['is_winner'] = True
+                Act.params['is_winner'] = True
+                Act.params['action'] = f'🏆 GANADOR (×{margin:.1f})'
                 column_rewards[j] = +1.0  # Ganador recibe R = +1.0 (LTP / Recompensa)
                 self.spike_post[j] = 1.0
             else:
-                LIF.params['V_m'] = 0.0 if winner_j is not None else V_m_next
-                Act.params['action'] = 'listo'
+                LIF.params['V_m'] = 0.0 if winner_j is not None else float(LIF.params.get('_v_m_next', 0.0))
+                LIF.params['is_winner'] = False
+                Act.params['is_winner'] = False
+                Act.params['action'] = '🚫 INHIBIDO' if winner_j is not None else 'listo'
                 column_rewards[j] = -1.0  # Perdedores reciben R = -1.0 (LTD / Penalización)
                 self.spike_post[j] = 0.0
 
             spikes_str.append(f"LIF_{j+1}={LIF.params['spike_count']}")
 
-        # 3. Aplicar vector de recompensas por columna a R-STDP
+        # 5. Aplicar vector de recompensas por columna a R-STDP
         if self.plasticity_mode == "rstdp" and self.canvas.is_animating:
             self.rstdp_rule.set_reward(column_rewards)
 
         if not (self.plasticity_mode == "rstdp" and self.canvas.is_animating):
+            margin_info = f" │ Margen: ×{margin:.1f}" if winner_j is not None else ""
             self.status_label.setText(
-                f"⚡ [4×4 REALTIME] t = {self._sim_time:.2f} s │ I_outs = [{I[0]*1e6:.1f}, {I[1]*1e6:.1f}, {I[2]*1e6:.1f}, {I[3]*1e6:.1f}] μA │ Spikes: {' '.join(spikes_str)}"
+                f"⚡ [4×4 REALTIME] t = {self._sim_time:.2f} s │ I_outs = [{I[0]*1e6:.1f}, {I[1]*1e6:.1f}, {I[2]*1e6:.1f}, {I[3]*1e6:.1f}] μA │ Spikes: {' '.join(spikes_str)}{margin_info}"
             )
+        self.canvas.update()
         self.canvas.update()
 
     def _on_simulate(self):

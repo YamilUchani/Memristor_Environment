@@ -358,59 +358,106 @@ class BaseCrossbarCanvas(QWidget):
                          "Volátil HfO₂")
 
     def _draw_neuron(self, painter: QPainter, elem):
-        """Dibuja una neurona LIF (círculo)."""
+        """Dibuja una neurona LIF (círculo) con marcado dramático de ganador/inhibida."""
         x, y = elem.x, elem.y
-        color = get_qcolor('selected' if elem.selected
-                           else ('hover' if elem.hover else 'neuron'))
+        is_winner = elem.params.get('is_winner', False)
+        view = getattr(self, 'view', None)
+        active_winner = getattr(view, 'winner_j', None)
 
-        painter.setPen(QPen(color, 2))
-        painter.setBrush(QBrush(get_qcolor('bg_panel')))
-        painter.drawEllipse(QPointF(x, y), 35, 35)
-
-        painter.setFont(FONTS['label'])
-        painter.setPen(get_qcolor('text'))
-        painter.drawText(QRectF(x - 30, y - 22, 60, 20), Qt.AlignCenter,
-                         elem.element_id)
-
-        painter.setFont(FONTS['small'])
-        painter.setPen(get_qcolor('text_dim'))
-        vm = float(elem.params.get('V_m', 0.0))
-        spikes = int(elem.params.get('spike_count', 0))
-        painter.drawText(QRectF(x - 30, y - 2, 60, 16), Qt.AlignCenter,
-                         f"{vm:.2f}V")
-        painter.drawText(QRectF(x - 30, y + 12, 60, 16), Qt.AlignCenter,
-                         f"⚡ {spikes}")
-
-    def _draw_actuator(self, painter: QPainter, elem):
-        """Dibuja un actuador (rectángulo)."""
-        x, y = elem.x, elem.y
-        act_name = str(elem.params.get('action', 'Girar'))
-
-        is_winner = any(k in act_name for k in ['GANADOR', 'ACTIVADO', 'Spike', '🏆'])
         if is_winner:
+            # Resplandor Neón / Oro
+            glow_pen = QPen(QColor(166, 227, 161, 90), 12)
+            painter.setPen(glow_pen)
+            painter.setBrush(Qt.NoBrush)
+            painter.drawEllipse(QPointF(x, y), 42, 42)
+
             border_color = QColor('#a6e3a1')
             bg_color = QColor('#1e382b')
-            border_width = 3
+            border_width = 3.5
             text_color = QColor('#a6e3a1')
+        elif active_winner is not None:
+            # Neurona Inhibida por WTA
+            border_color = QColor('#45475a')
+            bg_color = QColor('#11111b')
+            border_width = 1.5
+            text_color = QColor('#6c7086')
         else:
             border_color = get_qcolor('selected' if elem.selected
-                                       else ('hover' if elem.hover else 'actuator'))
+                                       else ('hover' if elem.hover else 'neuron'))
             bg_color = get_qcolor('bg_panel')
             border_width = 2
             text_color = get_qcolor('text_dim')
 
         painter.setPen(QPen(border_color, border_width))
         painter.setBrush(QBrush(bg_color))
-        painter.drawRoundedRect(QRectF(x - 45, y - 30, 90, 60), 8, 8)
+        painter.drawEllipse(QPointF(x, y), 35, 35)
+
+        # Insignia de Ganador
+        if is_winner:
+            painter.setFont(QFont('Segoe UI Emoji', 12, QFont.Bold))
+            painter.setPen(QColor('#f9e2af'))
+            painter.drawText(QRectF(x - 20, y - 60, 40, 22), Qt.AlignCenter, "🏆")
 
         painter.setFont(FONTS['label'])
-        painter.setPen(get_qcolor('text'))
-        painter.drawText(QRectF(x - 40, y - 25, 80, 20), Qt.AlignCenter,
-                         elem.element_id)
+        painter.setPen(QColor('#ffffff') if is_winner else get_qcolor('text'))
+        painter.drawText(QRectF(x - 30, y - 22, 60, 20), Qt.AlignCenter, elem.element_id)
 
         painter.setFont(FONTS['small'])
         painter.setPen(text_color)
-        painter.drawText(QRectF(x - 44, y, 88, 20), Qt.AlignCenter, act_name)
+        vm = float(elem.params.get('V_m', 0.0))
+        spikes = int(elem.params.get('spike_count', 0))
+        if active_winner is not None and not is_winner:
+            painter.drawText(QRectF(x - 30, y - 2, 60, 16), Qt.AlignCenter, "INHIBIDA")
+        else:
+            painter.drawText(QRectF(x - 30, y - 2, 60, 16), Qt.AlignCenter, f"{vm:.2f}V")
+        painter.drawText(QRectF(x - 30, y + 12, 60, 16), Qt.AlignCenter, f"⚡ {spikes}")
+
+    def _draw_actuator(self, painter: QPainter, elem):
+        """Dibuja un actuador (rectángulo) con fuerte diferenciación visual de victoria/inhibición."""
+        x, y = elem.x, elem.y
+        act_name = str(elem.params.get('action', 'Girar'))
+        is_winner = elem.params.get('is_winner', False) or any(k in act_name for k in ['GANADOR', 'ACTIVADO', '🏆'])
+        view = getattr(self, 'view', None)
+        active_winner = getattr(view, 'winner_j', None)
+
+        if is_winner:
+            # Resplandor exterior Neón
+            glow_pen = QPen(QColor(166, 227, 161, 90), 12)
+            painter.setPen(glow_pen)
+            painter.setBrush(Qt.NoBrush)
+            painter.drawRoundedRect(QRectF(x - 51, y - 36, 102, 72), 12, 12)
+
+            border_color = QColor('#a6e3a1')
+            bg_color = QColor('#1e382b')
+            border_width = 3.5
+            text_color = QColor('#a6e3a1')
+            lbl_title = "🏆 GANADOR"
+        elif active_winner is not None:
+            # Actuador Inhibido / Desactivado
+            border_color = QColor('#313244')
+            bg_color = QColor('#11111b')
+            border_width = 1.5
+            text_color = QColor('#6c7086')
+            lbl_title = "🚫 INHIBIDO"
+        else:
+            border_color = get_qcolor('selected' if elem.selected
+                                       else ('hover' if elem.hover else 'actuator'))
+            bg_color = get_qcolor('bg_panel')
+            border_width = 2
+            text_color = get_qcolor('text_dim')
+            lbl_title = act_name
+
+        painter.setPen(QPen(border_color, border_width))
+        painter.setBrush(QBrush(bg_color))
+        painter.drawRoundedRect(QRectF(x - 45, y - 30, 90, 60), 8, 8)
+
+        painter.setFont(FONTS['label'])
+        painter.setPen(QColor('#ffffff') if is_winner else get_qcolor('text'))
+        painter.drawText(QRectF(x - 40, y - 25, 80, 20), Qt.AlignCenter, elem.element_id)
+
+        painter.setFont(FONTS['small'])
+        painter.setPen(text_color)
+        painter.drawText(QRectF(x - 44, y, 88, 20), Qt.AlignCenter, lbl_title)
 
     # ================================================================
     # HOOKS PARA SUBCLASES
