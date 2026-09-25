@@ -48,12 +48,14 @@ class Crossbar4x4Controller:
         self.lif_neurons = [LIFNeuron(lif_cfg) for _ in range(4)]
         
         # Factores de escala con unidades explícitas
-        # Ref: modelo fenomenológico dW/dt = a*I - W/tau (Strukov 2008 adaptado)
-        self.MEM_VOLATILE_A = 5000.0    # [1/(A·s)]  ganancia de programación calibrada para uA
+        # Ref: modelo fenomenológico dW/dt = k*I - W/tau (Strukov 2008 adaptado)
+        self.MEM_VOLATILE_K = 1.6e4     # [1/(A·s)]  ganancia calibrada (I=200uA, tau=0.3s -> x ~ 1.0)
+        self.MEM_VOLATILE_A = 1.6e4     # Alias para compatibilidad
         self.MEM_VOLATILE_TAU = 1e-3    # [s]        tiempo de relajación
         self.TIA_R = 50e3               # [Ω]        transimpedancia (50 kΩ)
         self.LIF_R_IN = 1e6             # [Ω]        resistencia de entrada LIF
         self.LIF_I_scale = self.TIA_R / self.LIF_R_IN
+        self.WTA_GAIN = 0.5
 
         # Weight decay
         self.G_base = 69.4e-6
@@ -169,16 +171,29 @@ class Crossbar4x4Controller:
             x_v = float(p_v.get('x', 0.05))
             x_eq = float(p_v.get('x0', 0.05))
 
-            # FIX: Restaurar hacia x_eq con ganancia calibrada
-            dxdt_v = self.MEM_VOLATILE_A * I_cols[j] - ((x_v - x_eq) / max(1e-4, tau_rel))
+            # FIX: Restaurar hacia x_eq con ganancia calibrada k = 1.6e4
+            dxdt_v = self.MEM_VOLATILE_K * I_cols[j] - ((x_v - x_eq) / max(1e-4, tau_rel))
             p_v['x'] = float(np.clip(x_v + dxdt_v * dt, 0.001, 1.0))
 
         self.spike_pre = spike_pre_arr
         
+        # WTA Histéresis 5% e Inhibición Lateral Real
+        MARGIN = 1.05
+        candidate_winner = int(np.argmax(I_cols))
+
+        if self.winner_j is None or self.sim_time >= self.winner_lock_time:
+            if self.winner_j is None:
+                self.winner_j = candidate_winner
+                self.winner_lock_time = self.sim_time + self.WINNER_LOCK_DURATION
+            elif I_cols[candidate_winner] > MARGIN * I_cols[self.winner_j]:
+                self.winner_j = candidate_winner
+                self.winner_lock_time = self.sim_time + self.WINNER_LOCK_DURATION
+
+        winner_active = (self.winner_j is not None and self.sim_time < self.winner_lock_time)
+
         # LIF & WTA delegando al motor neuronal LIFNeuron
         spike_post = np.zeros(4, dtype=bool)
         spikes_this_tick = np.zeros(4)
-        winner_active = (self.winner_j is not None and self.sim_time < self.winner_lock_time)
 
         for j in range(4):
             LIF_ui = self.elements[f'LIF_{j+1}']
@@ -186,16 +201,18 @@ class Crossbar4x4Controller:
             mv = self.elements.get(f'M_v{j+1}')
             x_v = float(mv.params.get('x', 0.05)) if mv else 1.0
 
-            # Manejo de inhibición lateral
+            # Inhibición lateral real: corriente negativa en perdedores
             if winner_active and j != self.winner_j:
+                I_inhib = -self.WTA_GAIN * I_cols[self.winner_j] * (self.TIA_R / self.LIF_R_IN)
                 neuron.V_m = 0.0
                 LIF_ui.params['V_m'] = 0.0
-                continue
+            else:
+                I_inhib = 0.0
 
             # Inyectar corriente física modulada por la celda volátil M_v en serie
             I_col_eff = I_cols[j] * (0.1 + 0.9 * x_v)
             V_TIA = I_col_eff * self.TIA_R          # [V]
-            I_syn = V_TIA / self.LIF_R_IN           # [A] = V/R
+            I_syn = max(0.0, (V_TIA / self.LIF_R_IN) + I_inhib)
             has_spiked = neuron.step(current_input=I_syn, dt=dt, t=self.sim_time)
 
             # Sincronizar UI con el motor físico
@@ -208,18 +225,12 @@ class Crossbar4x4Controller:
                 LIF_ui.params['spike_count'] = int(LIF_ui.params.get('spike_count', 0)) + 1
                 self.refractory_time[j] = self.sim_time + neuron.config.t_ref
 
-        if self.winner_j is None:
-            fired = np.where(spikes_this_tick > 0.5)[0]
-            if len(fired) > 0:
-                # Seleccionar la columna de mayor corriente entre las que dispararon
-                self.winner_j = int(fired[np.argmax([I_cols[j] for j in fired])])
-                self.winner_lock_time = self.sim_time + self.WINNER_LOCK_DURATION
-
         if self.winner_j is not None and self.sim_time >= self.winner_lock_time:
-            self.winner_j = None
-            for j in range(4):
-                LIF = self.elements[f'LIF_{j+1}']
-                LIF.params['V_m'] = 0.0
+            if np.all(spikes_this_tick <= 0.5):
+                self.winner_j = None
+                for j in range(4):
+                    LIF = self.elements[f'LIF_{j+1}']
+                    LIF.params['V_m'] = 0.0
 
         for j in range(4):
             LIF = self.elements[f'LIF_{j+1}']
