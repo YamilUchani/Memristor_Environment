@@ -910,9 +910,10 @@ class Crossbar4x4View(QWidget):
     def _update_mode_button_styles(self):
         style_active = "QPushButton { background-color: #a6e3a1; color: #11111b; font-weight: bold; padding: 5px 12px; border-radius: 4px; }"
         style_inactive = "QPushButton { background-color: #313244; color: #cdd6f4; font-weight: bold; padding: 5px 12px; border-radius: 4px; border: 1px solid #45475a; }"
-        style_pulse = "QPushButton { background-color: #f9e2af; color: #11111b; font-weight: bold; padding: 5px 12px; border-radius: 4px; } QPushButton:hover { background-color: #fab387; }"
+        style_pulse_active = "QPushButton { background-color: #f9e2af; color: #11111b; font-weight: bold; padding: 5px 12px; border-radius: 4px; } QPushButton:hover { background-color: #fab387; }"
+        style_pulse_inactive = "QPushButton { background-color: #313244; color: #f9e2af; font-weight: bold; padding: 5px 12px; border-radius: 4px; border: 1px solid #45475a; }"
 
-        # Determinar cuál de los 4 modos está activo
+        # Determinar cuál de los 4 modos está activo de forma estricta
         is_m1 = (self.mode == "read" and self.plasticity_mode == "off")
         is_m2 = (self.mode == "program_v2" and self.plasticity_mode == "off")
         is_m3 = (self.plasticity_mode == "stdp")
@@ -923,17 +924,20 @@ class Crossbar4x4View(QWidget):
         self.btn_plast_stdp.setStyleSheet(style_active if is_m3 else style_inactive)
         self.btn_plast_rstdp.setStyleSheet(style_active if is_m4 else style_inactive)
 
-        self.btn_pulse_ltp.setStyleSheet(style_pulse)
-        self.btn_pulse_ltd.setStyleSheet(style_pulse)
+        # Estilo de botones V/2 (Modo 2)
+        self.btn_pulse_ltp.setStyleSheet(style_pulse_active if is_m2 else style_pulse_inactive)
+        self.btn_pulse_ltd.setStyleSheet(style_pulse_active if is_m2 else style_pulse_inactive)
 
+        # Estilo de botones Recompensa R (Modo 4)
         style_reward_plus_active = "QPushButton { background-color: #a6e3a1; color: #11111b; font-weight: bold; padding: 5px 10px; border-radius: 4px; border: 2px solid #ffffff; }"
-        style_reward_plus_inactive = "QPushButton { background-color: #a6e3a1; color: #11111b; font-weight: bold; padding: 5px 10px; border-radius: 4px; }"
+        style_reward_plus_inactive = "QPushButton { background-color: #313244; color: #a6e3a1; font-weight: bold; padding: 5px 10px; border-radius: 4px; border: 1px solid #45475a; }"
         style_reward_minus_active = "QPushButton { background-color: #f38ba8; color: #11111b; font-weight: bold; padding: 5px 10px; border-radius: 4px; border: 2px solid #ffffff; }"
-        style_reward_minus_inactive = "QPushButton { background-color: #f38ba8; color: #11111b; font-weight: bold; padding: 5px 10px; border-radius: 4px; }"
+        style_reward_minus_inactive = "QPushButton { background-color: #313244; color: #f38ba8; font-weight: bold; padding: 5px 10px; border-radius: 4px; border: 1px solid #45475a; }"
 
         self.btn_reward_plus.setStyleSheet(style_reward_plus_active if (is_m4 and self.reward > 0) else style_reward_plus_inactive)
         self.btn_reward_minus.setStyleSheet(style_reward_minus_active if (is_m4 and self.reward < 0) else style_reward_minus_inactive)
 
+        # Los 4 botones de acción permanecen habilitados para respuesta inmediata y compatibilidad con tests
         self.btn_pulse_ltp.setEnabled(True)
         self.btn_pulse_ltd.setEnabled(True)
         self.btn_reward_plus.setEnabled(True)
@@ -942,12 +946,15 @@ class Crossbar4x4View(QWidget):
     def _apply_reward(self, R: float, is_auto: bool = False):
         """
         Aplica R-STDP (Aprendizaje por Refuerzo Modulado por Recompensa Global R):
-        - R = +1.0 (Éxito / Recompensa): Induce LTP (+25.0 μS) en la celda target y celdas activas.
-        - R = -1.0 (Error / Penalización): Induce LTD (-25.0 μS) en la celda target y celdas activas.
+        - Conmuta a Modo 4 si se activa desde otro modo.
         """
         if self.plasticity_mode != "rstdp":
             self.mode = "read"
             self.plasticity_mode = "rstdp"
+            self._update_mode_button_styles()
+
+        self.reward = float(R)
+        self.rstdp_rule.set_reward(R)
 
         self.reward = float(R)
         self.rstdp_rule.set_reward(R)
@@ -1041,7 +1048,10 @@ class Crossbar4x4View(QWidget):
 
 
     def _apply_programming_pulse(self, v_pulse: float):
-        """Aplica un pulso de programación V/2 (LTP o LTD) a la celda objetivo M_ij."""
+        """Aplica un pulso de programación V/2 (LTP o LTD) a la celda objetivo M_ij exclusivamente en Modo 2."""
+        if self.mode != "program_v2":
+            self.status_label.setText("⚠️ Los pulsos V/2 solo se aplican en Modo 2 (Programación V/2). Selecciona Modo 2 para usar este botón.")
+            return
         tg_r, tg_c = self.target_cell
         target_mem = self.elements.get(f'M{tg_r+1}{tg_c+1}')
         if not target_mem:
