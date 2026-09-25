@@ -1296,11 +1296,11 @@ class Crossbar4x4View(QWidget):
         candidates = []
         for j in range(4):
             LIF = self.elements[f'LIF_{j+1}']
-            C_m = float(LIF.params.get('C_m', 50e-9))
+            C_m = float(LIF.params.get('C_m', 100e-9))
             R_leak = float(LIF.params.get('R_leak', 1e6))
             V_th_base = float(LIF.params.get('V_th_base', 2.5))
             V_th = float(LIF.params.get('V_th', V_th_base))
-            tau_adapt = float(LIF.params.get('tau_adapt', 0.05))
+            tau_adapt = float(LIF.params.get('tau_adapt', 0.10))
             V_m = float(LIF.params.get('V_m', 0.0))
 
             # Decaimiento del umbral adaptativo hacia V_th_base
@@ -1328,12 +1328,12 @@ class Crossbar4x4View(QWidget):
             LIF = self.elements[f'LIF_{j+1}']
             Act = self.elements[f'Act_{j+1}']
             V_th = float(LIF.params.get('V_th', 2.5))
-            V_adapt_inc = float(LIF.params.get('V_adapt_inc', 0.15))
+            V_adapt_inc = float(LIF.params.get('V_adapt_inc', 0.02))
             V_m_next = float(LIF.params.get('_v_m_next', 0.0))
 
             if winner_j is not None and j == winner_j:
                 LIF.params['V_m'] = 0.0
-                LIF.params['V_th'] = V_th + V_adapt_inc  # Boost adaptativo para el ganador
+                LIF.params['V_th'] = V_th + V_adapt_inc  # Boost adaptativo moderado para el ganador
                 LIF.params['spike_count'] = int(LIF.params.get('spike_count', 0)) + 1
                 Act.params['action'] = '🏆 GANADOR (Spike!)'
                 column_rewards[j] = +1.0  # Ganador recibe R = +1.0 (LTP / Recompensa)
