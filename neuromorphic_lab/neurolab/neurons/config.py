@@ -15,7 +15,10 @@ class LIFConfig:
     r_leak: float = 1e6       # Resistencia de fuga (Ohmios) -> 1 MΩ
     r_series: float = 100e3   # Resistencia en serie de entrada (Ohmios) -> 100 kΩ
     v_rest: float = 0.0       # Potencial de reposo (Voltios)
-    v_th: float = 1.0         # Potencial de umbral (Voltios)
+    v_th: float = 1.0         # Potencial de umbral actual (Voltios)
+    v_th_base: float = 1.0    # Potencial de umbral base en reposo (Voltios)
+    v_adapt_inc: float = 0.15 # Incremento de umbral por spike (Adaptación de frecuencia, V)
+    tau_adapt: float = 0.05   # Constante de tiempo de adaptación del umbral (Segundos)
     v_reset: float = 0.0      # Potencial de reinicio (Voltios)
     t_ref: float = 0.0        # Período refractario (Segundos)
 

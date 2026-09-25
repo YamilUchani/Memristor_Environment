@@ -18,6 +18,9 @@ class NeuronElement(VisualElement):
             'R_series': 100e3,       # Ω (100 kΩ)
             'R_leak': 1e6,           # Ω (1 MΩ)
             'V_th': 2.5,             # V
+            'V_th_base': 2.5,        # V (Umbral base en reposo)
+            'V_adapt_inc': 0.15,     # V (Incremento adaptativo por spike)
+            'tau_adapt': 50e-3,      # s (50 ms constante de adaptación)
             'V_reset': 0.0,          # V
             'V_rest': 0.0,           # V
             'tau_ref': 2e-3,         # s (2 ms)

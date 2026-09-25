@@ -566,7 +566,10 @@ class Crossbar4x4View(QWidget):
             self.elements[key_lif] = NeuronElement(key_lif, x=x_memristores[j], y=y_neuronas)
             self.elements[key_lif].params['C_m'] = 100e-9
             self.elements[key_lif].params['R_leak'] = 1e6
+            self.elements[key_lif].params['V_th_base'] = 2.5
             self.elements[key_lif].params['V_th'] = 2.5
+            self.elements[key_lif].params['V_adapt_inc'] = 0.15
+            self.elements[key_lif].params['tau_adapt'] = 0.05
             self.elements[key_lif].params['V_m'] = 0.0
             self.elements[key_lif].params['spike_count'] = 0
 
@@ -1286,20 +1289,28 @@ class Crossbar4x4View(QWidget):
 
             C_m = float(LIF.params.get('C_m', 50e-9))
             R_leak = float(LIF.params.get('R_leak', 1e6))
-            V_th = float(LIF.params.get('V_th', 2.5))
+            V_th_base = float(LIF.params.get('V_th_base', 2.5))
+            V_th = float(LIF.params.get('V_th', V_th_base))
+            V_adapt_inc = float(LIF.params.get('V_adapt_inc', 0.15))
+            tau_adapt = float(LIF.params.get('tau_adapt', 0.05))
             V_m = float(LIF.params.get('V_m', 0.0))
+
+            # Decaimiento del umbral adaptativo hacia V_th_base (Spike-Frequency Adaptation)
+            V_th += (V_th_base - V_th) * (dt / max(1e-4, tau_adapt))
 
             dVm = ((I[j] - V_m / R_leak) / C_m) * dt
             V_m_next = V_m + dVm
 
             if V_m_next >= V_th:
                 V_m_next = 0.0
+                V_th += V_adapt_inc  # Incremento adaptativo homeostático por spike
                 LIF.params['spike_count'] = int(LIF.params.get('spike_count', 0)) + 1
                 Act.params['action'] = 'ACTIVADO (Spike!)'
             else:
                 Act.params['action'] = 'listo'
 
             LIF.params['V_m'] = V_m_next
+            LIF.params['V_th'] = V_th
             spikes_str.append(f"LIF_{j+1}={LIF.params['spike_count']}")
 
         if not (self.plasticity_mode == "rstdp" and self.canvas.is_animating):
@@ -1343,8 +1354,10 @@ class Crossbar4x4View(QWidget):
                     elem.on_params_changed()
 
         for i in range(4):
-            self.elements[f'LIF_{i+1}'].params['V_m'] = 0.0
-            self.elements[f'LIF_{i+1}'].params['spike_count'] = 0
+            lif = self.elements[f'LIF_{i+1}']
+            lif.params['V_m'] = 0.0
+            lif.params['V_th'] = float(lif.params.get('V_th_base', 2.5))
+            lif.params['spike_count'] = 0
 
         self.status_label.setText("⏹ Reset completo (Semillas estocásticas renovadas)")
         self.canvas.update()
