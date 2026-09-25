@@ -384,11 +384,23 @@ class BaseCrossbarCanvas(QWidget):
     def _draw_actuator(self, painter: QPainter, elem):
         """Dibuja un actuador (rectángulo)."""
         x, y = elem.x, elem.y
-        color = get_qcolor('selected' if elem.selected
-                           else ('hover' if elem.hover else 'actuator'))
+        act_name = str(elem.params.get('action', 'Girar'))
 
-        painter.setPen(QPen(color, 2))
-        painter.setBrush(QBrush(get_qcolor('bg_panel')))
+        is_winner = any(k in act_name for k in ['GANADOR', 'ACTIVADO', 'Spike', '🏆'])
+        if is_winner:
+            border_color = QColor('#a6e3a1')
+            bg_color = QColor('#1e382b')
+            border_width = 3
+            text_color = QColor('#a6e3a1')
+        else:
+            border_color = get_qcolor('selected' if elem.selected
+                                       else ('hover' if elem.hover else 'actuator'))
+            bg_color = get_qcolor('bg_panel')
+            border_width = 2
+            text_color = get_qcolor('text_dim')
+
+        painter.setPen(QPen(border_color, border_width))
+        painter.setBrush(QBrush(bg_color))
         painter.drawRoundedRect(QRectF(x - 45, y - 30, 90, 60), 8, 8)
 
         painter.setFont(FONTS['label'])
@@ -397,9 +409,8 @@ class BaseCrossbarCanvas(QWidget):
                          elem.element_id)
 
         painter.setFont(FONTS['small'])
-        painter.setPen(get_qcolor('text_dim'))
-        act_name = str(elem.params.get('action', 'Girar'))
-        painter.drawText(QRectF(x - 40, y, 80, 20), Qt.AlignCenter, act_name)
+        painter.setPen(text_color)
+        painter.drawText(QRectF(x - 44, y, 88, 20), Qt.AlignCenter, act_name)
 
     # ================================================================
     # HOOKS PARA SUBCLASES

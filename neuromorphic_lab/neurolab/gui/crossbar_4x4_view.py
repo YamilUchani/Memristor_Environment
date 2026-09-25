@@ -1331,11 +1331,14 @@ class Crossbar4x4View(QWidget):
             V_adapt_inc = float(LIF.params.get('V_adapt_inc', 0.02))
             V_m_next = float(LIF.params.get('_v_m_next', 0.0))
 
+            hold = int(Act.params.get('_winner_hold', 0))
+
             if winner_j is not None and j == winner_j:
                 LIF.params['V_m'] = 0.0
                 LIF.params['V_th'] = V_th + V_adapt_inc  # Boost adaptativo moderado para el ganador
                 LIF.params['spike_count'] = int(LIF.params.get('spike_count', 0)) + 1
                 Act.params['action'] = '🏆 GANADOR (Spike!)'
+                Act.params['_winner_hold'] = 12  # Mantiene el resaltado durante 12 marcos (~0.36 s) para visibilidad perfecta
                 column_rewards[j] = +1.0  # Ganador recibe R = +1.0 (LTP / Recompensa)
                 self.spike_post[j] = 1.0
             else:
@@ -1343,7 +1346,14 @@ class Crossbar4x4View(QWidget):
                     LIF.params['V_m'] = 0.0  # Inhibición lateral sobre los perdedores
                 else:
                     LIF.params['V_m'] = V_m_next
-                Act.params['action'] = 'listo'
+
+                if hold > 1:
+                    Act.params['_winner_hold'] = hold - 1
+                    Act.params['action'] = '🏆 GANADOR (Hold)'
+                else:
+                    Act.params['_winner_hold'] = 0
+                    Act.params['action'] = 'listo'
+
                 column_rewards[j] = -1.0  # Perdedores reciben R = -1.0 (LTD / Penalización)
                 self.spike_post[j] = 0.0
 
