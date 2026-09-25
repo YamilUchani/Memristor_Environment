@@ -551,7 +551,7 @@ class Crossbar4x4View(QWidget):
         self.plasticity_mode = "off"   # 'off' | 'stdp' | 'rstdp'
 
         stdp_cfg = STDPConfig(
-            A_plus=0.05, A_minus=0.025,
+            A_plus=0.5e-6, A_minus=0.25e-6,
             tau_plus=20e-3, tau_minus=20e-3,
             eta=1.0, G_min=1e-6, G_max=500e-6,
         )
@@ -559,7 +559,7 @@ class Crossbar4x4View(QWidget):
         self.stdp_rule.reset(n_rows=4, n_cols=4)
 
         rstdp_cfg = RSTDPConfig(
-            A_plus=0.05, A_minus=0.025,
+            A_plus=0.5e-6, A_minus=0.25e-6,
             tau_plus=20e-3, tau_minus=20e-3,
             eta=1.0, G_min=1e-6, G_max=500e-6,
             R=0.0,

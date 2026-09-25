@@ -69,13 +69,13 @@ class Trace:
 @dataclass
 class STDPConfig:
     """Configuración de STDP."""
-    A_plus: float = 0.05        # Amplitud LTP
-    A_minus: float = 0.025      # Amplitud LTD (positiva)
+    A_plus: float = 0.5e-6       # Amplitud LTP (0.5 μS por evento para evolución gradual)
+    A_minus: float = 0.25e-6     # Amplitud LTD (0.25 μS por evento)
     tau_plus: float = 20e-3     # Constante pre (s)
     tau_minus: float = 20e-3    # Constante post (s)
     eta: float = 1.0            # Tasa de aprendizaje
     G_min: float = 1e-6         # Límite inferior (S)
-    G_max: float = 1e-3         # Límite superior (S)
+    G_max: float = 500e-6       # Límite superior (S)
 
 
 class STDPRule:
@@ -89,8 +89,8 @@ class STDPRule:
         self.trace_post = None
         self.G_min = self.cfg.G_min
         self.G_max = self.cfg.G_max
-        self.threshold_product = 0.1
-        self.threshold_dG = 1e-6
+        self.threshold_product = 0.01
+        self.threshold_dG = 1e-9
     
     def reset(self, n_rows: int, n_cols: int):
         """Reinicia trazas."""
