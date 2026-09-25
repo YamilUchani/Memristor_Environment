@@ -88,11 +88,8 @@ class ArrowDoubleSpinBox(QWidget):
     """
     valueChanged = Signal(float)
 
-    def __init__(self, value=1.0, min_val=0.0, max_val=100.0, step=0.1, decimals=2, suffix="", parent=None):
+    def __init__(self, value=1.0, min_val=-1000.0, max_val=1000.0, step=0.1, decimals=4, suffix="", parent=None):
         super().__init__(parent)
-        self.min_val = min_val
-        self.max_val = max_val
-        self.step = step
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -167,20 +164,45 @@ class ArrowDoubleSpinBox(QWidget):
         has_focus = self.spin.hasFocus()
         if hasattr(self.spin, "lineEdit") and self.spin.lineEdit():
             has_focus = has_focus or self.spin.lineEdit().hasFocus()
-            
+
         if has_focus:
             self.spin.wheelEvent(event)
         else:
             event.ignore()
 
     def _step_up(self):
-        # En vez de stepUp nativo (que reduce magnitud en negativos), sumamos algebraicamente el step.
-        new_val = self.spin.value() + self.step
-        self.spin.setValue(min(self.max_val, new_val))
+        val = self.spin.value()
+        step = self.spin.singleStep()
+        dec = self.spin.decimals()
+        new_val = min(self.spin.maximum(), round(val + step, dec))
+        self.spin.setValue(new_val)
 
     def _step_down(self):
-        new_val = self.spin.value() - self.step
-        self.spin.setValue(max(self.min_val, new_val))
+        val = self.spin.value()
+        step = self.spin.singleStep()
+        dec = self.spin.decimals()
+        new_val = max(self.spin.minimum(), round(val - step, dec))
+        self.spin.setValue(new_val)
+
+    def setRange(self, min_val: float, max_val: float):
+        self.spin.setRange(min_val, max_val)
+
+    def setSingleStep(self, step: float):
+        self.spin.setSingleStep(step)
+
+    def setDecimals(self, decimals: int):
+        self.spin.setDecimals(decimals)
+
+    def blockSignals(self, b: bool) -> bool:
+        self.btn_up.blockSignals(b)
+        self.btn_down.blockSignals(b)
+        return self.spin.blockSignals(b)
+
+    def setEnabled(self, enabled: bool):
+        super().setEnabled(enabled)
+        self.spin.setEnabled(enabled)
+        self.btn_up.setEnabled(enabled)
+        self.btn_down.setEnabled(enabled)
 
     def value(self) -> float:
         return self.spin.value()
@@ -196,11 +218,8 @@ class ArrowSpinBox(QWidget):
     """
     valueChanged = Signal(int)
 
-    def __init__(self, value=1, min_val=0, max_val=100, step=1, suffix="", parent=None):
+    def __init__(self, value=1, min_val=-10000, max_val=10000, step=1, suffix="", parent=None):
         super().__init__(parent)
-        self.min_val = min_val
-        self.max_val = max_val
-        self.step = step
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -265,19 +284,40 @@ class ArrowSpinBox(QWidget):
         has_focus = self.spin.hasFocus()
         if hasattr(self.spin, "lineEdit") and self.spin.lineEdit():
             has_focus = has_focus or self.spin.lineEdit().hasFocus()
-            
+
         if has_focus:
             self.spin.wheelEvent(event)
         else:
             event.ignore()
 
     def _step_up(self):
-        new_val = self.spin.value() + self.step
-        self.spin.setValue(min(self.max_val, new_val))
+        val = self.spin.value()
+        step = self.spin.singleStep()
+        new_val = min(self.spin.maximum(), val + step)
+        self.spin.setValue(new_val)
 
     def _step_down(self):
-        new_val = self.spin.value() - self.step
-        self.spin.setValue(max(self.min_val, new_val))
+        val = self.spin.value()
+        step = self.spin.singleStep()
+        new_val = max(self.spin.minimum(), val - step)
+        self.spin.setValue(new_val)
+
+    def setRange(self, min_val: int, max_val: int):
+        self.spin.setRange(min_val, max_val)
+
+    def setSingleStep(self, step: int):
+        self.spin.setSingleStep(step)
+
+    def blockSignals(self, b: bool) -> bool:
+        self.btn_up.blockSignals(b)
+        self.btn_down.blockSignals(b)
+        return self.spin.blockSignals(b)
+
+    def setEnabled(self, enabled: bool):
+        super().setEnabled(enabled)
+        self.spin.setEnabled(enabled)
+        self.btn_up.setEnabled(enabled)
+        self.btn_down.setEnabled(enabled)
 
     def value(self) -> int:
         return self.spin.value()

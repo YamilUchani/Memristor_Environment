@@ -102,19 +102,21 @@ class SynapseConfigPanel(QWidget):
         lay_dev.addWidget(self.memristor_subtabs)
         layout.addWidget(group_dev)
 
-        # ── GroupBox: Parámetros STDP ───────────────────────────────────────
-        group_stdp = QGroupBox("🎯 Parámetros STDP (Bi & Poo / Gerstner)")
+        # ── GroupBox: Parámetros STDP y Excitación ───────────────────────────────
+        group_stdp = QGroupBox("🎯 Parámetros STDP y Excitación (Bi & Poo / Gerstner)")
         form_stdp = QFormLayout(group_stdp)
 
-        self.spin_aplus = ArrowDoubleSpinBox(value=0.20, min_val=0.001, max_val=0.5, step=0.01)
-        self.spin_aminus = ArrowDoubleSpinBox(value=-0.20, min_val=-0.5, max_val=-0.001, step=0.005)
-        self.spin_tauplus = ArrowDoubleSpinBox(value=30.0, min_val=1.0, max_val=100.0, step=1.0, suffix=" ms")
-        self.spin_tauminus = ArrowDoubleSpinBox(value=30.0, min_val=1.0, max_val=100.0, step=1.0, suffix=" ms")
+        self.spin_aplus = ArrowDoubleSpinBox(value=0.20, min_val=-100.0, max_val=100.0, step=0.01, decimals=4)
+        self.spin_aminus = ArrowDoubleSpinBox(value=-0.20, min_val=-100.0, max_val=100.0, step=0.005, decimals=4)
+        self.spin_tauplus = ArrowDoubleSpinBox(value=30.0, min_val=0.1, max_val=10000.0, step=1.0, decimals=2, suffix=" ms")
+        self.spin_tauminus = ArrowDoubleSpinBox(value=30.0, min_val=0.1, max_val=10000.0, step=1.0, decimals=2, suffix=" ms")
+        self.spin_vamp = ArrowDoubleSpinBox(value=2.0, min_val=-100.0, max_val=100.0, step=0.1, decimals=2, suffix=" V")
 
         form_stdp.addRow("Amplitud A+ (LTP):", self.spin_aplus)
         form_stdp.addRow("Amplitud A− (LTD):", self.spin_aminus)
         form_stdp.addRow("Constante τ+:", self.spin_tauplus)
         form_stdp.addRow("Constante τ−:", self.spin_tauminus)
+        form_stdp.addRow("Amplitud Voltaje V_max:", self.spin_vamp)
         layout.addWidget(group_stdp)
 
         # Botón de Simulación
@@ -153,7 +155,7 @@ class SynapseConfigPanel(QWidget):
         layout.addStretch()
 
         # Conectar cambios de spinbox y subpestañas
-        for spin in (self.spin_aplus, self.spin_aminus, self.spin_tauplus, self.spin_tauminus):
+        for spin in (self.spin_aplus, self.spin_aminus, self.spin_tauplus, self.spin_tauminus, self.spin_vamp):
             spin.spin.valueChanged.connect(self._on_param_changed)
 
         self.config_panel_1.param_changed.connect(lambda *_: self._on_param_changed())
@@ -328,7 +330,10 @@ class SynapseConfigPanel(QWidget):
             exp_type = "iv_hysteresis"
             m = self._create_device()
             t_arr = np.linspace(0, 2, 800)
-            V = 1.0 * np.sin(2 * np.pi * t_arr)
+            v_amp = float(abs(self.spin_vamp.value()))
+            if v_amp < 0.1:
+                v_amp = 1.0
+            V = v_amp * np.sin(2 * np.pi * t_arr)
             I, R = np.zeros_like(V), np.zeros_like(V)
             for k, vk in enumerate(V):
                 I[k] = m.current(vk)
@@ -338,6 +343,7 @@ class SynapseConfigPanel(QWidget):
             sim_data = {"V_sweep": V, "I_sweep": I, "R_sweep": R}
             self.metrics_label.setText(
                 f"<b>Dispositivo:</b> {dev_name}<br>"
+                f"• Amplitud Voltaje (V_max): <b>±{v_amp:.2f} V</b><br>"
                 f"• I_max = {I.max()*1e3:.3f} mA, I_min = {I.min()*1e3:.3f} mA<br>"
                 f"• R_min = {R.min()/1e3:.2f} kΩ, R_max = {R.max()/1e3:.2f} kΩ"
             )
