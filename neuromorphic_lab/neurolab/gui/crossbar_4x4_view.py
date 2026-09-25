@@ -595,6 +595,13 @@ class Crossbar4x4View(QWidget):
         self.spike_post = np.zeros(4, dtype=bool)    # {0,1} por columna
         self.reward = 0.0
 
+        # Auto-Entorno RL (Azar Coherente)
+        self.auto_rl_enabled = False
+        self.auto_rl_target_col = 0
+        self.auto_rl_switch_time = 0.0
+        self.auto_rl_interval = 3.0   # Cambia la meta cada 3 segundos
+        self.auto_rl_last_applied_time = 0.0
+
         # RNG dedicado a Poisson (reproducible, independiente del RNG de memristores)
         self._spike_rng = np.random.default_rng(seed=12345)
 
@@ -726,14 +733,20 @@ class Crossbar4x4View(QWidget):
 
         self.btn_reward_plus = QPushButton("✅ Éxito (+1)")
         self.btn_reward_minus = QPushButton("❌ Error (−1)")
+        self.btn_auto_rl = QPushButton("🎲 Auto-RL (Off)")
+        self.btn_auto_rl.setToolTip("Modo Entorno Estocástico: Cambia la columna meta al azar y recompensa/castiga automáticamente")
         self.btn_reward_plus.setStyleSheet(
             "QPushButton { background-color: #a6e3a1; color: #11111b; font-weight: bold; padding: 4px 8px; border-radius: 4px; }"
         )
         self.btn_reward_minus.setStyleSheet(
             "QPushButton { background-color: #f38ba8; color: #11111b; font-weight: bold; padding: 4px 8px; border-radius: 4px; }"
         )
+        self.btn_auto_rl.setStyleSheet(
+            "QPushButton { background-color: #313244; color: #cba6f7; font-weight: bold; padding: 4px 8px; border-radius: 4px; border: 1px solid #45475a; }"
+        )
         self.btn_reward_plus.clicked.connect(lambda: self._apply_reward(+1.0))
         self.btn_reward_minus.clicked.connect(lambda: self._apply_reward(-1.0))
+        self.btn_auto_rl.clicked.connect(self._toggle_auto_rl)
 
         toolbar_modes_main.addWidget(self.btn_mode_read)
         toolbar_modes_main.addWidget(self.btn_mode_prog)
@@ -745,6 +758,7 @@ class Crossbar4x4View(QWidget):
         toolbar_modes_main.addSpacing(10)
         toolbar_modes_main.addWidget(self.btn_reward_plus)
         toolbar_modes_main.addWidget(self.btn_reward_minus)
+        toolbar_modes_main.addWidget(self.btn_auto_rl)
         toolbar_modes_main.addStretch()
 
         main_layout.addLayout(toolbar_modes_main)
@@ -1042,14 +1056,22 @@ class Crossbar4x4View(QWidget):
         style_reward_minus_active = "QPushButton { background-color: #f38ba8; color: #11111b; font-weight: bold; padding: 5px 10px; border-radius: 4px; border: 2px solid #ffffff; }"
         style_reward_minus_inactive = "QPushButton { background-color: #313244; color: #f38ba8; font-weight: bold; padding: 5px 10px; border-radius: 4px; border: 1px solid #45475a; }"
 
+        style_auto_rl_active = "QPushButton { background-color: #cba6f7; color: #11111b; font-weight: bold; padding: 5px 10px; border-radius: 4px; border: 2px solid #ffffff; }"
+        style_auto_rl_inactive = "QPushButton { background-color: #313244; color: #cba6f7; font-weight: bold; padding: 5px 10px; border-radius: 4px; border: 1px solid #45475a; }"
+
         self.btn_reward_plus.setStyleSheet(style_reward_plus_active if (is_m4 and self.reward > 0) else style_reward_plus_inactive)
         self.btn_reward_minus.setStyleSheet(style_reward_minus_active if (is_m4 and self.reward < 0) else style_reward_minus_inactive)
+        self.btn_auto_rl.setStyleSheet(style_auto_rl_active if (is_m4 and getattr(self, 'auto_rl_enabled', False)) else style_auto_rl_inactive)
 
-        # Los 4 botones de acción permanecen habilitados para respuesta inmediata y compatibilidad con tests
+        target_str = f"🎲 Meta Col {self.auto_rl_target_col+1} (ON)" if getattr(self, 'auto_rl_enabled', False) else "🎲 Auto-RL (Off)"
+        self.btn_auto_rl.setText(target_str)
+
+        # Los botones de acción permanecen habilitados para respuesta inmediata y compatibilidad con tests
         self.btn_pulse_ltp.setEnabled(True)
         self.btn_pulse_ltd.setEnabled(True)
         self.btn_reward_plus.setEnabled(True)
         self.btn_reward_minus.setEnabled(True)
+        self.btn_auto_rl.setEnabled(True)
 
     def _apply_reward(self, R: float, is_auto: bool = False):
         """
@@ -1075,6 +1097,25 @@ class Crossbar4x4View(QWidget):
             f"🎯 R-STDP {tag}{auto_tag} │ R = {R:+.0f} │ "
             f"La próxima actualización de G usará esta recompensa modulando las trazas acumuladas."
         )
+        self._update_mode_button_styles()
+        self.canvas.update()
+
+    def _toggle_auto_rl(self):
+        """Activa/desactiva el entorno de prueba con Azar Coherente R-STDP."""
+        if self.plasticity_mode != "rstdp":
+            self._set_mode_4_rstdp()
+
+        self.auto_rl_enabled = not getattr(self, 'auto_rl_enabled', False)
+        if self.auto_rl_enabled:
+            sim_t = getattr(self.controller, 'sim_time', 0.0)
+            self.auto_rl_target_col = int(self._spike_rng.integers(0, 4))
+            self.auto_rl_switch_time = sim_t + self.auto_rl_interval
+            self.status_label.setText(
+                f"🎲 Auto-RL ACTIVADO │ Meta Objetivo Inicial: Columna {self.auto_rl_target_col+1} "
+                f"│ Cambiará al azar cada {self.auto_rl_interval:.1f}s."
+            )
+        else:
+            self.status_label.setText("🎲 Auto-RL DESACTIVADO │ Control de recompensa manual restaurado.")
         self._update_mode_button_styles()
         self.canvas.update()
 
@@ -1302,6 +1343,25 @@ class Crossbar4x4View(QWidget):
             I_cols = result
             self.winner_j = self.controller.winner_j
 
+        # Entorno de Recompensa Estocástica (Auto-RL Azar Coherente)
+        if self.plasticity_mode == "rstdp" and getattr(self, 'auto_rl_enabled', False) and self.canvas.is_animating:
+            sim_t = self.controller.sim_time
+            # Cambiar de meta dinámicamente al azar cada N segundos
+            if sim_t >= getattr(self, 'auto_rl_switch_time', 0.0):
+                cols = [c for c in range(4) if c != self.auto_rl_target_col]
+                self.auto_rl_target_col = int(self._spike_rng.choice(cols))
+                self.auto_rl_switch_time = sim_t + self.auto_rl_interval
+                self._update_mode_button_styles()
+
+            # Aplicar recompensa o castigo cuando hay un ganador activo
+            if self.winner_j is not None:
+                if (sim_t - getattr(self, 'auto_rl_last_applied_time', 0.0)) >= 0.050:
+                    self.auto_rl_last_applied_time = sim_t
+                    if self.winner_j == self.auto_rl_target_col:
+                        self._apply_reward(+1.0, is_auto=True)
+                    else:
+                        self._apply_reward(-1.0, is_auto=True)
+
         n_pre = int(self.spike_pre.sum())
         n_post = int(self.spike_post.sum())
         spikes_str = " ".join(f"LIF_{j+1}={self.elements[f'LIF_{j+1}'].params.get('spike_count', 0)}" for j in range(4))
@@ -1336,6 +1396,10 @@ class Crossbar4x4View(QWidget):
         self.spike_post = np.zeros(4, dtype=bool)
         self.winner_j = None
         self.reward = 0.0
+        self.auto_rl_enabled = False
+        self.auto_rl_target_col = 0
+        self.auto_rl_switch_time = 0.0
+        self.auto_rl_last_applied_time = 0.0
         self.V_rows = np.full(4, self.read_cfg.V_read)
         self.V_cols = np.full(4, self.read_cfg.V_col)
 
