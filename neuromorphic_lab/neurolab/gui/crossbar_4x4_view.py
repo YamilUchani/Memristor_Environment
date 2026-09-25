@@ -1009,8 +1009,9 @@ class Crossbar4x4View(QWidget):
         """Sincroniza los spinboxes de los sensores con la simulación V/2 actual."""
         if self.mode == "program_v2":
             tg_r, _ = self.target_cell
+            v_half = float(self.write_cfg.V_program) / 2.0
             for i in range(4):
-                v_val = 1.0 if i == tg_r else 0.0
+                v_val = v_half if i == tg_r else 0.0
                 self.elements[f'S{i+1}'].params['V_out'] = v_val
             self._update_sensor_spinboxes()
 
