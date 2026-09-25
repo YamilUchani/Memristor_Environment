@@ -1216,8 +1216,8 @@ class Crossbar4x4View(QWidget):
             self.V_cols = np.zeros(4)
             self.V_rows[tg_r] = 1.0
             self.V_cols[tg_c] = -1.0
-        elif self.plasticity_mode in ("stdp", "rstdp") and self.canvas.is_animating:
-            # Selectividad Secuencial (address decoder multiplexing por fila)
+        elif getattr(self, 'use_sequential_multiplexing', False) and self.canvas.is_animating:
+            # Selectividad Secuencial Opcional (solo si se activa explícitamente)
             self._sequence_counter += 1
             if self._sequence_counter >= self.sequence_period_ticks:
                 self._sequence_counter = 0
@@ -1228,6 +1228,7 @@ class Crossbar4x4View(QWidget):
             self.V_rows[self.sequence_index] = s_val if abs(s_val) > 0.1 else 0.8
             self.V_cols = np.zeros(4)
         else:
+            # Alimentación Paralela Neuromórfica Continua (Sensores S1..S4 simultáneos)
             self.V_rows = np.array([float(self.elements[f'S{i+1}'].params.get('V_out', 0.2)) for i in range(4)])
             self.V_cols = np.zeros(4)
 
