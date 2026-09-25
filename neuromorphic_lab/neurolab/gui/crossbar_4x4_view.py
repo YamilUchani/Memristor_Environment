@@ -1289,46 +1289,69 @@ class Crossbar4x4View(QWidget):
 
         self._step_physics(dt)
 
-        # En Modo 4 (R-STDP), aplicar recompensa causal dependiente de la actividad por columna (Estilo Loihi / DYNAP-SE)
-        if self.plasticity_mode == "rstdp" and self.canvas.is_animating:
-            spikes_this_tick = np.array([1.0 if self.spike_post[j] > 0 else 0.0 for j in range(4)])
-            self.column_spike_history = 0.95 * self.column_spike_history + 0.05 * spikes_this_tick
-            self.column_rewards = np.clip(2.0 * self.column_spike_history - 1.0, -1.0, 1.0)
-            self.rstdp_rule.set_reward(self.column_rewards)
-
         G = get_G_matrix(self.elements, 4, 4)
         I = compute_currents(G, self.V_rows)
 
-        spikes_str = []
+        # 1. Integración de potencial de membrana y detección de candidatos a disparar
+        candidates = []
         for j in range(4):
             LIF = self.elements[f'LIF_{j+1}']
-            Act = self.elements[f'Act_{j+1}']
-
             C_m = float(LIF.params.get('C_m', 50e-9))
             R_leak = float(LIF.params.get('R_leak', 1e6))
             V_th_base = float(LIF.params.get('V_th_base', 2.5))
             V_th = float(LIF.params.get('V_th', V_th_base))
-            V_adapt_inc = float(LIF.params.get('V_adapt_inc', 0.15))
             tau_adapt = float(LIF.params.get('tau_adapt', 0.05))
             V_m = float(LIF.params.get('V_m', 0.0))
 
-            # Decaimiento del umbral adaptativo hacia V_th_base (Spike-Frequency Adaptation)
+            # Decaimiento del umbral adaptativo hacia V_th_base
             V_th += (V_th_base - V_th) * (dt / max(1e-4, tau_adapt))
+            LIF.params['V_th'] = V_th
 
             dVm = ((I[j] - V_m / R_leak) / C_m) * dt
             V_m_next = V_m + dVm
+            LIF.params['_v_m_next'] = V_m_next
 
+            ratio = V_m_next / max(1e-3, V_th)
             if V_m_next >= V_th:
-                V_m_next = 0.0
-                V_th += V_adapt_inc  # Incremento adaptativo homeostático por spike
-                LIF.params['spike_count'] = int(LIF.params.get('spike_count', 0)) + 1
-                Act.params['action'] = 'ACTIVADO (Spike!)'
-            else:
-                Act.params['action'] = 'listo'
+                candidates.append((ratio, j))
 
-            LIF.params['V_m'] = V_m_next
-            LIF.params['V_th'] = V_th
+        # 2. Competencia de Carrera Winner-Take-All (WTA): Solo 1 ganador por ciclo
+        winner_j = None
+        if len(candidates) > 0:
+            candidates.sort(key=lambda x: x[0], reverse=True)
+            winner_j = candidates[0][1]
+
+        column_rewards = np.full(4, -1.0)
+        spikes_str = []
+
+        for j in range(4):
+            LIF = self.elements[f'LIF_{j+1}']
+            Act = self.elements[f'Act_{j+1}']
+            V_th = float(LIF.params.get('V_th', 2.5))
+            V_adapt_inc = float(LIF.params.get('V_adapt_inc', 0.15))
+            V_m_next = float(LIF.params.get('_v_m_next', 0.0))
+
+            if winner_j is not None and j == winner_j:
+                LIF.params['V_m'] = 0.0
+                LIF.params['V_th'] = V_th + V_adapt_inc  # Boost adaptativo para el ganador
+                LIF.params['spike_count'] = int(LIF.params.get('spike_count', 0)) + 1
+                Act.params['action'] = '🏆 GANADOR (Spike!)'
+                column_rewards[j] = +1.0  # Ganador recibe R = +1.0 (LTP / Recompensa)
+                self.spike_post[j] = 1.0
+            else:
+                if len(candidates) > 0:
+                    LIF.params['V_m'] = 0.0  # Inhibición lateral sobre los perdedores
+                else:
+                    LIF.params['V_m'] = V_m_next
+                Act.params['action'] = 'listo'
+                column_rewards[j] = -1.0  # Perdedores reciben R = -1.0 (LTD / Penalización)
+                self.spike_post[j] = 0.0
+
             spikes_str.append(f"LIF_{j+1}={LIF.params['spike_count']}")
+
+        # 3. Aplicar vector de recompensas por columna a R-STDP
+        if self.plasticity_mode == "rstdp" and self.canvas.is_animating:
+            self.rstdp_rule.set_reward(column_rewards)
 
         if not (self.plasticity_mode == "rstdp" and self.canvas.is_animating):
             self.status_label.setText(
