@@ -573,7 +573,7 @@ class Crossbar4x4View(QWidget):
 
         # --- Selectividad Secuencial (Decoder multiplexing por fila) ---
         self.sequence_index = 0
-        self.sequence_period_ticks = 100  # 100 ticks (~3.0 s) por fila para observación clara y estable
+        self.sequence_period_ticks = 30   # 30 ticks (~0.9 s) por fila para multiplexación dinámica y fluida
         self._sequence_counter = 0
 
         # --- Recompensa Causal por Columna (R local dependiente de la actividad) ---
@@ -1304,44 +1304,30 @@ class Crossbar4x4View(QWidget):
         # 3. Aplicar plasticidad (si está activa STDP o R-STDP Y el modo es "read")
         if self.plasticity_mode in ("stdp", "rstdp") and self.mode == "read":
             self.spike_pre = (self.V_rows > 0.5).astype(float)
-
-
-            for j in range(4):
-                LIF = self.elements.get(f'LIF_{j+1}')
-                if LIF:
-                    Vm = float(LIF.params.get('V_m', 0.0))
-                    Vth = float(LIF.params.get('V_th', 2.5))
-                    prev_Vm = float(LIF.params.get('_prev_Vm', 0.0))
-                    if prev_Vm >= Vth and Vm < 1.0:
-                        self.spike_post[j] = 1.0
-                    else:
-                        self.spike_post[j] = 0.0
-                    LIF.params['_prev_Vm'] = Vm
-
             G_matrix = get_G_matrix(self.elements, 4, 4)
 
             if self.plasticity_mode == "stdp":
-                dG = self.stdp_rule.apply(
-                    G_matrix, self.spike_pre, self.spike_post, dt
-                )
+                dG = self.stdp_rule.apply(G_matrix, self.spike_pre, self.spike_post, dt)
             else:  # rstdp
-                dG = self.rstdp_rule.apply(
-                    G_matrix, self.spike_pre, self.spike_post, dt
-                )
+                dG = self.rstdp_rule.apply(G_matrix, self.spike_pre, self.spike_post, dt)
 
             for i in range(4):
                 for j in range(4):
                     if abs(dG[i, j]) > 1e-12:
                         mem = self.elements.get(f'M{i+1}{j+1}')
                         if mem:
-                            G_old = float(mem.params.get('G', 69.4e-6))
-                            G_new = np.clip(
-                                G_old + dG[i, j],
-                                self.stdp_rule.G_min,
-                                self.stdp_rule.G_max,
-                            )
-                            mem.params['G'] = float(G_new)
-                            mem.params['G_11'] = float(G_new)
+                            p = mem.params
+                            G_old = float(p.get('G', 69.4e-6))
+                            G_new = np.clip(G_old + dG[i, j], self.stdp_rule.G_min, self.stdp_rule.G_max)
+                            p['G'] = float(G_new)
+                            p['G_11'] = float(G_new)
+                            RON = float(p.get('RON', 100.0))
+                            ROFF = float(p.get('ROFF', 16000.0))
+                            R_new = 1.0 / max(1e-12, G_new)
+                            x_calc = float(np.clip((ROFF - R_new) / (ROFF - RON), 0.01, 0.99)) if ROFF != RON else 0.1
+                            p['x'] = x_calc
+                            p['R'] = R_new
+                            p['R_11'] = R_new
                             if hasattr(mem, 'on_params_changed'):
                                 mem.on_params_changed()
 
@@ -1398,7 +1384,7 @@ class Crossbar4x4View(QWidget):
             max_idx = int(np.argmax(self.evidence_accumulator))
             if self.evidence_accumulator[max_idx] >= self.evidence_threshold:
                 self.winner_j = max_idx
-                self.winner_lock_time = self._sim_time + 0.50  # 500 ms de candado de inercia temporal
+                self.winner_lock_time = self._sim_time + 0.35  # 350 ms de candado de inercia temporal
                 winner_j = max_idx
             else:
                 if self.winner_j is not None and self.evidence_accumulator[self.winner_j] < (self.evidence_threshold * 0.5):
@@ -1439,16 +1425,41 @@ class Crossbar4x4View(QWidget):
 
             spikes_str.append(f"LIF_{j+1}={LIF.params['spike_count']}")
 
-        # 5. Aplicar vector de recompensas por columna a R-STDP
-        if self.plasticity_mode == "rstdp" and self.canvas.is_animating:
-            self.rstdp_rule.set_reward(column_rewards)
+        # 5. Aplicar plasticidad STDP / R-STDP en tiempo real con spike_post activo del ganador
+        if self.plasticity_mode in ("stdp", "rstdp") and self.mode == "read" and self.canvas.is_animating:
+            self.spike_pre = (self.V_rows > 0.5).astype(float)
+            G_matrix = get_G_matrix(self.elements, 4, 4)
 
-        if not (self.plasticity_mode == "rstdp" and self.canvas.is_animating):
-            margin_info = f" │ Margen: ×{margin:.1f}" if winner_j is not None else ""
-            self.status_label.setText(
-                f"⚡ [4×4 REALTIME] t = {self._sim_time:.2f} s │ I_outs = [{I[0]*1e6:.1f}, {I[1]*1e6:.1f}, {I[2]*1e6:.1f}, {I[3]*1e6:.1f}] μA │ Spikes: {' '.join(spikes_str)}{margin_info}"
-            )
-        self.canvas.update()
+            if self.plasticity_mode == "rstdp":
+                self.rstdp_rule.set_reward(column_rewards)
+                dG = self.rstdp_rule.apply(G_matrix, self.spike_pre, self.spike_post, dt)
+            else:  # stdp
+                dG = self.stdp_rule.apply(G_matrix, self.spike_pre, self.spike_post, dt)
+
+            for i in range(4):
+                for j in range(4):
+                    if abs(dG[i, j]) > 1e-12:
+                        mem = self.elements.get(f'M{i+1}{j+1}')
+                        if mem:
+                            p = mem.params
+                            G_old = float(p.get('G', 69.4e-6))
+                            G_new = np.clip(G_old + dG[i, j], self.stdp_rule.G_min, self.stdp_rule.G_max)
+                            p['G'] = float(G_new)
+                            p['G_11'] = float(G_new)
+                            RON = float(p.get('RON', 100.0))
+                            ROFF = float(p.get('ROFF', 16000.0))
+                            R_new = 1.0 / max(1e-12, G_new)
+                            x_calc = float(np.clip((ROFF - R_new) / (ROFF - RON), 0.01, 0.99)) if ROFF != RON else 0.1
+                            p['x'] = x_calc
+                            p['R'] = R_new
+                            p['R_11'] = R_new
+                            if hasattr(mem, 'on_params_changed'):
+                                mem.on_params_changed()
+
+        margin_info = f" │ Margen: ×{margin:.1f}" if winner_j is not None else ""
+        self.status_label.setText(
+            f"⚡ [4×4 REALTIME] t = {self._sim_time:.2f} s │ I_outs = [{I[0]*1e6:.1f}, {I[1]*1e6:.1f}, {I[2]*1e6:.1f}, {I[3]*1e6:.1f}] μA │ Spikes: {' '.join(spikes_str)}{margin_info}"
+        )
         self.canvas.update()
 
     def _on_simulate(self):
