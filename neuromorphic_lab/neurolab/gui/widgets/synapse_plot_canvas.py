@@ -145,16 +145,30 @@ class SynapseMplCanvas(BaseMplCanvas):
         I = sim_data.get("I_sweep", np.array([]))
         R = sim_data.get("R_sweep", np.array([]))
         if len(V) > 0:
-            ax1.plot(V, I * 1e3, 'b-', lw=1.5)
+            max_i = float(np.max(np.abs(I)))
+            if max_i < 1.0e-3:
+                ax1.plot(V, I * 1e6, 'b-', lw=1.8)
+                ax1.set_ylabel("Corriente I (μA)")
+            else:
+                ax1.plot(V, I * 1e3, 'b-', lw=1.8)
+                ax1.set_ylabel("Corriente I (mA)")
+
             ax1.axhline(0, color='#cdd6f4', ls='--', lw=0.6)
             ax1.axvline(0, color='#cdd6f4', ls='--', lw=0.6)
             ax1.set_title("Curva I-V (Histéresis Pinzada)", fontsize=10, fontweight='bold')
-            ax1.set_xlabel("V (V)"); ax1.set_ylabel("I (mA)")
+            ax1.set_xlabel("Voltaje V (V)")
 
-            ax2.plot(V, R / 1e3, 'r-', lw=1.5)
+            max_r = float(np.max(R))
+            if max_r >= 1.0e6:
+                ax2.plot(V, R / 1e6, 'r-', lw=1.8)
+                ax2.set_ylabel("Resistencia R (MΩ)")
+            else:
+                ax2.plot(V, R / 1e3, 'r-', lw=1.8)
+                ax2.set_ylabel("Resistencia R (kΩ)")
+
             ax2.axvline(0, color='#cdd6f4', ls='--', lw=0.6)
-            ax2.set_title("R vs V", fontsize=10, fontweight='bold')
-            ax2.set_xlabel("V (V)"); ax2.set_ylabel("R (kΩ)")
+            ax2.set_title("R vs V (Curva Butterfly)", fontsize=10, fontweight='bold')
+            ax2.set_xlabel("Voltaje V (V)")
 
     def _plot_jo2010_stdp(self, sim_data):
         ax1 = self.figure.add_subplot(1, 2, 1)

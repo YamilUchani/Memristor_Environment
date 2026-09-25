@@ -329,23 +329,28 @@ class SynapseConfigPanel(QWidget):
         elif idx == 6:  # IV hysteresis
             exp_type = "iv_hysteresis"
             m = self._create_device()
-            t_arr = np.linspace(0, 2, 800)
+            # Frecuencia de excitación fisiológica de 1.0 Hz (2.0s totales, dt = 1.0 ms)
+            n_pts = 2000
+            t_total = 2.0
+            dt = t_total / float(n_pts)
+            t_arr = np.linspace(0.0, t_total, n_pts)
             v_amp = float(abs(self.spin_vamp.value()))
             if v_amp < 0.1:
-                v_amp = 1.0
-            V = v_amp * np.sin(2 * np.pi * t_arr)
+                v_amp = 1.5
+            V = v_amp * np.sin(2.0 * np.pi * 1.0 * t_arr)
             I, R = np.zeros_like(V), np.zeros_like(V)
             for k, vk in enumerate(V):
                 I[k] = m.current(vk)
                 R[k] = m.resistance
-                m.update(vk, 1e-4)
+                m.update(vk, dt)
 
             sim_data = {"V_sweep": V, "I_sweep": I, "R_sweep": R}
+            r_ratio = (R.max() / max(1e-12, R.min()))
             self.metrics_label.setText(
                 f"<b>Dispositivo:</b> {dev_name}<br>"
-                f"• Amplitud Voltaje (V_max): <b>±{v_amp:.2f} V</b><br>"
-                f"• I_max = {I.max()*1e3:.3f} mA, I_min = {I.min()*1e3:.3f} mA<br>"
-                f"• R_min = {R.min()/1e3:.2f} kΩ, R_max = {R.max()/1e3:.2f} kΩ"
+                f"• <b>Amplitud Voltaje (V_max):</b> ±{v_amp:.2f} V │ <b>Frecuencia:</b> 1.0 Hz<br>"
+                f"• <b>I_max:</b> {I.max()*1e3:.3f} mA, <b>I_min:</b> {I.min()*1e3:.3f} mA<br>"
+                f"• <b>R_min:</b> {R.min()/1e3:.2f} kΩ, <b>R_max:</b> {R.max()/1e3:.2f} kΩ (Dinámica: {r_ratio:.1f}×)"
             )
 
         elif idx == 7:  # Jo 2010 STDP Validation (jo2010_stdp.csv)
