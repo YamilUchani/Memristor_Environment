@@ -570,8 +570,8 @@ class Crossbar4x4View(QWidget):
 
         # Reglas: viven en el CONTROLLER, no en el view.
         stdp_cfg = STDPConfig(
-            A_plus=0.1e-6,
-            A_minus=0.08e-6,
+            A_plus=15.0e-6,    # Calibración interactiva: 15 μS por coincidencia
+            A_minus=10.0e-6,   # LTD: 10 μS por coincidencia
             G_min=1e-6,
             G_max=500e-6,
             tau_plus=20e-3,
@@ -581,8 +581,8 @@ class Crossbar4x4View(QWidget):
         self.controller.stdp_rule.reset(4, 4)
 
         rstdp_cfg = RSTDPConfig(
-            A_plus=0.1e-6,
-            A_minus=0.08e-6,
+            A_plus=15.0e-6,    # Calibración interactiva: 15 μS por coincidencia
+            A_minus=10.0e-6,   # LTD: 10 μS por coincidencia
             G_min=1e-6,
             G_max=500e-6,
             R=0.0,
