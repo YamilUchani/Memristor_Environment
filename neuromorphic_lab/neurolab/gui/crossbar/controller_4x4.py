@@ -276,47 +276,49 @@ class Crossbar4x4Controller:
 
             G_min = self.stdp_rule.G_min
             G_max = self.stdp_rule.G_max
+            has_plasticity_update = np.any(np.abs(dG) > 1e-12)
             
-            for i in range(4):
-                for j in range(4):
-                    if abs(dG[i, j]) > 1e-12:
-                        mem = self.elements.get(f'M{i+1}{j+1}')
-                        if mem:
-                            G_old = float(mem.params.get('G', self.G_base))
-                            saturation = max(0.0, (G_max - G_old) / (G_max - G_min)) if dG[i, j] > 0 else max(0.0, (G_old - G_min) / (G_max - G_min))
-                            G_new = float(np.clip(G_old + dG[i, j] * saturation, G_min, G_max))
-                            R_new = 1.0 / max(1e-12, G_new)
-                            RON = float(mem.params.get('RON', 2000.0))
-                            ROFF = float(mem.params.get('ROFF', 16000.0))
-                            x_calc = float(np.clip((ROFF - R_new) / (ROFF - RON), 0.01, 0.99)) if ROFF != RON else 0.1
-                            
-                            mem.params['G'] = G_new
-                            mem.params['G_11'] = G_new
-                            mem.params['R'] = R_new
-                            mem.params['R_11'] = R_new
-                            mem.params['x'] = x_calc
-                            mem.params['x0'] = x_calc
-                            self.crossbar.set_conductance(i, j, G_new)
+            if has_plasticity_update:
+                for i in range(4):
+                    for j in range(4):
+                        if abs(dG[i, j]) > 1e-12:
+                            mem = self.elements.get(f'M{i+1}{j+1}')
+                            if mem:
+                                G_old = float(mem.params.get('G', self.G_base))
+                                saturation = max(0.0, (G_max - G_old) / (G_max - G_min)) if dG[i, j] > 0 else max(0.0, (G_old - G_min) / (G_max - G_min))
+                                G_new = float(np.clip(G_old + dG[i, j] * saturation, G_min, G_max))
+                                R_new = 1.0 / max(1e-12, G_new)
+                                RON = float(mem.params.get('RON', 2000.0))
+                                ROFF = float(mem.params.get('ROFF', 16000.0))
+                                x_calc = float(np.clip((ROFF - R_new) / (ROFF - RON), 0.01, 0.99)) if ROFF != RON else 0.1
+                                
+                                mem.params['G'] = G_new
+                                mem.params['G_11'] = G_new
+                                mem.params['R'] = R_new
+                                mem.params['R_11'] = R_new
+                                mem.params['x'] = x_calc
+                                mem.params['x0'] = x_calc
+                                self.crossbar.set_conductance(i, j, G_new)
 
-        # Weight Decay
-        if plasticity_mode in ("stdp", "rstdp") and self.winner_j is not None:
-            for i in range(4):
-                for j in range(4):
-                    if j != self.winner_j:
-                        mem = self.elements.get(f'M{i+1}{j+1}')
-                        if mem:
-                            G_old = float(mem.params.get('G', self.G_base))
-                            G_new = G_old + self.G_decay_rate * (self.G_base - G_old)
-                            mem.params['G'] = float(G_new)
-                            R_new = 1.0 / max(1e-12, G_new)
-                            RON = float(mem.params.get('RON', 2000.0))
-                            ROFF = float(mem.params.get('ROFF', 16000.0))
-                            x_calc = float(np.clip((ROFF - R_new) / (ROFF - RON), 0.01, 0.99)) if ROFF != RON else 0.1
-                            mem.params['x'] = x_calc
-                            mem.params['R'] = R_new
-                            mem.params['G_11'] = G_new
-                            mem.params['R_11'] = R_new
-                            self.crossbar.set_conductance(i, j, G_new)
+                # Weight Decay: Solo aplica cuando hay actualización de plasticidad activa (Fase Escritura)
+                if self.winner_j is not None:
+                    for i in range(4):
+                        for j in range(4):
+                            if j != self.winner_j:
+                                mem = self.elements.get(f'M{i+1}{j+1}')
+                                if mem:
+                                    G_old = float(mem.params.get('G', self.G_base))
+                                    G_new = G_old + self.G_decay_rate * (self.G_base - G_old)
+                                    mem.params['G'] = float(G_new)
+                                    R_new = 1.0 / max(1e-12, G_new)
+                                    RON = float(mem.params.get('RON', 2000.0))
+                                    ROFF = float(mem.params.get('ROFF', 16000.0))
+                                    x_calc = float(np.clip((ROFF - R_new) / (ROFF - RON), 0.01, 0.99)) if ROFF != RON else 0.1
+                                    mem.params['x'] = x_calc
+                                    mem.params['R'] = R_new
+                                    mem.params['G_11'] = G_new
+                                    mem.params['R_11'] = R_new
+                                    self.crossbar.set_conductance(i, j, G_new)
 
         return {
             "I_cols": I_cols,

@@ -1135,18 +1135,12 @@ class Crossbar4x4View(QWidget):
         self.canvas.update()
 
     def _select_random_active_sensors(self):
-        """Selecciona de 1 a 3 sensores activos al azar para variar el patrón de entrada."""
+        """Selecciona de 1 a 3 sensores activos al azar para variar el patrón de entrada usando los voltajes del usuario."""
         k = int(self._spike_rng.integers(1, 4))  # Activar entre 1 y 3 filas al azar
         active_indices = self._spike_rng.choice(4, size=k, replace=False)
         mask = np.zeros(4, dtype=bool)
         mask[active_indices] = True
         self.rstdp_active_sensors = mask
-
-        # Sincronizar UI de sensores
-        for i in range(4):
-            v_val = 0.70 if mask[i] else 0.0
-            self.elements[f'S{i+1}'].params['V_out'] = v_val
-        self._update_sensor_spinboxes()
 
 
 
@@ -1349,10 +1343,6 @@ class Crossbar4x4View(QWidget):
                             self._apply_reward(-1.0, is_auto=True)
                 elif self.rstdp_phase == "write":
                     self.rstdp_phase = "rest"
-                    # Apagar temporalmente todos los sensores en la fase de reposo
-                    for i in range(4):
-                        self.elements[f'S{i+1}'].params['V_out'] = 0.0
-                    self._update_sensor_spinboxes()
                 else:  # "rest" -> regresar a "read"
                     self.rstdp_phase = "read"
                     # Cambiar meta de Auto-RL si expiró el intervalo
@@ -1372,7 +1362,10 @@ class Crossbar4x4View(QWidget):
                 self.spike_pre = np.zeros(4, dtype=bool)
             else:
                 for i in range(4):
-                    v_i = float(self.elements[f'S{i+1}'].params.get('V_out', 0.0))
+                    user_v = float(self.elements[f'S{i+1}'].params.get('V_out', 0.0))
+                    is_active = self.rstdp_active_sensors[i] if hasattr(self, 'rstdp_active_sensors') else True
+                    v_i = user_v if is_active else 0.0
+
                     if abs(v_i) < 0.1:
                         rate_hz = 0.0
                     else:
@@ -1384,7 +1377,10 @@ class Crossbar4x4View(QWidget):
                         if self._spike_rng.random() < p_spike:
                             self.spike_pre[i] = True
 
-                self.V_rows = np.array([float(self.elements[f'S{i+1}'].params.get('V_out', 0.0)) for i in range(4)])
+                self.V_rows = np.array([
+                    (float(self.elements[f'S{i+1}'].params.get('V_out', 0.0)) if self.rstdp_active_sensors[i] else 0.0)
+                    for i in range(4)
+                ])
                 self.V_cols = np.zeros(4)
 
         elif self.plasticity_mode == "stdp" and self.canvas.is_animating:
