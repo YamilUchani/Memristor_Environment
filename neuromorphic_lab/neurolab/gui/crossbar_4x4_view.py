@@ -1334,9 +1334,17 @@ class Crossbar4x4View(QWidget):
         self.controller.reset()
         self.spike_pre = np.zeros(4, dtype=bool)
         self.spike_post = np.zeros(4, dtype=bool)
+        self.winner_j = None
         self.reward = 0.0
         self.V_rows = np.full(4, self.read_cfg.V_read)
         self.V_cols = np.full(4, self.read_cfg.V_col)
+
+        # Resetear voltajes de sensores a estado inicial
+        for i in range(4):
+            s_key = f'S{i+1}'
+            if s_key in self.elements:
+                self.elements[s_key].params['V_out'] = 0.8 if i == 0 else 0.4 if i == 1 else 0.3 if i == 2 else 0.2
+        self._update_sensor_spinboxes()
 
         for elem in self.elements.values():
             elem.selected = False
@@ -1370,7 +1378,7 @@ class Crossbar4x4View(QWidget):
             act.params['is_winner'] = False
             act.params['action'] = 'listo'
 
-        self.status_label.setText("⏹ Reset completo: Conductancias restauradas a estado inicial x0 (~69.4 μS) con variabilidad D2D.")
+        self.status_label.setText("⏹ Reset completo: Sensores, conductancias x0 (~69.4 μS) y trazas STDP completamente reiniciadas.")
         self.canvas.update()
 
     def _on_reset_matrix(self):
