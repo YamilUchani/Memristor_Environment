@@ -177,18 +177,7 @@ class Crossbar4x4Controller:
 
         self.spike_pre = spike_pre_arr
         
-        # WTA Histéresis 5% e Inhibición Lateral Real
-        MARGIN = 1.05
-        candidate_winner = int(np.argmax(I_cols))
-
-        if self.winner_j is None or self.sim_time >= self.winner_lock_time:
-            if self.winner_j is None:
-                self.winner_j = candidate_winner
-                self.winner_lock_time = self.sim_time + self.WINNER_LOCK_DURATION
-            elif I_cols[candidate_winner] > MARGIN * I_cols[self.winner_j]:
-                self.winner_j = candidate_winner
-                self.winner_lock_time = self.sim_time + self.WINNER_LOCK_DURATION
-
+        # Soft WTA e Inhibición Lateral Analógica Continuos
         winner_active = (self.winner_j is not None and self.sim_time < self.winner_lock_time)
 
         # LIF & WTA delegando al motor neuronal LIFNeuron
@@ -201,18 +190,16 @@ class Crossbar4x4Controller:
             mv = self.elements.get(f'M_v{j+1}')
             x_v = float(mv.params.get('x', 0.05)) if mv else 1.0
 
-            # Inhibición lateral real: corriente negativa en perdedores
+            # Inhibición lateral suave: inyección de corriente negativa (sin reset duro de V_m)
             if winner_active and j != self.winner_j:
-                I_inhib = -self.WTA_GAIN * I_cols[self.winner_j] * (self.TIA_R / self.LIF_R_IN)
-                neuron.V_m = 0.0
-                LIF_ui.params['V_m'] = 0.0
+                I_inhib = -self.WTA_GAIN * (I_cols[self.winner_j] * self.TIA_R / self.LIF_R_IN)
             else:
                 I_inhib = 0.0
 
-            # Inyectar corriente física modulada por la celda volátil M_v en serie
+            # Inyectar corriente física modulada por la celda volátil M_v en serie + inhibición
             I_col_eff = I_cols[j] * (0.1 + 0.9 * x_v)
             V_TIA = I_col_eff * self.TIA_R          # [V]
-            I_syn = max(0.0, (V_TIA / self.LIF_R_IN) + I_inhib)
+            I_syn = (V_TIA / self.LIF_R_IN) + I_inhib
             has_spiked = neuron.step(current_input=I_syn, dt=dt, t=self.sim_time)
 
             # Sincronizar UI con el motor físico
@@ -225,12 +212,13 @@ class Crossbar4x4Controller:
                 LIF_ui.params['spike_count'] = int(LIF_ui.params.get('spike_count', 0)) + 1
                 self.refractory_time[j] = self.sim_time + neuron.config.t_ref
 
-        if self.winner_j is not None and self.sim_time >= self.winner_lock_time:
-            if np.all(spikes_this_tick <= 0.5):
-                self.winner_j = None
-                for j in range(4):
-                    LIF = self.elements[f'LIF_{j+1}']
-                    LIF.params['V_m'] = 0.0
+        # Actualizar ganador según la neurona que acaba de disparar con mayor corriente
+        recent_spikers = np.where(spikes_this_tick > 0.5)[0]
+        if len(recent_spikers) > 0:
+            self.winner_j = int(recent_spikers[np.argmax([I_cols[j] for j in recent_spikers])])
+            self.winner_lock_time = self.sim_time + 0.050  # Ventana fluida de 50 ms
+        elif self.sim_time >= self.winner_lock_time:
+            self.winner_j = None
 
         for j in range(4):
             LIF = self.elements[f'LIF_{j+1}']
@@ -245,7 +233,7 @@ class Crossbar4x4Controller:
                 is_refractory = self.sim_time < self.refractory_time[j]
                 if is_refractory:
                     Act.params['action'] = '⏳ REFRACTARIO'
-                elif self.winner_j is not None:
+                elif winner_active:
                     Act.params['action'] = '🚫 INHIBIDO'
                 else:
                     Act.params['action'] = 'listo'
