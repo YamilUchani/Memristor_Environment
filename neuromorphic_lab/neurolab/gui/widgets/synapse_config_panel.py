@@ -389,10 +389,10 @@ class SynapseConfigPanel(QWidget):
             # Simulación con dispositivo memristivo activo y regla de saturación no lineal
             mem = self._create_device()
             syn = MemristiveSynapse(mem)
-            ltp = LTPRule(n_pulses=100, V_pulse=+1.0, saturation=True, tau_sat=35.0)
-            G_ltp = ltp.apply(syn, dt=1e-3)
-            ltd = LTDRule(n_pulses=100, V_pulse=-1.0, saturation=True, tau_sat=35.0)
-            G_ltd = ltd.apply(syn, dt=1e-3)
+            ltp = LTPRule(n_pulses=100, V_pulse=+1.0, saturation=True, tau_sat=80.0)
+            G_ltp = ltp.apply(syn, dt=1.5e-4)
+            ltd = LTDRule(n_pulses=100, V_pulse=-1.0, saturation=True, tau_sat=80.0)
+            G_ltd = ltd.apply(syn, dt=1.5e-4)
             results['G_sim'] = np.concatenate([G_ltp, G_ltd[1:]])
 
             sim_data = results
