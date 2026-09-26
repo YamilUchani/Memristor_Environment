@@ -165,6 +165,7 @@ class SynapseConfigPanel(QWidget):
 
     def _on_param_changed(self):
         self.param_changed.emit()
+        self.run_simulation()
 
     def _on_exp_changed(self, idx: int):
         if idx == 7:  # Jo 2010 STDP
