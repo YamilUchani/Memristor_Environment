@@ -38,7 +38,7 @@ class StrukovMathModel(BaseMathModel):
     ) -> float:
         """Calcula la velocidad de deriva iónica pura sin perturbaciones ni ventanas."""
         cfg = model_config if model_config is not None else StrukovConfig()
-        v_th = float(getattr(cfg, 'V_th', getattr(cfg, 'v_th', 0.0)))
+        v_th = float(getattr(cfg, 'V_th', getattr(cfg, 'v_th', 0.1)))
         if v_th > 0 and abs(voltage) < v_th:
             return 0.0
         # dx/dt = (mu_v * R_on / D²) * I(t)
