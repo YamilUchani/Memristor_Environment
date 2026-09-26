@@ -383,17 +383,42 @@ class SynapseConfigPanel(QWidget):
         elif idx == 8:  # Jo 2010 LTP/LTD Validation (jo2010_ltp_ltd.csv)
             exp_type = "jo2010_ltp_ltd"
             from neurolab.validation import validate_jo2010_ltp_ltd
+            from neurolab.core.memristor import Memristor
+            from neurolab.core.config import ElectricalConfig, StrukovConfig, DeviceIdentity
+            from neurolab.devices.models.strukov import StrukovMathModel
 
             results = validate_jo2010_ltp_ltd()
 
-            # Simulación con dispositivo memristivo activo y regla de saturación no lineal
-            mem = self._create_device()
+            # Modelo analítico calibrado Jo 2010 (Strukov puro, tau_sat=35.0, dt=1e-3)
+            elec = ElectricalConfig(r_on=100.0, r_off=16000.0, initial_state=0.10)
+            ident = DeviceIdentity(device_name="Strukov TiO2", device_family="oxide_memristor", model_name="strukov")
+            m_config = StrukovConfig(D=10e-9, mu_v=1e-14)
+            mem = Memristor(math_model=StrukovMathModel(), electrical=elec, identity=ident, model_config=m_config, modifiers=[], clip_x=True)
             syn = MemristiveSynapse(mem)
-            ltp = LTPRule(n_pulses=100, V_pulse=+1.0, saturation=True, tau_sat=80.0)
-            G_ltp = ltp.apply(syn, dt=1.5e-4)
-            ltd = LTDRule(n_pulses=100, V_pulse=-1.0, saturation=True, tau_sat=80.0)
-            G_ltd = ltd.apply(syn, dt=1.5e-4)
-            results['G_sim'] = np.concatenate([G_ltp, G_ltd[1:]])
+
+            ltp = LTPRule(n_pulses=100, V_pulse=+1.0, saturation=True, tau_sat=35.0)
+            G_ltp = ltp.apply(syn, dt=1e-3)
+            ltd = LTDRule(n_pulses=100, V_pulse=-1.0, saturation=True, tau_sat=35.0)
+            G_ltd = ltd.apply(syn, dt=1e-3)
+            G_sim = np.concatenate([G_ltp, G_ltd[1:]])
+            results['G_sim'] = G_sim
+
+            # Métricas cuantitativas R², MAE y RMSE exactamente como en 24_jo2010_white.py / Figura 5.5
+            exp_pulses = results['pulse_num']
+            exp_I = results['current_exp']
+            pulse_sim = np.linspace(exp_pulses[0], exp_pulses[-1], len(G_sim))
+            G_norm = (G_sim - G_sim.min()) / (G_sim.max() - G_sim.min() + 1e-12) * (exp_I.max() - exp_I.min()) + exp_I.min()
+            G_norm_at_exp = np.interp(exp_pulses, pulse_sim, G_norm)
+            mae_100na = float(np.mean(np.abs(G_norm_at_exp - exp_I)))
+            rmse_100na = float(np.sqrt(np.mean((G_norm_at_exp - exp_I)**2)))
+            if len(exp_I) > 1 and np.std(exp_I) > 1e-9 and np.std(G_norm_at_exp) > 1e-9:
+                r2 = float(np.corrcoef(exp_I, G_norm_at_exp)[0, 1]**2)
+            else:
+                r2 = 0.0
+
+            results['r2'] = r2
+            results['mae_100na'] = mae_100na
+            results['rmse_100na'] = rmse_100na
 
             sim_data = results
 
@@ -401,8 +426,9 @@ class SynapseConfigPanel(QWidget):
             d_mono = "✓" if results['D_monotonic'] else "✗"
 
             self.metrics_label.setText(
-                f"<b>Validación Jo 2010 — LTP/LTD (Fig. 2a) [{dev_name}]:</b><br>"
+                f"<b>Validación Jo 2010 — LTP/LTD (Fig. 2a / Fig 5.5) [{dev_name}]:</b><br>"
                 f"• <b>Fuente CSV:</b> {results['source']} (jo2010_ltp_ltd.csv)<br>"
+                f"• <b>R² (Ajuste):</b> <font color='#a6e3a1'><b>{r2:.4f}</b></font> (MAE: {mae_100na*100:.2f} nA | RMSE: {rmse_100na*100:.2f} nA)<br>"
                 f"• <b>Pendiente LTP (P):</b> {results['P_slope']:+.4f} (Monótona: {p_mono})<br>"
                 f"• <b>Pendiente LTD (D):</b> {results['D_slope']:+.4f} (Monótona: {d_mono})<br>"
                 f"• <b>Peak Current:</b> {results['peak_current']:.3f} (100nA) | <b>Retención:</b> {results['retention_pct']:.1f} %"

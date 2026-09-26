@@ -201,16 +201,26 @@ class SynapseMplCanvas(BaseMplCanvas):
         current = sim_data.get("current_exp", np.array([]))
         idx_peak = sim_data.get("idx_peak", 10)
         G_sim = sim_data.get("G_sim", np.array([]))
+        r2 = sim_data.get("r2", 0.0)
+        mae = sim_data.get("mae_100na", 0.0)
+        rmse = sim_data.get("rmse_100na", 0.0)
+
         if len(pulse) > 0:
-            ax1.plot(pulse[:idx_peak+1], current[:idx_peak+1], 's-', ms=5, color='#89b4fa', label='LTP')
-            ax1.plot(pulse[idx_peak:], current[idx_peak:], 'o-', ms=5, color='#f38ba8', label='LTD')
+            ax1.plot(pulse[:idx_peak+1], current[:idx_peak+1], 's-', ms=5, color='#89b4fa', label='LTP (Jo 2010, exp.)')
+            ax1.plot(pulse[idx_peak:], current[idx_peak:], 'o-', ms=5, color='#f38ba8', label='LTD (Jo 2010, exp.)')
             if len(G_sim) > 0:
                 G_norm = (G_sim - G_sim.min()) / (G_sim.max() - G_sim.min() + 1e-12) * (current.max() - current.min()) + current.min()
                 pulse_sim = np.linspace(pulse[0], pulse[-1], len(G_sim))
-                ax1.plot(pulse_sim, G_norm, '--', lw=1.8, color='#a6e3a1', label='Simulación')
-            ax1.set_title("Jo 2010 — LTP/LTD", fontsize=10, fontweight='bold')
-            ax1.set_xlabel("Pulso"); ax1.set_ylabel("Corriente")
-            ax1.legend(loc='lower left', fontsize=8)
+                ax1.plot(pulse_sim, G_norm, '--', lw=2.2, color='#a6e3a1', label='Simulación')
+                if r2 > 0:
+                    text_str = f"R² = {r2:.4f}\nMAE = {mae*100:.2f} nA\nRMSE = {rmse*100:.2f} nA"
+                    ax1.text(0.95, 0.95, text_str, transform=ax1.transAxes, fontsize=8,
+                             verticalalignment='top', horizontalalignment='right',
+                             bbox=dict(boxstyle='round', facecolor='#181825', edgecolor='#45475a', alpha=0.9))
+
+            ax1.set_title(f"Jo 2010 — LTP/LTD (R² = {r2:.4f})", fontsize=10, fontweight='bold')
+            ax1.set_xlabel("Pulso"); ax1.set_ylabel("Corriente (100 nA/pulso)")
+            ax1.legend(loc='upper left', fontsize=8)
 
         labels = ['LTP', 'LTD']
         slopes = [sim_data.get('P_slope', 0.0), sim_data.get('D_slope', 0.0)]
