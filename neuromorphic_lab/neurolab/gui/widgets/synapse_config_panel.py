@@ -383,22 +383,16 @@ class SynapseConfigPanel(QWidget):
         elif idx == 8:  # Jo 2010 LTP/LTD Validation (jo2010_ltp_ltd.csv)
             exp_type = "jo2010_ltp_ltd"
             from neurolab.validation import validate_jo2010_ltp_ltd
-            from neurolab.core.memristor import Memristor
-            from neurolab.core.config import ElectricalConfig, StrukovConfig, DeviceIdentity
-            from neurolab.devices.models.strukov import StrukovMathModel
 
             results = validate_jo2010_ltp_ltd()
 
-            # Modelo analítico calibrado Jo 2010 (Strukov puro, tau_sat=35.0, dt=1e-3)
-            elec = ElectricalConfig(r_on=100.0, r_off=16000.0, initial_state=0.10)
-            ident = DeviceIdentity(device_name="Strukov TiO2", device_family="oxide_memristor", model_name="strukov")
-            m_config = StrukovConfig(D=10e-9, mu_v=1e-14)
-            mem = Memristor(math_model=StrukovMathModel(), electrical=elec, identity=ident, model_config=m_config, modifiers=[], clip_x=True)
+            # Usar el dispositivo seleccionado dinámicamente por el usuario (Subpestaña 1, 2 o 3)
+            mem = self._create_device()
             syn = MemristiveSynapse(mem)
 
-            ltp = LTPRule(n_pulses=100, V_pulse=+1.0, saturation=True, tau_sat=35.0)
+            ltp = LTPRule(n_pulses=100, V_pulse=+1.0, saturation=True, tau_sat=35.0, t_off=0.0)
             G_ltp = ltp.apply(syn, dt=1e-3)
-            ltd = LTDRule(n_pulses=100, V_pulse=-1.0, saturation=True, tau_sat=35.0)
+            ltd = LTDRule(n_pulses=100, V_pulse=-1.0, saturation=True, tau_sat=35.0, t_off=0.0)
             G_ltd = ltd.apply(syn, dt=1e-3)
             G_sim = np.concatenate([G_ltp, G_ltd[1:]])
             results['G_sim'] = G_sim
