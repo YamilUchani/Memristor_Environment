@@ -9,6 +9,7 @@ Características:
   - Restauración automática de última sesión al arrancar
   - Título dinámico con el nombre del dispositivo activo
 """
+from neurolab.core import Memristor
 import os
 import time
 import numpy as np
