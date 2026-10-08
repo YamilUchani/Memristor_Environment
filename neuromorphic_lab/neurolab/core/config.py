@@ -17,12 +17,13 @@ class ElectricalConfig:
     initial_state: float = 0.10 # x_0 = w_0/D = 0.10 (w_0 = 1 nm)
 
     def __post_init__(self):
-        if self.r_on <= 0 or self.r_off <= 0:
-            raise ValueError("R_on y R_off deben ser estrictamente positivos.")
+        if self.r_on <= 0: self.r_on = 1e-3
+        if self.r_off <= 0: self.r_off = 1e-3
         if self.r_on >= self.r_off:
-            raise ValueError("R_on debe ser menor que R_off.")
-        if not (0.0 <= self.initial_state <= 1.0):
-            raise ValueError("initial_state debe estar acotado en el rango [0.0, 1.0].")
+            # En GUI en tiempo real, evitar crasheos si el usuario teclea R_on > R_off
+            self.r_on = self.r_off * 0.99
+        
+        self.initial_state = max(0.0, min(1.0, self.initial_state))
 
     @property
     def g_on(self) -> float:
@@ -128,3 +129,15 @@ class PreziosoVirginConfig:
 
     # --- Integración ---
     dt: float = 1e-4                # s paso temporal
+
+@dataclass
+class CustomConfig:
+    """NIVEL E: Parámetros físicos específicos del modelo Custom (definido por el usuario)."""
+    equation_dxdt: str = "(mu_v * R_on / D**2) * i" # Igual a Strukov por defecto
+    equation_i: str = ""
+    equation_window: str = "1.0"
+    D: float = 10e-9
+    mu_v: float = 1e-14
+    tau_relax: float = 1.0
+    x_eq: float = 0.05
+

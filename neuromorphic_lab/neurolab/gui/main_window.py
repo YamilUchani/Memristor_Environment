@@ -83,7 +83,7 @@ class MainWindow(QMainWindow):
         self._rt_i_in_hist = []
         self._rt_spike_times = []
 
-        self._apply_dark_theme()
+        # self._apply_dark_theme()
         self.init_ui()
         # Simulación inicial ÚNICA: con la sesión restaurada si existe, o con
         # los valores por defecto en caso contrario (evita simular dos veces).
@@ -239,11 +239,25 @@ class MainWindow(QMainWindow):
         splitter_m = QSplitter(Qt.Horizontal)
         controls_container_m = QWidget()
         controls_layout_m = QVBoxLayout(controls_container_m)
-        # Sub-pestañas para configurar Memristores (Strukov Ideal, HfO₂ Serie Neurona, Prezioso 2014)
+        # Sub-pestañas para configurar Memristores (Genérico, Strukov Ideal, HfO₂ Serie Neurona, Prezioso 2014)
         self.memristor_subtabs = QTabWidget()
+        self.config_panel_0 = ConfigPanel()   # Genérico / Personalizado (Vacio/Custom - Configuración Total)
         self.config_panel_1 = ConfigPanel()   # Strukov Ideal
         self.config_panel_2 = ConfigPanel()   # HfO₂ Serie Neurona (Fusiona Volátil + Híbrido)
         self.config_panel_3 = ConfigPanel()   # Prezioso 2014
+
+        # Subpestaña 0: Genérico / Personalizado (Configuración Vacía / Libre desde cero)
+        self.config_panel_0.txt_device_name.setText("Memristor Personalizado (Genérico)")
+        self.config_panel_0.combo_material.setCurrentText("Personalizado")
+        self.config_panel_0.spin_r_on.setValue(100.0)
+        self.config_panel_0.combo_ron_unit.setCurrentText("Ω")
+        self.config_panel_0.spin_r_off.setValue(100.0)
+        self.config_panel_0.combo_roff_unit.setCurrentText("kΩ")
+        self.config_panel_0.spin_x0.setValue(0.10)
+        self.config_panel_0.spin_D_nm.setValue(10.0)
+        self.config_panel_0.spin_mu_v.setValue(1e-14)
+        self.config_panel_0.combo_realism_mode.setCurrentIndex(0)
+        self.config_panel_0.spin_seed.setValue(42)
 
         # Subpestaña 1: Strukov Ideal (TiO₂)
         self.config_panel_1.txt_device_name.setText("Memristor No Volátil (Strukov)")
@@ -302,6 +316,7 @@ class MainWindow(QMainWindow):
         self.config_panel_3.spin_seed.setValue(42)
 
         self.signal_panel = SignalPanel()
+        self.config_panel_0.set_signal_panel(self.signal_panel)
         self.config_panel_1.set_signal_panel(self.signal_panel)
         self.config_panel_2.set_signal_panel(self.signal_panel)
         self.config_panel_3.set_signal_panel(self.signal_panel)
@@ -331,11 +346,12 @@ class MainWindow(QMainWindow):
             except Exception:
                 pass
 
+        self.memristor_subtabs.addTab(self.config_panel_0, "⚙️ 0 · Genérico / Custom")
         self.memristor_subtabs.addTab(self.config_panel_1, "🔬 1 · Strukov Ideal (TiO₂)")
         self.memristor_subtabs.addTab(self.config_panel_2, "🧠 2 · HfO₂ Serie Neurona")
         self.memristor_subtabs.addTab(self.config_panel_3, "📊 3 · Prezioso 2014")
-        self.memristor_subtabs.setCurrentIndex(1)  # Sub-Pestaña 2 (HfO₂ Neurona) activa por defecto
-        self._on_subtab_changed(1)  # Forzar carga de señal y parámetros de HfO2 por defecto
+        self.memristor_subtabs.setCurrentIndex(0)  # Sub-Pestaña 0 (Genérica / Custom) activa por defecto
+        self._on_subtab_changed(0)
 
         controls_layout_m.addWidget(self.memristor_subtabs)
         controls_layout_m.addWidget(self.signal_panel)
@@ -461,7 +477,7 @@ class MainWindow(QMainWindow):
 
         form_combos = QFormLayout()
         self.combo_mem_rs = QComboBox()
-        self.combo_mem_rs.addItems(["Memristor 1 (Strukov Ideal)", "Memristor 2 (HfO₂ Serie Neurona)", "Memristor 3 (Prezioso 2014)"])
+        self.combo_mem_rs.addItems(["Memristor 0 (Genérico / Custom)", "Memristor 1 (Strukov Ideal)", "Memristor 2 (HfO₂ Serie Neurona)", "Memristor 3 (Prezioso 2014)"])
 
         self.combo_mem_rs.setCurrentIndex(1)  # Default: Memristor 2 (HfO₂ Serie Neurona)
 
@@ -683,6 +699,7 @@ class MainWindow(QMainWindow):
         self.synapse_config_panel.simulation_requested.connect(
             lambda exp_type, sim_data: self.synapse_plot_canvas.plot_experiment(exp_type, sim_data)
         )
+        self.config_panel_0.param_changed.connect(self._sync_memristor_to_synapse)
         self.config_panel_1.param_changed.connect(self._sync_memristor_to_synapse)
         self.config_panel_2.param_changed.connect(self._sync_memristor_to_synapse)
         self.config_panel_3.param_changed.connect(self._sync_memristor_to_synapse)
@@ -758,6 +775,7 @@ class MainWindow(QMainWindow):
         btn_edit_neu.clicked.connect(lambda: self.dock_neuron.raise_())
 
         self.signal_panel.run_simulation_requested.connect(self.run_simulation)
+        self.config_panel_0.param_changed.connect(self._on_param_changed)
         self.config_panel_1.param_changed.connect(self._on_param_changed)
         self.config_panel_2.param_changed.connect(self._on_param_changed)
         self.config_panel_3.param_changed.connect(self._on_param_changed)
@@ -856,8 +874,10 @@ class MainWindow(QMainWindow):
 
         active_idx = self.memristor_subtabs.currentIndex()
         if active_idx == 0:
-            panel = self.config_panel_1
+            panel = self.config_panel_0
         elif active_idx == 1:
+            panel = self.config_panel_1
+        elif active_idx == 2:
             panel = self.config_panel_2
         else:
             panel = self.config_panel_3
@@ -1133,9 +1153,9 @@ class MainWindow(QMainWindow):
     def _on_subtab_changed(self, index: int):
         """Al cambiar de subpestaña, actualiza el panel activo y la fuente de señal con su perfil JSON."""
         json_map = {
-            0: "strukov_ideal.json",
-            1: "memristor_hfo2_neuron.json",
-            2: "memristor_prezioso.json"
+            1: "strukov_ideal.json",
+            2: "memristor_hfo2_neuron.json",
+            3: "memristor_prezioso.json"
         }
         json_file = json_map.get(index)
         if json_file:
@@ -1151,13 +1171,15 @@ class MainWindow(QMainWindow):
         self.run_simulation()
 
     def _get_panel_by_index(self, index: int) -> ConfigPanel:
-        """Devuelve el ConfigPanel correspondiente al índice de sub-pestaña."""
-        if index == 1:
-            return self.config_panel_2   # HfO₂ Serie Neurona
-        elif index == 2:
-            return self.config_panel_3   # Prezioso 2014
-        else:
+        """Devuelve el ConfigPanel correspondiente al índice de sub-pestaña (0, 1, 2, 3)."""
+        if index == 0:
+            return self.config_panel_0   # Genérico / Custom
+        elif index == 1:
             return self.config_panel_1   # Strukov Ideal
+        elif index == 2:
+            return self.config_panel_2   # HfO₂ Serie Neurona
+        else:
+            return self.config_panel_3   # Prezioso 2014
 
     def _get_memristor_by_index(self, index: int, seed_offset: int = 0) -> Memristor:
         """Devuelve una instancia de Memristor configurado según el índice de la sub-pestaña (0, 1, 2)."""

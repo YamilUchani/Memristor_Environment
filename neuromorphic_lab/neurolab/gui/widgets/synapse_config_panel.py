@@ -61,11 +61,21 @@ class SynapseConfigPanel(QWidget):
         lay_dev.setContentsMargins(4, 8, 4, 8)
 
         self.memristor_subtabs = QTabWidget()
+        self.config_panel_0 = ConfigPanel()   # Genérico / Personalizado
         self.config_panel_1 = ConfigPanel()   # Strukov Ideal
         self.config_panel_2 = ConfigPanel()   # HfO₂ Serie Neurona
         self.config_panel_3 = ConfigPanel()   # Prezioso 2014
 
         # Preconfigurar perfiles por defecto
+        self.config_panel_0.txt_device_name.setText("Memristor Personalizado (Genérico)")
+        self.config_panel_0.combo_material.setCurrentText("Personalizado")
+        self.config_panel_0.spin_r_on.setValue(100.0)
+        self.config_panel_0.combo_ron_unit.setCurrentText("Ω")
+        self.config_panel_0.spin_r_off.setValue(100.0)
+        self.config_panel_0.combo_roff_unit.setCurrentText("kΩ")
+        self.config_panel_0.combo_model_name.setCurrentText("custom_equation")
+        self.config_panel_0.spin_x0.setValue(0.10)
+
         self.config_panel_1.txt_device_name.setText("Strukov TiO₂ (Ideal)")
         self.config_panel_1.combo_material.setCurrentText("TiO₂ (Dióxido de Titanio - Strukov 2008)")
         self.config_panel_1.spin_r_on.setValue(100.0)
@@ -95,6 +105,7 @@ class SynapseConfigPanel(QWidget):
         self.config_panel_3.spin_x0.setValue(0.05)
         self.config_panel_3.combo_realism_mode.setCurrentIndex(1)
 
+        self.memristor_subtabs.addTab(self.config_panel_0, "⚙️ 0 · Genérico / Custom")
         self.memristor_subtabs.addTab(self.config_panel_1, "🔬 1 · Strukov Ideal")
         self.memristor_subtabs.addTab(self.config_panel_2, "🧠 2 · HfO₂ Neurona")
         self.memristor_subtabs.addTab(self.config_panel_3, "📊 3 · Prezioso 2014")
@@ -158,6 +169,7 @@ class SynapseConfigPanel(QWidget):
         for spin in (self.spin_aplus, self.spin_aminus, self.spin_tauplus, self.spin_tauminus, self.spin_vamp):
             spin.spin.valueChanged.connect(self._on_param_changed)
 
+        self.config_panel_0.param_changed.connect(lambda *_: self._on_param_changed())
         self.config_panel_1.param_changed.connect(lambda *_: self._on_param_changed())
         self.config_panel_2.param_changed.connect(lambda *_: self._on_param_changed())
         self.config_panel_3.param_changed.connect(lambda *_: self._on_param_changed())
@@ -181,8 +193,9 @@ class SynapseConfigPanel(QWidget):
 
     def get_active_config_panel(self) -> ConfigPanel:
         curr_tab = self.memristor_subtabs.currentIndex()
-        if curr_tab == 0: return self.config_panel_1
-        elif curr_tab == 1: return self.config_panel_2
+        if curr_tab == 0: return self.config_panel_0
+        elif curr_tab == 1: return self.config_panel_1
+        elif curr_tab == 2: return self.config_panel_2
         else: return self.config_panel_3
 
     def get_active_device_name(self) -> str:

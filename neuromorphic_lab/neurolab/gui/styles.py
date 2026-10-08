@@ -9,33 +9,33 @@ from PySide6.QtGui import QColor, QFont
 # --- Palette de Colores en Formato Hexadecimal ---
 COLORS = {
     # Fondo
-    'bg_dark':      '#1e1e2e',
-    'bg_panel':     '#252536',
-    'bg_canvas':    '#181825',
-    'bg_grid':      '#313244',
+    'bg_dark':      '#f0f0f0',
+    'bg_panel':     '#ffffff',
+    'bg_canvas':    '#f8f9fa',
+    'bg_grid':      '#e9ecef',
 
     # Elementos
-    'sensor':       '#89b4fa',   # Azul Catppuccin
-    'memristor_nv': '#f38ba8',   # Rojo/Rosa (no volátil)
-    'memristor_v':  '#fab387',   # Naranja (volátil)
-    'neuron':       '#a6e3a1',   # Verde Catppuccin
-    'actuator':     '#cba6f7',   # Púrpura
-    'wire':         '#6c7086',   # Gris
+    'sensor':       '#1e3a8a',   # Azul oscuro
+    'memristor_nv': '#991b1b',   # Rojo oscuro
+    'memristor_v':  '#9a3412',   # Naranja oscuro
+    'neuron':       '#166534',   # Verde oscuro
+    'actuator':     '#6b21a8',   # Púrpura oscuro
+    'wire':         '#9ca3af',   # Gris
 
     # Estados
-    'selected':     '#f9e2af',   # Amarillo
-    'hover':        '#ffffff',   # Blanco
-    'active':       '#94e2d5',   # Verde turquesa brillante
+    'selected':     '#fef08a',   # Amarillo
+    'hover':        '#111827',   # Negro
+    'active':       '#0d9488',   # Verde turquesa
 
     # Texto
-    'text':         '#cdd6f4',
-    'text_dim':     '#a6adc8',
-    'text_label':   '#bac2de',
+    'text':         '#111827',
+    'text_dim':     '#4b5563',
+    'text_label':   '#374151',
 
     # Alertas
-    'warning':      '#fab387',
-    'error':        '#f38ba8',
-    'success':      '#a6e3a1',
+    'warning':      '#d97706',
+    'error':        '#dc2626',
+    'success':      '#16a34a',
 }
 
 

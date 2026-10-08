@@ -12,13 +12,13 @@ from matplotlib.figure import Figure
 
 
 COLORS = {
-    'bg_figure': '#1e1e2e',
-    'bg_axes':   '#181825',
-    'spine':     '#45475a',
-    'grid':      '#585b70',
-    'tick':      '#cdd6f4',
-    'title':     '#89b4fa',
-    'text':      '#cdd6f4',
+    'bg_figure': '#ffffff',
+    'bg_axes':   '#f8f9fa',
+    'spine':     '#dee2e6',
+    'grid':      '#e9ecef',
+    'tick':      '#495057',
+    'title':     '#1e3a8a',
+    'text':      '#343a40',
 }
 
 MAX_DISPLAY_POINTS = 4000
@@ -92,10 +92,8 @@ class BaseMplCanvas(QWidget):
         self._apply_style(self.axes)
 
     def refresh(self):
-        try:
-            self.figure.tight_layout(pad=1.8)
-        except Exception:
-            pass
+        # Desactivamos tight_layout para acelerar el renderizado en tiempo real
+        # y evitar ValueErrors cuando los ejes cambian muy rápido.
         self.canvas.draw()
 
     @staticmethod

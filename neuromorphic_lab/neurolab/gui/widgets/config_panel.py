@@ -260,12 +260,11 @@ class ConfigPanel(QWidget):
 
         self.txt_device_family = QLineEdit("TiO2_oxide")
         self.combo_model_name = QComboBox()
-        self.combo_model_name.addItems(["strukov", "ideal_normalized", "prezioso"])
+        self.combo_model_name.addItems(["strukov", "strukov_volatil", "ideal_normalized", "prezioso", "custom_equation"])
 
         layout_a.addRow("Nombre Dispositivo:", self.txt_device_name)
         layout_a.addRow("Material Memristivo:", self.combo_material)
         layout_a.addRow("Familia Física:", self.txt_device_family)
-        layout_a.addRow("Modelo Matemático:", self.combo_model_name)
         group_a.setLayout(layout_a)
         main_layout.addWidget(group_a)
 
@@ -324,6 +323,27 @@ class ConfigPanel(QWidget):
         layout_e.addRow("Característica del Material:", self.lbl_material_info)
         group_e.setLayout(layout_e)
         main_layout.addWidget(group_e)
+
+        # ── 3.5. Modelo Matemático y Ecuaciones ─────────────────────────────
+        self.group_custom = QGroupBox("3.5 📝 Modelo Matemático y Ecuaciones")
+        layout_custom = QFormLayout()
+        
+        self.txt_eq_dxdt = QLineEdit("(mu_v * R_on / D**2) * i")
+        self.txt_eq_dxdt.setToolTip("Variables: v, i, x, R_on, R_off, D, mu_v, tau_relax, x_eq, np, math")
+        
+        self.txt_eq_i = QLineEdit("v / (R_on * x + R_off * (1 - x))")
+        self.txt_eq_i.setToolTip("Ecuación I(A). Vacío = V/R(x)")
+        
+        self.txt_eq_window = QLineEdit("1.0")
+        self.txt_eq_window.setToolTip("Función ventana w(x, v, i)")
+        
+        layout_custom.addRow("Modelo Base:", self.combo_model_name)
+        layout_custom.addRow("Ecuación dx/dt:", self.txt_eq_dxdt)
+        layout_custom.addRow("Ecuación I(v,x):", self.txt_eq_i)
+        layout_custom.addRow("Ventana w(x):", self.txt_eq_window)
+        
+        self.group_custom.setLayout(layout_custom)
+        main_layout.addWidget(self.group_custom)
 
         # ── 4. Modificadores de Realismo y Ventanas ──────────────────────────
         group_d = QGroupBox("4. 🛠️ Modificadores de Realismo y Ventanas")
@@ -597,7 +617,10 @@ class ConfigPanel(QWidget):
         self.txt_device_name.textChanged.connect(lambda *_: self.param_changed.emit())
         self.combo_material.currentIndexChanged.connect(self._on_material_changed)
         self.txt_device_family.textChanged.connect(lambda *_: self.param_changed.emit())
-        self.combo_model_name.currentTextChanged.connect(lambda *_: self.param_changed.emit())
+        self.combo_model_name.currentTextChanged.connect(self._on_model_name_changed)
+        self.txt_eq_dxdt.textChanged.connect(lambda *_: self.param_changed.emit())
+        self.txt_eq_i.textChanged.connect(lambda *_: self.param_changed.emit())
+        self.txt_eq_window.textChanged.connect(lambda *_: self.param_changed.emit())
         self.spin_r_on.valueChanged.connect(lambda *_: self.param_changed.emit())
         self.combo_ron_unit.currentTextChanged.connect(lambda *_: self.param_changed.emit())
         self.spin_r_off.valueChanged.connect(lambda *_: self.param_changed.emit())
@@ -615,6 +638,9 @@ class ConfigPanel(QWidget):
         self.spin_d2d_sigma.valueChanged.connect(lambda *_: self.param_changed.emit())
         self.chk_noise.toggled.connect(lambda *_: self.param_changed.emit())
         # Volatile: ya conectado arriba en los lambdas de su propia sección
+        
+        # Inicializar el estado de los text boxes (solo lectura si no es custom)
+        self._on_model_name_changed(self.combo_model_name.currentText())
 
     def _on_material_changed(self, index: int):
         mat_name = self.combo_material.currentText()
@@ -626,6 +652,41 @@ class ConfigPanel(QWidget):
                 self.spin_mu_v.blockSignals(False)
             self.txt_device_family.setText(data["family"])
             self.lbl_material_info.setText(data["info"])
+        self.param_changed.emit()
+
+    def _on_model_name_changed(self, text: str):
+        text_lower = text.lower()
+        is_custom = "custom_equation" in text_lower
+        
+        self.txt_eq_dxdt.setReadOnly(not is_custom)
+        self.txt_eq_i.setReadOnly(not is_custom)
+        self.txt_eq_window.setReadOnly(not is_custom)
+        
+        self.txt_eq_dxdt.setStyleSheet("")
+        self.txt_eq_i.setStyleSheet("")
+        self.txt_eq_window.setStyleSheet("")
+        
+        eq_i_default = "v / (R_on * x + R_off * (1 - x))"
+        
+        if "strukov_volatil" in text_lower:
+            self.txt_eq_dxdt.setText("(mu_v * R_on / D**2) * i - (x - x_eq) / tau_relax")
+            self.txt_eq_i.setText(eq_i_default)
+            self.txt_eq_window.setText("1.0")
+            if not self.chk_volatile.isChecked():
+                self.chk_volatile.setChecked(True)
+        elif "strukov" in text_lower:
+            self.txt_eq_dxdt.setText("(mu_v * R_on / D**2) * i")
+            self.txt_eq_i.setText(eq_i_default)
+            self.txt_eq_window.setText("1.0")
+        elif "ideal" in text_lower:
+            self.txt_eq_dxdt.setText("(mu_v * R_on / D**2) * i")
+            self.txt_eq_i.setText(eq_i_default)
+            self.txt_eq_window.setText("1.0")
+        elif "prezioso" in text_lower or "yakopcic" in text_lower:
+            self.txt_eq_dxdt.setText("1e-2 * v * x")
+            self.txt_eq_i.setText(eq_i_default)
+            self.txt_eq_window.setText("1.0")
+            
         self.param_changed.emit()
 
     def _on_mu_v_spin_changed(self, val: float):
@@ -734,7 +795,7 @@ class ConfigPanel(QWidget):
 
         self.txt_device_name.setText("HfO₂ Serie Neurona")
         self.combo_material.setCurrentText("HfO₂ (Óxido de Hafnio - CMOS LIF 2025)")
-        self.combo_model_name.setCurrentText("strukov")
+        self.combo_model_name.setCurrentText("strukov_volatil")
         self.spin_r_on.setValue(1.0)
         self.combo_ron_unit.setCurrentText("kΩ")
         self.spin_r_off.setValue(1.0)
@@ -859,6 +920,9 @@ class ConfigPanel(QWidget):
             "tau_relax": self.spin_tau_relax.value(),
             "x_eq": self.spin_x_eq.value() if hasattr(self, "spin_x_eq") else 0.05,
             "enable_csv_validation": self.btn_csv_toggle.isChecked(),
+            "eq_dxdt": self.txt_eq_dxdt.text(),
+            "eq_i": self.txt_eq_i.text(),
+            "eq_window": self.txt_eq_window.text(),
         }
 
         if self.signal_panel is not None:
@@ -961,6 +1025,13 @@ class ConfigPanel(QWidget):
             if "enable_csv_validation" in data:
                 self.btn_csv_toggle.setChecked(bool(data["enable_csv_validation"]))
                 self._update_csv_toggle_style()
+                
+            if "eq_dxdt" in data:
+                self.txt_eq_dxdt.setText(data["eq_dxdt"])
+            if "eq_i" in data:
+                self.txt_eq_i.setText(data["eq_i"])
+            if "eq_window" in data:
+                self.txt_eq_window.setText(data["eq_window"])
 
             if "signal" in data and self.signal_panel is not None:
                 self.signal_panel.from_dict(data["signal"])
@@ -1035,7 +1106,20 @@ class ConfigPanel(QWidget):
         model_str = self.combo_model_name.currentText().lower()
         dev_name = self.txt_device_name.text().lower()
 
-        if "prezioso" in model_str or "prezioso" in dev_name or "yakopcic" in model_str:
+        if model_str == "custom_equation":
+            from neurolab.devices.models.custom import CustomMathModel
+            from neurolab.core.config import CustomConfig
+            math_model = CustomMathModel()
+            model_config = CustomConfig(
+                equation_dxdt=self.txt_eq_dxdt.text(),
+                equation_i=self.txt_eq_i.text(),
+                equation_window=self.txt_eq_window.text(),
+                D=self.spin_D_nm.value() * 1e-9,
+                mu_v=self.spin_mu_v.value(),
+                tau_relax=self.spin_tau_relax.value(),
+                x_eq=self.spin_x_eq.value()
+            )
+        elif "prezioso" in model_str or "prezioso" in dev_name or "yakopcic" in model_str:
             from neurolab.devices.models.prezioso import PreziosoMathModel
             from neurolab.core.config import PreziosoConfig
             math_model = PreziosoMathModel()

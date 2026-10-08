@@ -309,6 +309,7 @@ class ValidationTestsPanel(QWidget):
         lay_plot.setContentsMargins(0, 0, 0, 0)
 
         self.figure = Figure(figsize=(10, 5), dpi=100, facecolor='#1e1e2e')
+        self.figure.tight_layout = lambda *args, **kwargs: None  # Desactivar tight_layout por lentitud
         self.canvas = FigureCanvas(self.figure)
         self.toolbar = NavigationToolbar(self.canvas, self)
 
