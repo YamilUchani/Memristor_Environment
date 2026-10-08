@@ -567,7 +567,117 @@ posición para producir la acción.}
 \section{Resultados y discusión}
 % =====================================================
 
-% (vacío por ahora)
+\subsection{Métricas comparativas entre tareas}
+
+La Tabla~\ref{tab:cross_task} consolida los resultados de las tres 
+tareas ---control (CartPole-v1), clasificación visual (Visión 
+$8\times8$) y navegación (Gridworld $10\times10$)--- resueltas con 
+el mismo agente R-STDP. En los tres casos el crossbar memristivo es 
+el único sustrato de pesos: solo cambian las dimensiones del arreglo 
+($24\times12$, $64\times8$ y $16\times4$) y el codificador sensorial.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lccccc}
+\hline
+Tarea & Episodios & Semillas & Métrica final & $\bar{X}$ & $\sigma_X$ \\
+\hline
+CartPole-v1 & 2000 & 5 & $\bar{R}_{200}=77.8$, $\bar{R}_{\max}=499$ & 0.57 & 0.30 \\
+Visión $8\times8$ & 5000 & 3 & acierto(500)$=100\%$ & 0.10 & 0.03 \\
+Navegación & 800 & 3 & éxito(200)$=50$--$82\%$ & 0.34--0.38 & 0.27--0.34 \\
+\hline
+\end{tabular}
+\caption{Comparación de las tres tareas resueltas con el mismo 
+sustrato memristivo y la misma regla R-STDP. La métrica se evalúa 
+sobre los últimos 200 episodios de cada corrida (500 en el caso de 
+visión); $\bar{X}$ y $\sigma_X$ son la media y la desviación 
+estándar de la matriz de pesos al final del entrenamiento.}
+\label{tab:cross_task}
+\end{table}
+
+\subsection{Especialización del sustrato según la tarea}
+
+La desviación estándar de la matriz de pesos resume cómo se 
+reorganiza el crossbar: en visión $X$ permanece casi plana 
+($\sigma_X \approx 0.02$--$0.03$, media $\approx 0.10$); en 
+CartPole crece hasta $\sigma_X = 0.30$ con media 0.57; y en 
+navegación alcanza $\sigma_X = 0.27$--$0.34$ con media 0.34--0.38. 
+El contraste entre visión y navegación es el argumento central de 
+este capítulo: el mismo arreglo físico se reconfigura de forma 
+distinta según la tarea, y la especialización estructural (presente 
+en navegación) no es una condición para el desempeño funcional 
+(vista en visión), donde el decodificador discierne la clase a 
+partir de diferencias mínimas de conductancia.
+
+\subsection{Ablaciones A/B/C/D}
+\label{sec:ablaciones_34}
+
+Se reprodujo el estudio de ablaciones del capítulo anterior
+(Figura~\ref{fig:ablaciones_robot}) con el protocolo actual
+(\texttt{run\_ablations\_real\_physics.py}, 300 episodios, física real
+$R_{\text{off}} = 16\,\text{k}\Omega$) sobre la arquitectura $24 \times 12$.
+La Tabla~\ref{tab:ablaciones} compara ambos protocolos.
+
+\begin{table}[H]
+\centering
+\caption{Estudio de ablaciones: protocolo original vs reproducción con
+física real. Los valores corresponden a $\bar{R}_{50}$ (media de recompensa
+en los últimos 50 episodios).}
+\label{tab:ablaciones}
+\begin{tabular}{lccc}
+\hline
+\textbf{Config} & \textbf{Original} & \textbf{Reproducción} & \textbf{$\Delta$} \\
+\hline
+A (control base)            & $491.9$ (3/5) & $476.5$ (5/5) & $-3.1\%$ \\
+B (sin adaptación térmica)  & $-39.0$       & $+468.8$\textsuperscript{1} & protocolo distinto\textsuperscript{1} \\
+C (sin elegibilidad)        & $-33.3$       & $-35.9$       & $+3.7\%$ \\
+D (Hebbiano sin modulación)   & $-39.0$        & $-39.0$        & $\pm 0.3\%$ \\
+\hline
+\end{tabular}
+
+\vspace{0.2cm}
+{\footnotesize \textsuperscript{1} La configuración B cambió de definición
+entre protocolos. En el original se implementó como temperatura fija baja
+($T_{\text{init}} = 0.10$, \texttt{temp\_decay} $= 1.0$) y colapsaba por
+congelamiento estocástico. En el protocolo actual se define como temperatura
+mínima reducida ($T_{\text{init}} = 1.0 \to T_{\min} = 0.10$,
+\texttt{temp\_decay} $= 0.995$), y el agente converge normalmente. Ambos
+resultados son informativos: el primero confirma que la exploración inicial
+es indispensable; el segundo muestra que el agente es robusto a una
+reducción de la temperatura mínima.}
+\end{table}
+
+\paragraph{Interpretación.} Tres observaciones emergen de la comparación.
+Primero, las ablaciones C y D son \emph{atractores robustos}: se reproducen
+con una variación menor al $4\%$ pese al no-determinismo medido entre
+corridas (C/0, misma semilla y script: $-33.31$ vs $-34.56$, $\Delta \approx
+4\%$). Esto confirma con evidencia nueva que la traza de elegibilidad y la
+modulación por recompensa son estrictamente indispensables para R-STDP, tal
+como se argumentó en el capítulo anterior. Segundo, el control base A
+pasa de $3/5$ a $5/5$ semillas convergentes con la física real, reduciendo
+la varianza entre semillas reportada en el protocolo original. Tercero, la
+nueva definición de B (temperatura mínima reducida, no congelada) no
+produce colapso, indicando que el agente es robusto a la reducción del piso
+de exploración cuando el decaimiento térmico se preserva. En conjunto, las
+ablaciones reproducidas refuerzan los hallazgos del
+capítulo anterior y extienden la caracterización del sustrato bajo
+física realista.
+
+\subsection{Limitaciones}
+
+El aprendizaje episódico R-STDP sin buffer de experiencia exhibe 
+varianza entre semillas: en CartPole el protocolo original observó 3 de 5 
+semillas convergentes y la corrida fresca 5 de 5, mientras que la 
+navegación mantiene tasas de éxito final de 49.5\%, 70.5\% y 82\% en las 
+tres semillas, atribuible a la aleatoriedad de la proyección inicial del 
+codificador. El entorno Pendulum-v1 se excluyó del 
+estudio como decisión metodológica: su recompensa densa presenta una 
+varianza intrínseca que excede la señal del gradiente de política 
+episódico (relación señal/ruido $\approx 0.7$), por lo que REINFORCE 
+no puede asignar crédito de forma estable. Finalmente, la baja 
+especialización de $X$ en visión constituye una evidencia funcional 
+sólida (100\% de acierto) pero estructuralmente débil, ya que el 
+decodificador aprovecha diferencias mínimas de conductancia.
 
 % =====================================================
 \section{Análisis de costos}
