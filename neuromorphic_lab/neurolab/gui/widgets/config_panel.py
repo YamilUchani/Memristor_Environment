@@ -686,6 +686,11 @@ class ConfigPanel(QWidget):
             self.txt_eq_dxdt.setText("1e-2 * v * x")
             self.txt_eq_i.setText(eq_i_default)
             self.txt_eq_window.setText("1.0")
+        elif is_custom:
+            # Resetear a ecuaciones editables de Strukov como punto de partida
+            self.txt_eq_dxdt.setText("(mu_v * R_on / D**2) * i")
+            self.txt_eq_i.setText(eq_i_default)
+            self.txt_eq_window.setText("1.0")
             
         self.param_changed.emit()
 
@@ -947,6 +952,10 @@ class ConfigPanel(QWidget):
                 idx = self.combo_model_name.findText(data["model_name"])
                 if idx >= 0:
                     self.combo_model_name.setCurrentIndex(idx)
+                    # Llamar explícitamente porque las señales están bloqueadas;
+                    # actualiza las ecuaciones según el modelo antes de que el
+                    # JSON las pise con los valores guardados.
+                    self._on_model_name_changed(data["model_name"])
 
             if "r_on" in data:
                 val_ron = float(data["r_on"])
