@@ -44,6 +44,8 @@ scratch/
 outputs/
 neuromorphic_lab/outputs/
 neuromorphic_lab/scratch/
+neuromorphic_lab/configs/last_session.json
+robot_sim/log_*.txt
 .antigravityrules
 
 # Sistema
