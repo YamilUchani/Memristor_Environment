@@ -44,13 +44,12 @@ plt.rcParams.update({
 def make_brain(N, M, seed=0, json_nv="strukov_ideal.json", json_lif="lif_config.json"):
     """
     Crossbar para tests aislados.
-    R_sense = 1e-3 Ohm para que la corriente dependa de G y no de la
-    impedancia de sensado. En el agente (run_robot.py) se mantiene
-    R_sense=1e2 para preservar los resultados ya obtenidos.
+    R_sense = 100 Ohm: divisor real del sense-amp, consistente con el
+    agente (run_robot.py) y con lo declarado en la tesis (L123 cap 06).
     """
     return CrossbarBrain(
         N=N, M=M, seed=seed,
-        R_sense=1e-3,          # <<< override para tests del crossbar
+        R_sense=1e2,           # <<< divisor real del sense-amp (consistente con agente, L123 tesis)
         json_memristor=json_nv,
         json_lif=json_lif,
     )

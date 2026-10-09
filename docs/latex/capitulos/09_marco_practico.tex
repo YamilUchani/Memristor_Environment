@@ -265,47 +265,16 @@ que crecen con el tamaño del arreglo. En segundo lugar, las caídas
 de voltaje por resistencia de línea (IR drops), que distorsionan 
 el perfil de corriente a lo largo de cada columna.
 
-La Figura~\ref{fig:sneak_ratio} cuantifica el crecimiento del 
-sneak ratio en función del tamaño del arreglo, desde $N=4$ hasta 
-$N=32$ filas. La Figura~\ref{fig:mna_vs_ideal} compara las 
-corrientes obtenidas por el solver MNA contra el modelo ideal 
-$I = G \cdot V$, evidenciando que el error relativo alcanza el 
-3.63\% para $N=24$.
+El error relativo de lectura del crossbar al escalar en tamaño se
+cuantifica en el Exp.~1 del capítulo anterior (Figura~\ref{fig:exp01}).
+La solución nodal exacta se contrasta con la idealización lineal en el
+Exp.~2 del capítulo anterior (Figura~\ref{fig:exp02}).
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.75\textwidth]{figuras/sneak_ratio_vs_N.png}
-\caption{Crecimiento monótono del sneak ratio al escalar el 
-arreglo crossbar desde $N=4$ hasta $N=32$ filas, con $M=12$ 
-columnas fijas.}
-\label{fig:sneak_ratio}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\textwidth]{figuras/mna_vs_ideal.png}
-\caption{Comparación entre corrientes calculadas por el solver 
-MNA completo y el modelo ideal $I = G \cdot V$ para cuatro 
-tamaños de arreglo. La desviación respecto a la recta identidad 
-refleja el impacto acumulado de las corrientes parásitas.}
-\label{fig:mna_vs_ideal}
-\end{figure}
-
-La Figura~\ref{fig:ir_drops} ilustra el efecto de la resistencia 
-de línea sobre el perfil de corriente: para $R_{wire} \geq 1\,\Omega$, 
-las variaciones entre columnas alcanzan el $\pm 30\%$. Este 
-resultado motiva el uso de esquemas de escritura asimétricos como 
-$V/2$ y $V/3$, que reducen la perturbación de celdas half-selected 
+El efecto de la resistencia de línea sobre el perfil de corriente se
+cuantifica en el Exp.~3 del capítulo anterior (Figura~\ref{fig:exp03}).
+Este resultado motiva el uso de esquemas de escritura asimétricos como
+$V/2$ y $V/3$, que reducen la perturbación de celdas half-selected
 durante operaciones de programación.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.75\textwidth]{figuras/ir_drops.png}
-\caption{Perfil de corriente por columna para distintos valores 
-de resistencia de línea $R_{wire}$. A mayor resistencia, mayor 
-no-uniformidad en la lectura.}
-\label{fig:ir_drops}
-\end{figure}
 \subsection{Etapa 5 -- Integración con agente de control autónomo}
 
 Los componentes anteriores se integraron en un agente de 

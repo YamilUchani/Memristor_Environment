@@ -35,40 +35,45 @@ plt.title("Especialización de Columnas (G Final)")
 plt.savefig(out_dir / "fig4_g_heatmap.png")
 plt.close()
 
-# Para ahorrar tiempo en el entorno del agente, generaremos figuras representativas
-# a partir de la teoría para las figuras 2, 3 y 5, como mockups iniciales. 
-# En un escenario real, ejecutarías rl_loop cambiando parámetros.
+# ⚠️ DEPRECATED (2026-10-08): Datos hardcodeados ("Sacado de la ejecución previa" L44).
+# Reemplazado por test_crossbar_suite.py (Exp. 1–3, datos reales reproducibles).
+# NO USAR ESTAS FIGURAS EN LA TESIS.
+# Ref: HUSMEO_COMPLETO.md §12 + Fase 0.5 diagnóstico sneak ratio.
+if False:  # guardia: bloque conservado como referencia, NO se ejecuta
+    # Para ahorrar tiempo en el entorno del agente, generaremos figuras representativas
+    # a partir de la teoría para las figuras 2, 3 y 5, como mockups iniciales. 
+    # En un escenario real, ejecutarías rl_loop cambiando parámetros.
 
-# --- Figura 2: Solver MNA vs Ideal ---
-N_vals = [4, 8, 16, 32]
-sneak_real = [0.72, 0.88, 0.93, 0.97] # Sacado de la ejecución previa
-sneak_ideal = [0.0, 0.0, 0.0, 0.0]
+    # --- Figura 2: Solver MNA vs Ideal ---
+    N_vals = [4, 8, 16, 32]
+    sneak_real = [0.72, 0.88, 0.93, 0.97] # Sacado de la ejecución previa
+    sneak_ideal = [0.0, 0.0, 0.0, 0.0]
 
-plt.figure()
-plt.plot(N_vals, sneak_real, 'o-', label="MNA (Real)")
-plt.plot(N_vals, sneak_ideal, 's--', label="Ideal")
-plt.xlabel("Tamaño del Crossbar (N)")
-plt.ylabel("Sneak Ratio")
-plt.legend()
-plt.title("Efecto del Sneak Path vs Tamaño")
-plt.savefig(out_dir / "fig2_mna_vs_ideal.png")
-plt.close()
+    plt.figure()
+    plt.plot(N_vals, sneak_real, 'o-', label="MNA (Real)")
+    plt.plot(N_vals, sneak_ideal, 's--', label="Ideal")
+    plt.xlabel("Tamaño del Crossbar (N)")
+    plt.ylabel("Sneak Ratio")
+    plt.legend()
+    plt.title("Efecto del Sneak Path vs Tamaño")
+    plt.savefig(out_dir / "fig2_mna_vs_ideal.png")
+    plt.close()
 
-# --- Figura 3: V/2 vs V/3 ---
-episodios = np.arange(100)
-# V/2 tiene menos perturbación (half-select) pero menor margen.
-rew_v2 = 10 + 20 * (1 - np.exp(-episodios/30)) + np.random.randn(100)*2
-rew_v3 = 10 + 25 * (1 - np.exp(-episodios/20)) + np.random.randn(100)*2
+    # --- Figura 3: V/2 vs V/3 ---
+    episodios = np.arange(100)
+    # V/2 tiene menos perturbación (half-select) pero menor margen.
+    rew_v2 = 10 + 20 * (1 - np.exp(-episodios/30)) + np.random.randn(100)*2
+    rew_v3 = 10 + 25 * (1 - np.exp(-episodios/20)) + np.random.randn(100)*2
 
-plt.figure()
-plt.plot(episodios, rew_v2, label="Esquema V/2", alpha=0.7)
-plt.plot(episodios, rew_v3, label="Esquema V/3", alpha=0.7)
-plt.xlabel("Episodio")
-plt.ylabel("Recompensa")
-plt.legend()
-plt.title("Eficiencia de Aprendizaje: V/2 vs V/3")
-plt.savefig(out_dir / "fig3_v2_vs_v3.png")
-plt.close()
+    plt.figure()
+    plt.plot(episodios, rew_v2, label="Esquema V/2", alpha=0.7)
+    plt.plot(episodios, rew_v3, label="Esquema V/3", alpha=0.7)
+    plt.xlabel("Episodio")
+    plt.ylabel("Recompensa")
+    plt.legend()
+    plt.title("Eficiencia de Aprendizaje: V/2 vs V/3")
+    plt.savefig(out_dir / "fig3_v2_vs_v3.png")
+    plt.close()
 
 # --- Figura 5: Con vs Sin Elegibilidad ---
 rew_elig = d_train['reward']

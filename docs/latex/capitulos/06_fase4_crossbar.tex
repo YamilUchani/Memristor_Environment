@@ -120,7 +120,7 @@ El cerebro neuromórfico del agente consiste en un crossbar memristivo de $N=24$
 El vector de observación continuo $\mathbf{s} = [x, \dot{x}, \theta, \dot{\theta}] \in \mathbb{R}^4$ se proyecta mediante una batería de receptores gaussianos distribuidos a lo largo del dominio de cada variable. Se aplica un mecanismo Top-K ($K=10$) que selecciona las 10 filas de mayor activación, generando un patrón binario disperso de voltajes de lectura $V_{\text{rows}} \in \{0, V_{\text{read}}\}$.
 
 \subsubsection{Crossbar Memristivo y Solución Nodal (MNA)}
-La corriente integrada por columna $\mathbf{I}_{\text{col}} \in \mathbb{R}^{12}$ se calcula resolviendo la matriz MNA con resistencia de línea $R_{\text{wire}} = 0.5\,\Omega$ y resistencia de sensado $R_{\text{sense}} = 100\,\Omega$:
+La corriente integrada por columna $\mathbf{I}_{\text{col}} \in \mathbb{R}^{12}$ se calcula resolviendo la matriz MNA con resistencia de línea $R_{\text{wire}} = 10^{-3}\,\Omega$ y resistencia de sensado $R_{\text{sense}} = 100\,\Omega$:
 \begin{equation}
     \mathbf{I}_{\text{col}} = \text{MNA}(\mathbf{G}, V_{\text{rows}}, R_{\text{wire}}, R_{\text{sense}})
 \end{equation}
@@ -187,19 +187,42 @@ La Figura~\ref{fig:heatmap_robot} muestra la distribución final del estado memr
 \section{Validación del Modelo Físico del Crossbar (Suite de 10 Experimentos)}
 \label{sec:suite_10_exp}
 
-Para certificar la fidelidad del simulador neuromórfico respecto al hardware real (configurando $R_{\text{sense}} = 10^{-3}\,\Omega$ en el crossbar aislado), se ejecutó una suite de 10 experimentos autónomos sobre el modelo del crossbar memristivo. Cada test es independiente, reproducible y genera sus propias métricas y figuras.
+Para certificar la fidelidad del simulador neuromórfico respecto al hardware
+real, se ejecutó una suite de 10 experimentos autónomos sobre el modelo del
+crossbar memristivo. Cada test es independiente, reproducible y genera sus
+propias métricas y figuras. Las condiciones de excitación y las impedancias
+de sensado ($R_{\text{sense}} = 100\,\Omega$) corresponden a la configuración
+operativa del agente descrita en la Sección~\ref{sec:desarrollo}.
 
-\subsection{Exp.~1 --- Corrientes parásitas vs.\ tamaño (sneak ratio)}
-La Figura~\ref{fig:exp01} muestra el crecimiento monótono del \textit{sneak ratio} al escalar el arreglo de $N=4$ ($0.34\%$) a $N=32$ filas ($2.44\%$, con $M=12$ fijo).
+\subsection{Exp.~1 --- Error de lectura del crossbar vs.\ tamaño}
+
+La Figura~\ref{fig:exp01} cuantifica el error relativo de lectura del arreglo
+al escalar de $N=4$ a $N=32$ filas con $M=12$ columnas fijas. Se define el
+error relativo como
+$\varepsilon = \|I_{\text{col}} - I_{\text{ideal}}\| / \|I_{\text{ideal}}\|$,
+donde $I_{\text{col}}$ es la solución nodal del arreglo (MNA con
+$R_{\text{wire}}$ y $R_{\text{sense}}$) e $I_{\text{ideal}} = \mathbf{G}^T \mathbf{V}$
+es la proyección lineal ideal.
+
+Para $N=4$ el error es $\varepsilon \approx 6.5\%$ y escala monótonamente
+hasta $\varepsilon \approx 41\%$ para $N=32$. Este crecimiento refleja la
+contribución conjunta de la caída resistiva en las líneas ($R_{\text{wire}}$)
+y el divisor formado por $R_{\text{sense}}$ con la conductancia agregada del
+arreglo. El efecto de corrientes parásitas estrictas (\textit{sneak paths} en
+el sentido clásico: fila única activa con filas flotantes) requiere una
+configuración de excitación distinta y se considera una extensión natural
+para trabajos futuros.
+
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.65\textwidth]{experiments/figures/exp01_sneak_vs_N.png}
-  \caption{Sneak ratio vs.\ tamaño. Crecimiento monótono confirma el efecto parásito escalar.}
+  \caption{Error relativo de lectura vs.\ tamaño del arreglo. Crecimiento
+  monótono desde $N=4$ ($6.5\%$) hasta $N=32$ ($41\%$).}
   \label{fig:exp01}
 \end{figure}
 
 \subsection{Exp.~2 --- MNA real vs.\ modelo ideal}
-La Figura~\ref{fig:exp02} compara corrientes MNA e ideales para cuatro tamaños. A $N=24$ el error relativo medio alcanza el $3.63\%$, demostrando la necesidad de resolver las ecuaciones circuitales completas.
+La Figura~\ref{fig:exp02} compara corrientes MNA e ideales para cuatro tamaños. En el caso $N=24$, el error medio por componente alcanza $29.08\%$, reflejando la contribución acumulada de $R_{\text{wire}}$ y $R_{\text{sense}}$ sobre las corrientes de columna.
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.90\textwidth]{experiments/figures/exp02_mna_vs_ideal.png}
@@ -208,16 +231,19 @@ La Figura~\ref{fig:exp02} compara corrientes MNA e ideales para cuatro tamaños.
 \end{figure}
 
 \subsection{Exp.~3 --- Caída de tensión en línea ($R_{\text{wire}}$)}
-La Figura~\ref{fig:exp03} ilustra cómo $R_{\text{wire}}$ distorsiona el perfil de corriente. Para $R_{\text{wire}} \ge 1\,\Omega$ las variaciones entre columnas llegan a $\pm 30\%$.
+La Figura~\ref{fig:exp03} ilustra cómo $R_{\text{wire}}$ distorsiona el perfil de corriente. El efecto sobre el perfil es doble: atenúa la corriente media ($-13\%$ entre $R_{\text{wire}} = 1\,\text{m}\Omega$ y $R_{\text{wire}} = 10\,\Omega$) y mantiene prácticamente invariante la no-uniformidad relativa entre columnas ($\sim 27\%$), dominada por la dispersión dispositivo-a-dispositivo de $\mathbf{G}$.
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.72\textwidth]{experiments/figures/exp03_rwire_effect.png}
-  \caption{Perfil de $I_{\text{col}}$ para distintos $R_{\text{wire}}$. Mayor resistencia implica mayor no-uniformidad.}
+  \caption{Perfil de $I_{\text{col}}$ para distintos $R_{\text{wire}}$. La
+atenuación de la corriente media aumenta con la resistencia de línea, mientras
+que la dispersión entre columnas se mantiene dominada por la variabilidad de
+$\mathbf{G}$.}
   \label{fig:exp03}
 \end{figure}
 
 \subsection{Exp.~4 --- Precisión en VMM}
-La Figura~\ref{fig:exp04} muestra la distribución del error relativo en VMM para 1000 vectores aleatorios. El error medio crece de $0.37\%$ ($N=4$) a $3.14\%$ ($N=24$).
+La Figura~\ref{fig:exp04} muestra la distribución del error relativo en VMM para 1000 vectores aleatorios. El error medio crece de $5.82\%$ ($N=4$) a $29.05\%$ ($N=24$).
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.70\textwidth]{experiments/figures/exp04_vmm_precision.png}
@@ -244,7 +270,7 @@ Tras 1000 pasos de lectura con $V_{\text{rows}}=0\,\text{V}$, el cambio máximo 
 \end{figure}
 
 \subsection{Exp.~7 --- Linealidad LTP/LTD}
-La Figura~\ref{fig:exp07} muestra curvas monótonas y acotadas en $[0,1]$ bajo pulsos de potenciación (LTP, $+1\,\text{V}$) y depresión (LTD, $-1\,\text{V}$). La celda responde progresivamente alcanzando $x=1.000$ y $x=0.000$.
+La Figura~\ref{fig:exp07} muestra curvas monótonas y acotadas en $[0,1]$ bajo pulsos de potenciación (LTP, $+1\,\text{V}$) y depresión (LTD, $-1\,\text{V}$). La celda responde gradualmente: con 50 pulsos desde el estado inicial $x_0=0.1$, la LTP lleva el peso a $x=0.135$ y la LTD a $x=0.066$, mostrando una respuesta gradual consistente con la dinámica del dispositivo real. La saturación hacia los extremos ($x \to 1$, $x \to 0$) requiere trenes de pulsos más largos, fuera del alcance de este experimento.
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=0.88\textwidth]{experiments/figures/exp07_ltp_ltd.png}
@@ -253,7 +279,7 @@ La Figura~\ref{fig:exp07} muestra curvas monótonas y acotadas en $[0,1]$ bajo p
 \end{figure}
 
 \subsection{Exp.~8 --- Variabilidad dispositivo a dispositivo (D2D)}
-La Figura~\ref{fig:exp08} cuantifica la dispersión de $I_{\text{col}}$ entre 20 crossbars virtuales. El CV normalizado por el rango dinámico de conductancia es $141.3\%$, reflejando una dispersión inter-dispositivo clara y físicamente realista.
+La Figura~\ref{fig:exp08} cuantifica la dispersión de $I_{\text{col}}$ entre 20 crossbars virtuales. La variabilidad dispositivo-a-dispositivo se caracteriza por $CV(I_{\text{col}}) = 40.3\%$ en términos de la corriente integrada, equivalente al $4.0\%$ del rango dinámico de $\mathbf{G}$.
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.88\textwidth]{experiments/figures/exp08_d2d_reproducibility.png}
@@ -262,16 +288,17 @@ La Figura~\ref{fig:exp08} cuantifica la dispersión de $I_{\text{col}}$ entre 20
 \end{figure}
 
 \subsection{Exp.~9 --- Costo computacional del solver MNA}
-La Figura~\ref{fig:exp09} revela una complejidad empírica de $\mathcal{O}(N^{0.88})$, inferior al $\mathcal{O}(N^3)$ teórico. A $N=24$, el costo es de $1.96\,\text{ms/paso}$, compatible con simulación en tiempo real.
+La Figura~\ref{fig:exp09} revela que el ajuste del costo computacional del solver MNA arroja $\mathcal{O}(N^{0.85})$, inferior al $\mathcal{O}(N^3)$ teórico, con un tiempo aproximado de $\sim 3$ ms por paso para $N=24$ en una CPU de escritorio estándar.
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.62\textwidth]{experiments/figures/exp09_computational_cost.png}
-  \caption{Costo del solver MNA en log-log. Ajuste empírico $\mathcal{O}(N^{0.88})$.}
+  \caption{Costo computacional del solver MNA en función de $N$. El ajuste
+empírico sigue $\mathcal{O}(N^{0.85})$.}
   \label{fig:exp09}
 \end{figure}
 
 \subsection{Exp.~10 --- Crosstalk entre columnas}
-La Figura~\ref{fig:exp10} expone el efecto de crosstalk: al excitar únicamente la fila 0, las otras columnas muestran una desviación media del $0.75\%$ por interacción parásita MNA.
+La Figura~\ref{fig:exp10} expone el efecto de crosstalk: al excitar únicamente la fila 0, las otras columnas muestran una desviación media del $13.32\%$ por interacción parásita MNA.
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.88\textwidth]{experiments/figures/exp10_crosstalk.png}
@@ -282,9 +309,12 @@ La Figura~\ref{fig:exp10} expone el efecto de crosstalk: al excitar únicamente 
 \subsection{Síntesis de Conclusiones de Fase 4}
 La validación integral del pipeline ---desde el solver MNA hasta la política de control robótico--- cierra la brecha entre simuladores de dispositivos físicos y frameworks de Machine Learning. Los 10 experimentos de la suite confirman:
 \begin{enumerate}
-    \item El crecimiento monótono del sneak ratio con el tamaño del arreglo ($0.34\%$ a $2.44\%$);
+    \item El error relativo de lectura del crossbar crece de $6.5\%$ ($N=4$) a
+$41\%$ ($N=32$), dominado por la caída resistiva de línea y el divisor del
+sense-amp;
     \item Las selectividades teóricas exactas ($2.0\times$ V/2, $3.0\times$ V/3) en el modelo lineal de Strukov;
     \item La retención perfecta del dispositivo no volátil ($\Delta_{\max} = 0$);
-    \item La variabilidad realista Device-to-Device ($CV_{\text{norm}} = 141.3\%$); y
+    \item La variabilidad D2D produce $CV(I_{\text{col}}) = 40.3\%$ sobre la
+corriente integrada, equivalente al $4.0\%$ del rango dinámico de $\mathbf{G}$;
     \item La convergencia del agente R-STDP en $<30$ episodios con $\bar{R} \approx 488$ sobre el crossbar físico $24 \times 12$.
 \end{enumerate}
