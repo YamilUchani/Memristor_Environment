@@ -1,0 +1,118 @@
+{
+  "task": "Auto 2D",
+  "algorithms": [
+    "REINFORCE",
+    "R-STDP"
+  ],
+  "initial_X": [
+    0.1,
+    0.9
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "episodes_per_run": 4000,
+  "total_runs": 12,
+  "total_training_episodes": 48000,
+  "validation_interval": 200,
+  "validation_episodes": 20,
+  "test_episodes": 50,
+  "validation_map": "same deterministic training map per seed",
+  "test_map_seeds": [
+    1100000000,
+    1100000001,
+    1100000002,
+    1100000003,
+    1100000004,
+    1100000005,
+    1100000006,
+    1100000007,
+    1100000008,
+    1100000009,
+    1100000010,
+    1100000011,
+    1100000012,
+    1100000013,
+    1100000014,
+    1100000015,
+    1100000016,
+    1100000017,
+    1100000018,
+    1100000019,
+    1100000020,
+    1100000021,
+    1100000022,
+    1100000023,
+    1100000024,
+    1100000025,
+    1100000026,
+    1100000027,
+    1100000028,
+    1100000029,
+    1100000030,
+    1100000031,
+    1100000032,
+    1100000033,
+    1100000034,
+    1100000035,
+    1100000036,
+    1100000037,
+    1100000038,
+    1100000039,
+    1100000040,
+    1100000041,
+    1100000042,
+    1100000043,
+    1100000044,
+    1100000045,
+    1100000046,
+    1100000047,
+    1100000048,
+    1100000049
+  ],
+  "test_checkpoint": "final weights only; no test-based checkpoint selection",
+  "initial_X_definition": "nominal mean of the seeded initial matrix; per-cell Gaussian perturbation sigma=0.01, clipped to [0,1]",
+  "shared_dynamics": {
+    "N": 24,
+    "M": 8,
+    "encoder": "auto2d",
+    "dt": 0.001,
+    "steps_per_action": 1,
+    "k_wta": 3,
+    "wta_temperature": 1.0,
+    "V_read": 0.05,
+    "memristor_nv_profile": "strukov_ideal.json",
+    "lif_profile": "lif_config.json",
+    "d2d_enabled": false,
+    "c2c_enabled": false,
+    "eta": 0.01,
+    "max_abs_weight_change_per_episode": 0.01
+  },
+  "algorithm_specific_exploration": {
+    "REINFORCE": {
+      "temperature_initial": 1.5,
+      "temperature_adaptation_during_training": false
+    },
+    "R-STDP": {
+      "temperature_initial": 1.0,
+      "epsilon": 0.15
+    }
+  },
+  "action_names": [
+    "accelerate_straight",
+    "coast_straight",
+    "gentle_left",
+    "gentle_right",
+    "sharp_left",
+    "sharp_right",
+    "brake_left",
+    "brake_right"
+  ],
+  "reports_rebuilt_with": "per-episode spike/update metrics, labeled crossbar figures, per-cell plasticity magnitudes, and frozen-weight held-out REINFORCE metrics reevaluated when missing",
+  "crossbar_plots": [
+    "crossbar_final_promedio.png",
+    "crossbar_cambio_abs_promedio.png"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "N": 24,
+  "M": 12,
+  "convention": "X = 1 - x",
+  "initial_X": 0.1,
+  "json_memristor_nv": "strukov_ideal.json",
+  "source_commit": "c1ddda8",
+  "note": "Historical code archive reproduction; global NumPy action RNG was not seeded."
+}

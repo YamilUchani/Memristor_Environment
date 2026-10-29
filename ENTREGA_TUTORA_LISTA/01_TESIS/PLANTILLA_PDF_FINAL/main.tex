@@ -1,0 +1,112 @@
+% ---------------
+% Último revisor: Miguel Clavijo
+% Fecha: 14.2.2025
+% ---------------
+
+\input{Encabezado/encabezado}
+\usepackage{mhchem} % necesario para \ce{} usado en Cap2/cap2.tex
+\usepackage{amssymb} % necesario para \mathbb{} usado en las etapas del Cap3
+\usepackage{multirow} % necesario para \multirow{} usado en Apendices.tex
+\usepackage{lipsum}
+%inicio estilizado de códigos
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
+%fin estilizado de códigos
+
+\usepackage{titlesec}
+\usepackage{comment}
+\usepackage{booktabs}
+\usepackage{caption}
+
+
+\renewcommand{\tablename}{\textbf{Tabla}}
+\renewcommand{\figurename}{\textbf{Figura}}
+\renewcommand{\lstlistingname}{\textbf{Algoritmo}}
+\renewcommand{\listtablename}{Lista de Tablas}
+\renewcommand{\listfigurename}{Lista de Figuras}
+\renewcommand{\labelitemi}{$\bullet$}
+\titleformat{\chapter}[display]
+{\bfseries\Large}
+{\filright\MakeUppercase{\chaptertitlename} \Huge\thechapter}
+{1ex}
+{\titlerule\vspace{1ex}\filleft}
+[\vspace{1ex}\titlerule]
+
+\renewcommand{\contentsname}{\textbf{\LARGE Índice}}
+
+
+\begin{document}
+\pagenumbering{roman}
+%Se incluye la portada, resumen y abstract
+\ifdefined\CapitulosTresOnly
+\input{HojaTitulo/Portada}
+\input{Simbolos/simbolos}
+\else
+\include{HojaTitulo/Portada}
+%Se incluye los símbolos u abreviaturas
+  \include{Simbolos/simbolos}
+\fi
+\input{Resumen/resumen}
+%Se incluyen las tablas de contenido
+\tableofcontents
+\listoffigures
+\listoftables
+
+\newpage
+\pagenumbering{arabic}
+
+% Incluyendo todo el contenido necesario
+\ifdefined\CapitulosTresOnly
+\input{Cap1/cap1}
+\input{Cap2/cap2}
+\input{Cap3/cap3}
+\else
+\include{Cap1/cap1}
+\include{Cap2/cap2}
+\include{Cap3/cap3}
+\include{Cap4/cap4}
+
+% Incluir en el índice la sección de Bibliografía
+\appendix
+\include{Apendices/Apendices}
+\include{Apendices/D_extendido_main}
+\include{Apendices/F_entrenamientos}
+\fi
+
+\clearpage
+\phantomsection
+\addcontentsline{toc}{chapter}{\numberline{}Bibliografía}
+% Estilo de bibliografía
+\bibliographystyle{IEEEtran}
+% Archivo Bibtex para las referencias
+\begingroup
+\interlinepenalty=10000
+\bibliography{references}
+\endgroup
+
+\end{document}

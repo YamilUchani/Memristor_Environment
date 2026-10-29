@@ -1,0 +1,33 @@
+{
+  "source": "csv",
+  "n_total": 13,
+  "n_train": 9,
+  "n_test": 4,
+  "split_method": "Hold out sorted indices 1 and -2 from each nonzero delta_t branch; fit each exponential on remaining points.",
+  "timing_convention": {
+    "project_and_digitized_axis": "delta_t = t_post - t_pre",
+    "positive_delta_t": "pre-before-post; LTP",
+    "paper_prose_definition": "delta_t = t_pre - t_post",
+    "conversion": "delta_t_project = -delta_t_paper",
+    "note": "The paper's prose definition has the opposite sign to the positive-LTP digitized axis and the implemented rule; this comparison uses the explicit project/digitized convention."
+  },
+  "test_indices_zero_based": [
+    1,
+    4,
+    7,
+    11
+  ],
+  "parameters_fitted_on_training_points": {
+    "A_plus_percent": 16.741488135166776,
+    "A_minus_magnitude_percent": 27.279603993030978,
+    "tau_plus_ms": 34.370778474182664,
+    "tau_minus_ms": 22.76825874906849
+  },
+  "test_metrics": {
+    "residual_r2": 0.9421965736041077,
+    "mae_percentage_points": 1.9040427634875527,
+    "rmse_percentage_points": 2.1362609533375267,
+    "erp_percent": 14.867907695162828
+  },
+  "csv": "jo2010_stdp_holdout.csv"
+}

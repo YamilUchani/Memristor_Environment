@@ -1,0 +1,22 @@
+{
+  "reference": "Prezioso et al. (2014), Fig. 1(b), digitized I-V hysteresis",
+  "reference_sweep_protocol": "not completely specified in the available source",
+  "model_parameters": {
+    "r_on_ohm": 4750.0,
+    "r_off_ohm": 1000000.0,
+    "initial_state_x": 0.05,
+    "V_p_V": 0.6,
+    "V_n_V": 0.85,
+    "A_p": 200.0,
+    "A_n": 600.0
+  },
+  "illustrative_excitation": {
+    "waveform": "one sinusoidal cycle spanning the digitized voltage range",
+    "cycle_duration_s": 3.0,
+    "integration_step_s": 1e-05,
+    "values_are_assumptions_not_paper_conditions": true
+  },
+  "voltage_coverage_percent": 100.0,
+  "fit_metrics": "not calculated; reference time and SET/RESET branch labels are unavailable",
+  "conclusion": "approximate visual reconstruction based on Fig. 1(b), not exact reproduction"
+}

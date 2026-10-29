@@ -1,0 +1,133 @@
+{
+  "test_01_operacion": {
+    "MAE": "2.71e-20 A",
+    "RMSE": "5.42e-20 A",
+    "Err. máx": "3.03e-14 %",
+    "R²": "1.0000000000"
+  },
+  "test_02_barrido_v": {
+    "R² Col 1": "1.0000000000",
+    "R² Col 2": "1.0000000000",
+    "R² Col 3": "1.0000000000",
+    "R² Col 4": "1.0000000000",
+    "Pendiente G11": "200.0 μS"
+  },
+  "test_03_barrido_g": {
+    "R_line": "50.0 Ω",
+    "V₁ max drop": "16.53 mV",
+    "I₂ max drop": "0.29 μA"
+  },
+  "test_04_no_destructiva": {
+    "V_pico": "50 mV",
+    "Variación G final (Uniforme)": "0.000000 %",
+    "Variación G final (No Uniforme)": "0.000000 %",
+    "I1 max (No Uniforme)": "32.0 μA"
+  },
+  "test_05_ltp_selectivo": {
+    "ΔG M11": "+4.86 μS",
+    "ΔG M12 (no sel)": "0.0000 μS  ← debe ser 0",
+    "G inicial M11": "89.0 μS",
+    "G final M11": "93.9 μS",
+    "Aislamiento": "100 % (Solo M₁₁ modificada)"
+  },
+  "test_06_ltd_selectivo": {
+    "ΔG M44": "-39.75 μS",
+    "ΔG M41 (no sel)": "0.0000 μS  ← debe ser 0",
+    "G inicial M44": "205.3 μS",
+    "G final M44": "165.6 μS",
+    "Aislamiento": "100 % (Solo M₄₄ modificada)"
+  },
+  "test_07_ciclo": {
+    "Error Repetibilidad": "0.01 %",
+    "G mín": "89.0 μS",
+    "G máx": "95.2 μS",
+    "Rango dinámico": "6.2 μS"
+  },
+  "test_08_sneak": {
+    "Error medio": "7.30 %",
+    "Error máx": "8.14 %"
+  },
+  "test_09_line_resistance": {
+    "R_line evaluada": "50.0 Ω",
+    "Caída Col 1": "0.00 %",
+    "Caída Col 4": "4.50 %"
+  },
+  "test_10_lif_dinamico": {
+    "Spikes LIF_1": 22,
+    "Spikes LIF_2": 21,
+    "Spikes LIF_3": 22,
+    "Spikes LIF_4": 27,
+    "Total Spikes": 92,
+    "V_m máx observado": "0.999 V"
+  },
+  "test_11_stdp": {
+    "Max ΔG LTP": "+0.943 μS",
+    "Max ΔG LTD": "-0.971 μS",
+    "Escala porcentual": "0.5 %"
+  },
+  "test_12_cross_talk": {
+    "ΔG Celda Programada (M11)": "+9.83 μS",
+    "Máx Cross-talk (otras celdas)": "0.00e+00 μS  ← debe ser ≈ 0",
+    "Aislamiento": "100 % Aislado (Crossbar Ideal)"
+  },
+  "test_13_escalabilidad": {
+    "Lectura 1x1": "4.18 μs",
+    "Lectura 2x2": "3.88 μs",
+    "Lectura 4x4": "9.48 μs",
+    "Rendimiento 4x4": "105.4 kOps/s"
+  },
+  "test_14_uniformidad": {
+    "Media G": "300.00 μS",
+    "Desv. Estándar": "0.0000 μS",
+    "Coef. Variación (CV)": "0.0000 %",
+    "Celdas evaluadas": 16
+  },
+  "test_15_matriz_identidad": {
+    "V aplicados": "[1.0, 0.8, 0.6, 0.4] V",
+    "G diagonal": "500 μS",
+    "G off-diagonal": "62 μS",
+    "I₁": "612.5 μA  (analítica: 611.6)",
+    "I₂": "525.0 μA  (analítica: 524.0)",
+    "I₃": "437.5 μA  (analítica: 436.4)",
+    "I₄": "350.0 μA  (analítica: 348.8)"
+  },
+  "test_16_matriz_diagonal": {
+    "V aplicados": "[1.0, 0.8, 0.6, 0.4] V",
+    "G diagonal": "[500, 400, 300, 200] μS",
+    "G off-diagonal": "62 μS",
+    "I₁": "612.5 μA  (analítica: 611.6)",
+    "I₂": "445.0 μA  (analítica: 444.0)",
+    "I₃": "317.5 μA  (analítica: 316.4)",
+    "I₄": "230.0 μA  (analítica: 228.8)"
+  },
+  "test_17_patron_X": {
+    "Patrón": "X (Diagonal + Anti-diagonal)",
+    "G activa": "400 μS",
+    "G inactiva": "62.5 μS",
+    "I₁": "462.5 μA",
+    "I₂": "462.5 μA",
+    "I₃": "462.5 μA",
+    "I₄": "462.5 μA"
+  },
+  "test_18_patron_T": {
+    "Patrón": "T (Fila 1 + Columna 2)",
+    "G activa": "450 μS",
+    "I₂ (Col 2 Tallo)": "900.0 μA",
+    "I₁ (Col 1 Barra)": "318.7 μA"
+  },
+  "test_19_patron_4x4": {
+    "Carácter": "H (4x4)",
+    "G activa": "480 μS",
+    "I col 1": "1536.0 μA",
+    "I col 2": "534.0 μA",
+    "I col 4": "1536.0 μA"
+  },
+  "test_20_comparacion": {
+    "Capacidad 1x1": "160 μA (1 mem)",
+    "Capacidad 2x2": "400 μA (4 mems)",
+    "Capacidad 4x4": "1600 μA (16 mems)",
+    "Sneak Error 1x1": "0.0 %",
+    "Sneak Error 2x2": "5.0 %",
+    "Sneak Error 4x4": "7.5 %  ← escala correctamente"
+  }
+}

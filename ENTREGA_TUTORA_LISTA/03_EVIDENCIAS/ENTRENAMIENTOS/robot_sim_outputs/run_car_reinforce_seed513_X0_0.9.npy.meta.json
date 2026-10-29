@@ -1,0 +1,16 @@
+{
+  "N": 24,
+  "M": 4,
+  "crossbar_seed": 513,
+  "convention": "X = 1 - x",
+  "initial_X": 0.9,
+  "json_memristor_nv": "strukov_ideal.json",
+  "variability": {
+    "d2d_enabled": false,
+    "d2d_sigma": 0.08,
+    "c2c_enabled": false,
+    "c2c_sigma": 0.05,
+    "c2c_theta": 1.0,
+    "c2c_dt": 0.02
+  }
+}

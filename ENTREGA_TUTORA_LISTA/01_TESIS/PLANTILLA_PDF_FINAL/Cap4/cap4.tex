@@ -1,0 +1,256 @@
+\chapter{Marco Conclusivo}
+\label{ch:marco_conclusivo}
+
+El presente capítulo resume los resultados obtenidos a lo largo del desarrollo
+de la plataforma de simulación neuromórfica, formula recomendaciones orientadas
+a futuras iteraciones del proyecto y delinea las líneas de trabajo futuro que
+se derivan de las limitaciones identificadas.
+
+\section{Conclusiones}
+\label{sec:conclusiones_principales}
+
+El trabajo desarrolló \texttt{neurolab}, un simulador modular de
+memristores, neuronas LIF, plasticidad y crossbar, y lo conectó con el
+agente Robot Sim. La evidencia se limita a simulaciones, verificaciones
+internas, soluciones analíticas y curvas digitalizadas atribuidas a
+publicaciones. No constituye una validación general de hardware físico.
+El estado de cumplimiento de los objetivos, con el alcance de cada
+evidencia, se resume en la Tabla~\ref{tab:cumplimiento_objetivos}.
+
+\begin{enumerate}
+    \item \textbf{Modelo memristivo y variabilidad:} El modelo de Strukov
+    alcanza $R^2=0.999657$ para $x(t)$ y $R^2=0.996994$ para $I(t)$ bajo la
+    alineación y escalado especificados en el Capítulo~3; para resistencia
+    y conductancia se obtienen $R^2=0.998319$ y $R^2=0.983726$,
+    respectivamente. D2D/C2C están habilitados en las corridas actuales de
+    Robot Sim mediante modificadores por celda. Las pruebas estadísticas
+    reproducen propiedades de distribuciones sintéticas, no variabilidad
+    medida en dispositivos.
+    \item \textbf{Histéresis y estado:} Se implementaron ciclos I--V y
+    evolución acotada de estado. Para Prezioso, se presenta una
+    reconstrucción visual aproximada basada en la Fig.~1(b). El artículo
+    disponible no especifica completamente el barrido temporal y la
+    digitalización no conserva tiempo ni etiquetas de rama; no se calculan
+    métricas de ajuste ni se demuestra la validación I--V por rama. El
+    objetivo se considera parcialmente cumplido.
+    \item \textbf{Neurona LIF:} La implementación integra, dispara, reinicia y
+    respeta el período refractario. La curva $f-I$ se contrastó con la solución
+    analítica del mismo modelo ($R^2=0.999964$, MAE $=0.086$ Hz,
+    RMSE $=0.151$ Hz), no con datos experimentales independientes.
+    \item \textbf{Plasticidad:} Se implementó una regla STDP en el módulo de
+    sinapsis; al ajustar nueve puntos y evaluar cuatro reservados, la ventana
+    obtiene $R^2=0.94220$ y RMSE $=2.136$ puntos porcentuales. El holdout es
+    pequeño. La curva digitalizada de Jo asigna signo positivo a LTP, pero
+    la definición temporal en prosa del artículo usa el signo contrario;
+    el proyecto declara y prueba la convención
+    $\Delta t=t_{\mathrm{post}}-t_{\mathrm{pre}}$. Para LTP/LTD se emplean
+    los pulsos publicados de $+3.2$ y $-2.8\,\mathrm{V}$, de
+    $300\,\mu\mathrm{s}$, y lectura a $1\,\mathrm{V}$. En los 18 puntos de
+    test se obtuvo $R^2=0.73988$, Pearson $r=0.99303$,
+    RMSE $=8.618$ nA y ERP $=31.23\%$;
+    las métricas por rama son deficientes ($R^2=-8.54$ para LTP y
+    $R^2=-829.99$ para LTD). Los parámetros efectivos se ajustan a la
+    misma curva digitalizada, por lo que no son una caracterización
+    independiente del dispositivo. La evidencia es parcial. Las
+    corridas de Robot Sim resumidas en este documento usan REINFORCE con
+    baseline. El software entregado ofrece tambi\'en R-STDP en los cuatro runners y sus
+pruebas funcionales verifican partes de su mecanismo. La carpeta de evidencias
+incluye un piloto exploratorio de 28 corridas en CartPole, visi\'on y obst\'aculos
+(dos semillas y dos valores de $X_0$), adem\'as de cuatro corridas R-STDP de Car
+bajo un protocolo inicial. Una repetici\'on separada de Car R-STDP con
+evaluaci\'on cada 100 episodios us\'o semillas 2 y 4. La muestra sigue siendo
+peque\~na, Car REINFORCE no est\'a emparejado en estos lotes y el protocolo Car
+inicial difiere; no se afirma superioridad estad\'istica ni se generaliza a
+otras condiciones.
+    \item \textbf{Crossbar e integración:} El solver MNA incluye resistencias
+    de línea y sensado en lectura. En el caso $2\times2$ la diferencia
+    relativa de norma respecto a la VMM ideal es $10.98\%$; es una
+    comprobación numérica, no experimental. Robot Sim usa una matriz
+    abstracta $X$ cuyos valores determinan $R(X)$ y $G(X)$. En ambos modos, el memristor vol\'atil de salida modula la corriente
+    que llega a la LIF. En REINFORCE, la acci\'on se decodifica desde las
+    corrientes de columna; en el R-STDP actual tambi\'en se decodifica desde
+    esa pol\'itica softmax y WTA no la restringe. La elegibilidad R-STDP usa
+    eventos pre del codificador y la acci\'on decodificada centrada por la
+    softmax; los spikes LIF se registran, pero no act\'uan como evento post
+    en el piloto cuantitativo del runner. Este piloto usa elegibilidad
+    pre/acci\'on centrada por la pol\'itica y modulada por retornos descontados;
+    no es la regla can\'onica de pares pre/post. Se distinguen tres resultados:
+    la STDP local del laboratorio usa spikes pre/post y trazas temporales;
+    una variante de tarea con spikes LIF reales como evento post obtuvo bajo
+    rendimiento exploratorio; y las corridas de la carpeta de evidencias,
+    etiquetadas R-STDP por el modo del software, corresponden al h\'ibrido
+    pre/acci\'on. Estas corridas no demuestran que la R-STDP can\'onica
+    aprenda las tareas. Las reglas cambian en software, sin alterar la
+    topolog\'ia ni el modelo el\'ectrico del crossbar. El bajo desempe\~no de
+    la variante directa est\'a observado, pero las pruebas no aíslan una causa
+    \'unica.
+    \item \textbf{Validación cuantitativa:} Las métricas se calcularon con
+    procedimientos de alineación y limitaciones documentados sobre curvas
+    digitalizadas atribuidas a publicaciones. La evidencia es heterogénea:
+    Prezioso cuenta con una reconstrucción visual aproximada sin métricas
+    de ajuste; STDP se evalúa en cuatro puntos reservados y LTP/LTD muestra
+    errores elevados, en particular por rama. Los parámetros LTP/LTD se
+    estiman sobre la misma curva digitalizada. Ninguna comparación
+    representa validación frente a mediciones experimentales propias.
+\end{enumerate}
+
+\section{Respuesta a la pregunta de investigación}
+\label{sec:respuesta_pregunta}
+
+La concordancia depende de la magnitud y del protocolo. Con
+$R^2=1-\mathrm{SSE}/\mathrm{SST}$, el modelo local de Strukov muestra alta
+concordancia de forma con las series digitalizadas usadas ($R^2=0.999657$
+para el estado, $0.996994$ para la corriente, $0.998319$ para la
+resistencia y $0.983726$ para la conductancia). Los ERP de conductancia
+Strukov ($19.04\%$) y de la curva STDP ($14.87\%$) son errores máximos
+normalizados por el rango de sus respectivas series; el umbral ERP
+$<10\%$ del Capítulo~1 se aplica a parámetros puntuales, mientras la
+aceptación de curvas se evalúa con $R^2$ y coincidencia cualitativa.
+Por ello, ambos ERP no contradicen por sí solos el criterio de curva:
+Strukov cumple $R^2>0.90$, y STDP obtiene $R^2=0.94220$ en un holdout
+pequeño. Para Prezioso se dispone de una reconstrucción visual aproximada
+de la Fig.~1(b), no de métricas de ajuste: el barrido temporal no está
+completamente especificado y los datos digitalizados no permiten separar
+las ramas SET/RESET. La histéresis se mantiene como evidencia parcial.
+En STDP, el holdout de cuatro puntos tiene RMSE $=2.136$ puntos
+porcentuales; su tamaño no permite una afirmación amplia de
+generalización. Además, la curva digitalizada asigna $\Delta t>0$ a LTP,
+mientras que la definición temporal en prosa de Jo et al. presenta el
+signo opuesto. El proyecto usa explícitamente
+$\Delta t=t_{\mathrm{post}}-t_{\mathrm{pre}}$ y prueba que $\Delta t>0$
+potencia y $\Delta t<0$ deprime.
+En LTP/LTD, se obtuvo en 18 puntos de test
+$R^2_{\mathrm{residual}}=0.73988$, MAE $=8.349$ nA,
+RMSE $=8.618$ nA y ERP $=31.23\%$, aplicando los pulsos y la lectura
+indicados en la Fig.~2a. Pearson del test agregado es $r=0.99303$
+($r^2=0.98610$), pero este coeficiente mide covariación y no sustituye
+al error residual: la predicción de LTP es constante (Pearson no
+definido) y LTD obtiene $r=-0.22170$. Las métricas desagregadas son débiles
+($R^2=-8.54$ para LTP y $R^2=-829.99$ para LTD); el resultado agregado
+no basta para demostrar concordancia por rama. Los parámetros efectivos
+se ajustaron a la misma curva digitalizada, por lo que no acreditan
+amplitud ni predicción independientes. En LIF, Euler
+concuerda con la solución analítica del propio modelo
+($R^2=0.999964$). En conjunto, la evidencia cuantitativa es
+heterogénea: alta en Strukov y LIF, limitada en STDP por el tamaño del
+holdout y no satisfactoria por rama en LTP/LTD. La
+variabilidad D2D/C2C se probó estadísticamente con muestras
+sintéticas y se habilitó en el crossbar del agente, sin comparación con
+medidas de hardware. El MNA se comprobó en un caso pequeño, cuya
+diferencia relativa de norma respecto a la VMM ideal fue $10.98\%$; no
+es una comparación con hardware. En consecuencia, la evidencia
+disponible no permite afirmar concordancia experimental general para
+dispositivos, redes SNN o crossbars físicos.
+Entre las limitaciones de integración están el uso de $X$ como estado
+del modelo simulado y no como dispositivo físico, la LIF como monitor/WTA
+en REINFORCE y la ausencia de programación con \textit{sneak paths}. Los
+resultados principales de Auto 2D de esta tesis usan una semilla; la carpeta
+de evidencias agrega un piloto independiente con tres semillas emparejadas
+por condición y evaluación final congelada. El piloto comparativo posterior ya cubre CartPole, visi\'on y obst\'aculos,
+pero solo con dos semillas; Car cuenta con una repetici\'on R-STDP separada y
+no incluye una condici\'on REINFORCE emparejada. Falta ampliar la muestra y
+uniformar el protocolo Car antes de estimar diferencias entre reglas. En el
+agente, $X_0=0.1$ (equivalente a $x_0=0.9$) es una elecci\'on de dise\~no que
+difiere de la convenci\'on de estado inicial del dispositivo aislado; el
+piloto tambi\'en explora $X_0=0.9$, pero no sustituye un estudio de sensibilidad
+con mayor tama\~no muestral ni permite extrapolar a otras inicializaciones.
+
+Otras limitaciones del alcance son: las referencias de literatura se
+introducen como curvas digitalizadas y no como mediciones propias; el
+holdout STDP comprende solo cuatro puntos y los parámetros efectivos de
+LTP/LTD se estiman sobre la misma curva de referencia, con desempeño
+deficiente por rama; la reconstrucción Prezioso es visual y no identifica
+el protocolo temporal del artículo; en REINFORCE, la LIF actúa como
+monitor/WTA y no como decisor principal;
+la matriz $X$ representa el estado de celdas simuladas, no un crossbar
+    físico; las actualizaciones del agente cambian directamente el estado
+    abstracto $X$, con límites y variabilidad configurada, sin simular una
+    forma de onda de programación ni pulsos discretos por actualización; los
+    valores de $\gamma$ y
+la actualización de elegibilidad difieren entre tareas; el solver MNA
+incluye resistencias de línea y el acoplamiento de la topología de
+lectura simulada, pero no la configuración clásica de
+\textit{sneak paths} con líneas flotantes ni la programación parásita;
+y los resultados principales de Auto 2D cuentan con una sola semilla. El
+piloto separado de la carpeta de evidencias amplía esa tarea a tres semillas
+por condición, pero sigue siendo exploratorio. Por tanto, los resultados de
+las tareas no constituyen una comparación general entre algoritmos ni
+permiten generalizar el rendimiento más allá de las configuraciones
+evaluadas.
+
+\section{Recomendaciones}
+
+A partir de las lecciones aprendidas durante el desarrollo y de las limitaciones
+observadas en la validación, se formulan las siguientes recomendaciones:
+
+\begin{itemize}
+    \item \textbf{No idealidades de crossbar:} la lectura incluye
+    resistencias de línea y el acoplamiento de la topología simulada, pero no
+    la configuración clásica de \textit{sneak paths} con líneas flotantes ni
+    la escritura parásita. Se recomienda modelar y validar ambos casos antes
+    de extrapolar a arreglos de mayor densidad.
+    \item \textbf{Acoplamiento térmico:} complementar el ruido estocástico
+    macroscópico actual con un modelo de calentamiento de Joule dependiente de
+    la disipación temporal a escala nanométrica.
+    \item \textbf{Robustez del solver:} el esquema de integración Euler
+    Forward requiere pasos temporales restrictivos ($dt \leq 10^{-3}$\,s) en
+    los umbrales ultra no lineales del dispositivo; se recomienda evaluar
+    integradores adaptativos (p.\ ej.\ Runge-Kutta) para ampliar la ventana
+    numérica de simulación.
+    \item \textbf{Reproducibilidad continua:} mantener la suite de validación
+    como herramienta de referencia en \texttt{neuromorphic\_lab/validaciones/},
+    ejecutando automáticamente los scripts (p.\ ej.\
+    \texttt{python 01\_strukov\_2008.py}) bajo Python 3.10+ para revalidar el
+    ecosistema en cada modificación, sin intervención manual del operador.
+    \item \textbf{Validación de escritura y selección:} contrastar con datos
+    experimentales los pulsos de escritura y los cambios de $X$ y $G$ del
+    modo R-STDP; evaluar si la LIF debe participar en la selección de
+    acciones del modo REINFORCE. Mantener explícita la distinción entre
+    $X$, conductancia y pesos normalizados.
+    \\item \\textbf{Cobertura estad\'istica:} ampliar el piloto REINFORCE/R-STDP
+    desde dos semillas a una muestra previamente dimensionada; emparejar Car
+    bajo el mismo intervalo de evaluaci\'on y reportar resultados por condici\'on.
+    Mantener separados los resultados incompletos y las corridas que alcanzan
+    el presupuesto m\'aximo sin {\'e}xito. Documentar adem\'as las fuentes y el
+    proceso de digitalizaci\'on de cada CSV atribuido a la literatura.
+\end{itemize}
+
+\section{Trabajo Futuro}
+
+El simulador se evaluó en cuatro tareas: control con recompensa densa
+(CartPole-v1), clasificación supervisada (Visión $8\times8$),
+navegación con recompensa escasa (Gridworld $10\times10$) y control
+en un entorno 2D de estado continuo (Auto 2D). La extensión a otros
+entornos de control continuo y a tareas con acciones continuas se
+plantea como trabajo futuro. También se consideran la unificación de
+la regla de elegibilidad entre tareas, la integración de la LIF en el
+lazo de decisión y la modelización de \textit{sneak paths} durante
+escritura.
+
+Las líneas de desarrollo identificadas sobre la base de los resultados
+obtenidos comprenden:
+
+\begin{itemize}
+    \item \textbf{Crossbars de alta densidad:} extender el solver MNA para
+    arreglos de escala industrial (por ejemplo $128 \times 128$) con
+    selectores (\textit{memristor switches}) y modelado completo de sneak
+    paths y margen de ruido.
+    \item \textbf{Redes neuronales pulsantes completas:} combinar la
+    neurona LIF implementada con las sinapsis STDP en redes SNN capaces de
+    tareas de reconocimiento de patrones de mayor complejidad (p.\ ej.\
+    MNIST o sensores DVS).
+    \item \textbf{Comparación de reglas de aprendizaje:} completar y
+    documentar una comparación controlada de REINFORCE y R-STDP en las
+    cuatro tareas de Robot Sim, con semillas emparejadas, presupuesto de
+    entrenamiento equivalente, checkpoints seleccionados solo con
+    validación y pruebas finales con pesos congelados. Publicar los
+    registros originales y las métricas por semilla antes de concluir
+    que una regla supera a la otra.
+    \item \textbf{Co-simulación con hardware:} exportar las matrices
+    conductivas entrenadas a flujos de diseño de circuitos (p.\ ej.\
+    SPICE o frameworks de computación en memoria) para acercar la simulación
+    a la implementación física.
+    \item \textbf{Benchmarking inter-simulador:} comparar las métricas de
+    Neuromorphic Lab con herramientas de referencia del área para
+    contextualizar su precisión dentro del estado del arte.
+\end{itemize}

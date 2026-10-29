@@ -1,0 +1,16 @@
+{
+    "_meta": {
+        "type": "lif_calibrado",
+        "info": "Calibrado para 5-50 Hz con input moderado"
+    },
+    "c_m_value": 803805.7534163665,
+    "c_m_unit": "nF",
+    "r_leak_value": 9.95265331953409e-05,
+    "r_leak_unit": "M\u03a9",
+    "r_series_value": 0.01,
+    "r_series_unit": "k\u03a9",
+    "v_rest": 0.0,
+    "v_th": 1.0,
+    "v_reset": 0.0,
+    "t_ref": 0.005
+}

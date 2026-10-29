@@ -1,0 +1,134 @@
+\chapter*{Resumen}
+\addcontentsline{toc}{chapter}{Resumen}
+
+Este trabajo desarrolla y evalúa un simulador modular de dispositivos
+memristivos y componentes neuromórficos, junto con un agente de control
+que utiliza un crossbar como representación computacional de sus pesos.
+El sistema integra el modelo de Strukov, neuronas Leaky Integrate-and-Fire
+(LIF), reglas de plasticidad, variabilidad estocástica y lectura de
+crossbar mediante un solver nodal MNA. Con la definición residual $R^2=1-\mathrm{SSE}/\mathrm{SST}$ se obtienen
+$R^2=0.999657$ para el estado interno y $0.996994$ para la corriente del
+modelo de Strukov. Para STDP, un ajuste con nueve de los 13 puntos
+digitalizados atribuidos a Jo et al. se evaluó en cuatro puntos
+reservados y obtuvo $R^2=0.94220$ y RMSE $=2.136$ puntos porcentuales;
+el tamaño reducido del holdout limita la evidencia de generalización.
+La convención usada es $\Delta t=t_{\mathrm{post}}-t_{\mathrm{pre}}$,
+positiva para pre antes que post y LTP; la definición en prosa del
+artículo presenta el signo opuesto. Para LTP/LTD se simularon los pulsos
+de $+3.2$ y $-2.8\,\mathrm{V}$, de $300\,\mu\mathrm{s}$, y lectura a
+$1\,\mathrm{V}$ de la Fig.~2a. El test obtuvo $R^2=0.73988$,
+RMSE $=8.618$ nA y ERP $=31.23\%$, con resultados deficientes por rama;
+Pearson agregado es $r=0.99303$, aunque no implica concordancia de
+amplitud y no está definido para la predicción constante de LTP. El
+ajuste se hizo a la misma curva digitalizada y la evidencia es parcial.
+Prezioso se presenta solo como reconstrucción visual aproximada,
+sin métricas de ajuste ni asignación de ramas SET/RESET, porque la fuente
+no especifica por completo el barrido temporal. Una curva
+frecuencia-corriente LIF concuerda con la solución analítica del propio
+modelo, mientras las pruebas D2D/C2C evalúan distribuciones sintéticas,
+no mediciones de hardware. En un crossbar $2\times2$, el solver MNA
+difiere 10.98\% de la VMM ideal al incluir resistencias de línea y
+sensado. Los resultados respaldan la consistencia de varias
+implementaciones numéricas, pero no una validación física general. En
+CartPole, cinco corridas de 300 episodios con D2D/C2C habilitados
+obtuvieron una recompensa media de 435.31 en los últimos 200 episodios
+(rango: 369.66--474.31). La semilla 0 alcanzó tarde el nivel de
+recompensa alta, por lo que su promedio de ventana final también refleja
+el tiempo de aprendizaje; estos datos no establecen que una semilla sea
+intrínsecamente mejor que otra. Tras seleccionar un checkpoint con 50
+episodios de validación por matriz, una prueba con pesos congelados en 50 episodios
+disjuntos obtuvo $493.63\pm0.93$ puntos. En Robot Sim, REINFORCE y R-STDP
+usan el mismo camino simulado de crossbar, dispositivo vol\'atil de salida y
+neuronas LIF. La pol\'itica de ambos se decodifica desde las corrientes de
+columna; las LIF producen spikes y participan en la din\'amica WTA, pero el WTA
+no restringe la acci\'on del R-STDP actual. Su elegibilidad usa la entrada
+presin\'aptica y un evento de acci\'on centrado por la pol\'itica softmax; no
+usa el spike LIF como evento postsin\'aptico. La regla modula la elegibilidad
+con retornos futuros y actualiza el estado simulado $X$. Un piloto de 28
+corridas compar\'o ambos algoritmos en CartPole, visi\'on y obst\'aculos, con
+semillas 0 y 1 e inicializaciones $X_0=0.1$ y $0.9$. Se detuvo al obtener al
+menos 271 exitos en la ventana m\'ovil de 300 episodios (90.33\%). R-STDP
+alcanz\'o el criterio en 4/4 condiciones de cada tarea; REINFORCE, en 2/4 de
+CartPole (dos registros incompletos), 4/4 de visi\'on y 4/4 de obst\'aculos.
+Una repetici\'on de Car R-STDP, con evaluaci\'on cada 100 episodios, alcanz\'o
+el criterio en 2/4 condiciones para semillas 2 y 4. Son resultados
+exploratorios: hay dos semillas, las m\'etricas dependen del dominio y las
+corridas originales de Car siguieron otra frecuencia de evaluaci\'on.
+
+La plasticidad local R-STDP del crossbar simulado funciona como parte del
+enfoque h\'ibrido que combina elegibilidad local con la se\~nal de recompensa
+y asignaci\'on de cr\'edito de REINFORCE. En cambio, la variante que usa el
+spike LIF real como evento post directamente en el aprendizaje de la tarea
+tuvo rendimiento muy bajo en pruebas exploratorias. El piloto cuantitativo
+corresponde al agente h\'ibrido etiquetado R-STDP, con elegibilidad
+pre/acci\'on centrada por la pol\'itica; no a la variante de post LIF.
+La fusi\'on act\'ua en la regla software de aprendizaje y recompensa; conserva
+el mismo modelo y camino de lectura del crossbar.
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+This work develops and evaluates a modular simulator for memristive
+devices and neuromorphic components, together with a control agent that
+uses a crossbar as a computational representation of its weights. The
+system combines the Strukov model, Leaky Integrate-and-Fire (LIF)
+neurons, plasticity rules, stochastic variability, and crossbar
+readout through a nodal MNA solver. Evaluation combines digitized
+references, analytical solutions, and reproducible numerical tests.
+Using the residual definition $R^2=1-\mathrm{SSE}/\mathrm{SST}$, the
+Strukov model obtains $R^2=0.999657$ for its internal state and
+$0.996994$ for current. An exponential STDP rule was fitted to nine of
+13 digitized points attributed to Jo et al. and evaluated on four
+reserved points, yielding $R^2=0.94220$ and an RMSE of $2.136$ percentage
+points; the small holdout limits the evidence for generalization. The
+project uses $\Delta t=t_{\mathrm{post}}-t_{\mathrm{pre}}$ (positive for
+pre-before-post and LTP); the paper's prose definition has the opposite
+sign to its digitized positive-LTP axis. For Jo et al. (2010), LTP/LTD
+was simulated with
+the Fig.~2a pulse amplitudes ($+3.2$ and $-2.8\,\mathrm{V}$), widths
+($300\,\mu\mathrm{s}$), and $1\,\mathrm{V}$ reads; the held-out result
+was $R^2=0.73988$, RMSE $=8.618$ nA, and ERP $=31.23\%$, with poor
+branch-wise scores and no independent-device prediction. The aggregate
+Pearson coefficient is $r=0.99303$, but it does not imply amplitude
+agreement; Pearson correlation is undefined for the constant LTP
+predictions. The STDP comparison evaluates four reserved points.
+Prezioso is reported only as
+an approximate visual reconstruction, without fit metrics or branch
+attribution, because the complete sweep protocol is unavailable. An LIF
+frequency-current curve agrees with the analytical solution of the same
+model, whereas D2D/C2C tests assess synthetic distributions rather than
+hardware measurements. For a $2\times2$ crossbar, the MNA solver differs
+by 10.98\% from the ideal VMM when line and sensing resistances are
+included. These results support the numerical consistency of several
+implementations, but do not establish general physical validation. In
+CartPole, five 300-episode runs with D2D/C2C enabled achieved a mean
+reward of 435.31 over their last 200 episodes (range: 369.66--474.31).
+Seed 0 reached the high-reward regime later, so its final-window mean
+also reflects learning time; these results do not establish that one
+seed is intrinsically better than another. After selecting a checkpoint
+using 50 validation episodes per matrix, a frozen-weight test on 50 disjoint episodes achieved $493.63\pm0.93$ points. In Robot Sim, both
+REINFORCE and R-STDP use the same simulated crossbar, volatile output device,
+and LIF pathway. Both policies decode actions from column currents; LIF
+neurons generate spikes and participate in WTA dynamics, but WTA does not
+gate the current R-STDP action selection. Its eligibility uses presynaptic
+input and an action event centered by the softmax policy; it does not use the
+LIF spike as its postsynaptic learning event. Reward-modulated eligibility
+uses future returns to update the simulated state $X$. An exploratory 28-run
+pilot compared both algorithms on CartPole, vision, and obstacle navigation
+with seeds 0 and 1 and initial states $X_0=0.1$ and $0.9$. Runs stopped after
+at least 271 successes in a rolling window of 300 episodes (90.33%). R-STDP
+met the criterion in 4/4 conditions in each task; REINFORCE met it in 2/4
+CartPole conditions (two records were incomplete), 4/4 vision conditions,
+and 4/4 obstacle conditions. A separate Car R-STDP repeat, evaluated every
+100 episodes, met the criterion in 2/4 conditions for seeds 2 and 4. These
+are exploratory results: there are two seeds, success metrics are
+domain-specific, and the original Car runs used a different evaluation
+frequency.
+
+The crossbar's local reward-modulated STDP works as part of the hybrid
+approach, which combines local eligibility with REINFORCE's reward and
+credit-assignment signal. By contrast, using the real LIF spike as the
+postsynaptic event directly in task learning performed very poorly in
+exploratory runs. The quantitative pilot corresponds to the hybrid agent
+labelled R-STDP, using policy-centered pre/action eligibility, not the
+real-LIF-post variant.

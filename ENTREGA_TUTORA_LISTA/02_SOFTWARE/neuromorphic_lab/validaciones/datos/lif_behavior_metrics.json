@@ -1,0 +1,26 @@
+{
+  "config": {
+    "c_m_nF": 100.00000000000001,
+    "r_series_kohm": 100.0,
+    "r_leak_Mohm": 1.0,
+    "v_rest_V": 0.0,
+    "v_threshold_V": 1.0,
+    "v_reset_V": 0.0,
+    "refractory_period_ms": 2.0
+  },
+  "stimulus": {
+    "waveform": "Tren de Pulsos (Unipolar)",
+    "amplitude_V": 2.0,
+    "frequency_Hz": 200.0,
+    "duty_cycle": 0.2,
+    "duration_s": 0.5,
+    "dt_s": 1e-06,
+    "mode": "voltage_input"
+  },
+  "spike_count": 11,
+  "firing_rate_Hz": 22.0,
+  "reset_next_sample_max_abs_error_V": 0.0,
+  "refractory_min_interspike_interval_ms": 44.99699999999999,
+  "refractory_violations": 0,
+  "checks_passed": true
+}

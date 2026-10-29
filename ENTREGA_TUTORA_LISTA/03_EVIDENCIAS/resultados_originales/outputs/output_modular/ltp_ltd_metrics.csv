@@ -1,0 +1,11 @@
+Metrica,Valor
+R inicial LTP (Ohm),248550.59988002398
+R final LTP (Ohm),100.0
+dR LTP (Ohm),-248450.59988002398
+% cambio LTP,-99.9597667436537
+Tiempo saturacion LTP (ms),8.5
+R inicial LTD (Ohm),251549.40011997602
+R final LTD (Ohm),499999.99999762874
+dR LTD (Ohm),248450.5998776527
+% cambio LTD,98.76811463639136
+Tiempo saturacion LTD (ms),25.8

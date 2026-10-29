@@ -1,0 +1,144 @@
+\chapter{Marco Referencial}
+
+\section{Introducción}
+
+Durante las últimas décadas, el crecimiento exponencial de aplicaciones basadas en inteligencia artificial, aprendizaje automático y procesamiento masivo de datos ha impulsado una demanda cada vez mayor de recursos computacionales. Este fenómeno ha evidenciado las limitaciones presentes en las arquitecturas tradicionales basadas en el modelo de Von Neumann, donde las unidades de procesamiento y almacenamiento se encuentran físicamente separadas. Como consecuencia, una parte significativa del consumo energético total de un sistema computacional se destina al movimiento de información entre memoria y procesador, generando limitaciones de rendimiento conocidas como el cuello de botella de Von Neumann \cite{9,15}.
+
+La necesidad de superar estas restricciones ha motivado el desarrollo de nuevos paradigmas computacionales inspirados en el funcionamiento del sistema nervioso biológico. Entre ellos destaca la computación neuromórfica, cuyo objetivo consiste en integrar almacenamiento y procesamiento dentro de una misma estructura física para reducir el movimiento de datos y mejorar la eficiencia energética \cite{2,15}. Este enfoque busca reproducir características observadas en sistemas biológicos, incluyendo paralelismo masivo, aprendizaje adaptativo y tolerancia a fallos.
+
+Uno de los dispositivos más prometedores para la implementación de sistemas neuromórficos es el memristor. Este elemento fue propuesto teóricamente por Leon Chua en 1971 como el cuarto elemento fundamental de los circuitos eléctricos, complementando al resistor, capacitor e inductor mediante una relación funcional entre flujo magnético y carga eléctrica \cite{17}. Décadas después, Strukov et al. demostraron experimentalmente la existencia física de un dispositivo con comportamiento memristivo basado en óxido de titanio, reactivando el interés científico y tecnológico en esta área de investigación \cite{26}.
+
+Los memristores presentan propiedades particularmente atractivas para aplicaciones neuromórficas. Entre ellas destacan su capacidad de memoria no volátil, la posibilidad de modificar gradualmente su conductancia mediante estímulos eléctricos y la capacidad de conservar estados internos aun cuando la alimentación eléctrica es removida \cite{26,2}. Estas características permiten representar pesos sinápticos artificiales y reproducir mecanismos de aprendizaje inspirados en procesos biológicos.
+
+Diversas investigaciones han demostrado la capacidad de los memristores para implementar fenómenos asociados a la plasticidad sináptica, incluyendo potenciación a largo plazo (Long-Term Potentiation, LTP), depresión a largo plazo (Long-Term Depression, LTD) y plasticidad dependiente del tiempo de disparo (Spike-Timing Dependent Plasticity, STDP) \cite{3,2}. Asimismo, los memristores pueden organizarse en arreglos tipo crossbar que permiten realizar operaciones de computación en memoria y acelerar procesos de inferencia neuronal mediante estructuras altamente paralelas \cite{4,5}.
+
+Sin embargo, el desarrollo de hardware neuromórfico basado en memristores continúa enfrentando desafíos importantes. Los dispositivos reales presentan fenómenos de variabilidad dispositivo a dispositivo (Device-to-Device, D2D) y variabilidad ciclo a ciclo (Cycle-to-Cycle, C2C), generando diferencias estadísticas entre dispositivos nominalmente idénticos \cite{27,29,21}. Adicionalmente, el incremento en la densidad de integración de arreglos crossbar introduce corrientes parásitas conocidas como sneak paths, las cuales afectan la precisión de lectura y escritura de información \cite{7}.
+
+Debido a estas dificultades, la simulación computacional se ha convertido en una herramienta fundamental para el análisis y validación de arquitecturas neuromórficas antes de su implementación física. Herramientas de simulación permiten estudiar el comportamiento de dispositivos memristivos, mecanismos de plasticidad y arquitecturas de interconexión reduciendo costos de desarrollo y facilitando la exploración de nuevas configuraciones experimentales \cite{20,23,24}.
+
+En este contexto, el presente trabajo propone el desarrollo de un simulador neuromórfico basado en memristores capaz de integrar modelado físico del dispositivo, variabilidad estocástica, plasticidad sináptica, neuronas tipo Leaky Integrate-and-Fire y arquitecturas crossbar dentro de una misma plataforma de simulación. La propuesta busca proporcionar una herramienta que permita estudiar fenómenos neuromórficos de forma integrada y validar su comportamiento mediante comparación con resultados reportados en la literatura científica.
+
+\section{Planteamiento del Problema}
+
+La computación neuromórfica se ha consolidado como una de las líneas de investigación más prometedoras para el desarrollo de sistemas capaces de ejecutar tareas de aprendizaje, reconocimiento de patrones y procesamiento cognitivo con una eficiencia energética superior a la ofrecida por las arquitecturas computacionales tradicionales \cite{2,15}. Este interés ha impulsado el desarrollo de dispositivos electrónicos emergentes capaces de emular el comportamiento de neuronas y sinapsis biológicas, siendo los memristores una de las tecnologías más estudiadas debido a sus propiedades de memoria no volátil y modificación gradual de conductancia \cite{17,26}.
+
+A pesar de los avances logrados durante los últimos años, el desarrollo de hardware neuromórfico basado en memristores continúa enfrentando importantes desafíos científicos y tecnológicos. Uno de los principales problemas radica en la complejidad inherente de los dispositivos memristivos reales. A diferencia de los modelos ideales utilizados en etapas iniciales de investigación, los dispositivos físicos presentan fenómenos de variabilidad dispositivo a dispositivo y variabilidad ciclo a ciclo, provocando diferencias significativas en parámetros como voltajes de conmutación, velocidades de transición resistiva y niveles de conductancia alcanzados durante procesos de aprendizaje \cite{27,29,21}.
+
+Estas variaciones afectan directamente el desempeño de sistemas neuromórficos construidos a partir de grandes cantidades de memristores. En aplicaciones prácticas, pequeñas diferencias en el comportamiento individual de los dispositivos pueden generar modificaciones acumulativas en los pesos sinápticos de una red neuronal, alterando procesos de aprendizaje y clasificación \cite{8,2}. Como consecuencia, resulta insuficiente analizar únicamente modelos ideales del memristor, siendo necesario incorporar mecanismos que permitan representar comportamientos estocásticos observados experimentalmente.
+
+Otro desafío importante está relacionado con la integración de los memristores dentro de arquitecturas neuromórficas completas. Diversos trabajos han demostrado la viabilidad de utilizar memristores como sinapsis artificiales y elementos de almacenamiento analógico \cite{3,6}; sin embargo, la evaluación conjunta de dispositivos memristivos, neuronas artificiales y mecanismos de aprendizaje continúa siendo un problema complejo. Con frecuencia, las investigaciones se enfocan únicamente en uno de estos componentes, dificultando el análisis integral del comportamiento del sistema.
+
+De manera similar, los arreglos crossbar memristivos representan una de las arquitecturas más prometedoras para implementar computación en memoria y acelerar operaciones neuronales mediante paralelismo masivo \cite{4,5}. No obstante, el incremento de densidad en estas estructuras introduce fenómenos no deseados, entre ellos las corrientes parásitas conocidas como sneak paths. Estas corrientes generan rutas alternativas para el flujo de información, degradando la precisión de lectura y escritura y limitando la escalabilidad de los sistemas \cite{7}.
+
+La validación experimental de estos fenómenos requiere equipamiento especializado, procesos de fabricación avanzados y recursos económicos considerables. Además, la construcción de prototipos físicos limita la capacidad de explorar rápidamente diferentes configuraciones arquitectónicas y escenarios de operación. Esta situación dificulta el estudio sistemático de la interacción entre comportamiento físico del memristor, plasticidad sináptica, actividad neuronal y arquitecturas de interconexión.
+
+Por otra parte, existen herramientas especializadas orientadas al modelado de memristores, simulación de redes neuronales o análisis de arreglos crossbar \cite{20,23,24}. Sin embargo, muchas de estas soluciones se encuentran enfocadas en problemas específicos y no integran simultáneamente el comportamiento físico del dispositivo, la variabilidad estocástica, los mecanismos de plasticidad sináptica y los efectos arquitectónicos presentes en sistemas neuromórficos de gran escala.
+
+En consecuencia, surge la necesidad de desarrollar una herramienta de simulación que permita analizar de manera integrada los diferentes niveles que conforman un sistema neuromórfico basado en memristores. Una plataforma de estas características facilitaría la evaluación de modelos memristivos, la implementación de neuronas artificiales, el estudio de mecanismos de aprendizaje y el análisis de arquitecturas crossbar bajo condiciones realistas de operación, reduciendo costos experimentales y favoreciendo la investigación en computación inspirada en el cerebro.
+
+\subsection{Definición del Problema}
+
+Actualmente, la investigación en hardware neuromórfico basado en memristores enfrenta dificultades asociadas a la complejidad de modelar simultáneamente el comportamiento físico de los dispositivos, la variabilidad inherente presente en procesos de conmutación resistiva, los mecanismos de plasticidad sináptica y las arquitecturas de interconexión utilizadas en sistemas neuromórficos. La ausencia de herramientas de simulación que integren estos elementos dentro de una misma plataforma limita la capacidad de evaluar y validar diseños neuromórficos antes de su implementación física.
+
+\subsection{Pregunta de Investigación}
+
+¿Con qué nivel de concordancia un simulador neuromórfico basado en memristores puede reproducir el comportamiento de dispositivos memristivos, neuronas LIF, mecanismos de plasticidad sináptica (STDP) y una arquitectura crossbar simplificada, en comparación con los resultados reportados en la literatura científica, considerando además la incorporación de variabilidad estocástica (D2D y C2C)?
+
+\section{Objetivos}
+
+\subsection{Objetivo General}
+
+Desarrollar un simulador neuromórfico basado en memristores que integre el modelado físico del dispositivo, variabilidad estocástica, plasticidad sináptica y una arquitectura crossbar simplificada, con el fin de analizar y validar cuantitativamente su concordancia con resultados reportados en la literatura científica.
+
+\subsection{Objetivos Específicos}
+
+\begin{enumerate}
+
+\item Implementar y validar el modelo memristivo de Strukov, incorporando variabilidad estocástica dispositivo a dispositivo (D2D) y ciclo a ciclo (C2C).
+
+\item Caracterizar el comportamiento dinámico del memristor mediante análisis de histéresis y evolución de estados resistivos bajo diferentes condiciones de excitación.
+
+\item Implementar una neurona tipo Leaky Integrate-and-Fire (LIF) como unidad básica de procesamiento neuronal.
+
+\item Desarrollar una sinapsis memristiva con plasticidad dependiente del tiempo de disparo (STDP) y analizar la evolución del peso sináptico.
+
+\item Integrar los componentes memristor, sinapsis STDP y neurona LIF en una arquitectura crossbar simplificada y analizar su comportamiento colectivo.
+
+\item Validar cuantitativamente los modelos implementados mediante comparación con resultados reportados en la literatura científica, utilizando métricas de error numérico y coincidencia funcional.
+
+\end{enumerate}
+
+\subsection{Criterios de Validación}
+
+La validación de los modelos implementados se realizará mediante dos enfoques complementarios:
+
+\textbf{Validación cuantitativa:} Se compararán las curvas y valores numéricos obtenidos por el simulador con los resultados reportados en la literatura científica, utilizando las siguientes métricas:
+\begin{itemize}
+\item \textbf{Error relativo porcentual (ERP):} para comparar valores puntuales (voltajes de conmutación, niveles de conductancia, umbrales neuronales).
+\item \textbf{Error cuadrático medio (RMSE):} para comparar curvas completas (histéresis I-V, evolución temporal de estados, curvas de aprendizaje STDP).
+\item \textbf{Coeficiente de determinación (R$^2$):} para evaluar la calidad del ajuste entre las curvas simuladas y las de referencia.
+\end{itemize}
+
+Para una referencia $y_i$ y una predicción alineada $\hat y_i$, el error
+cuadrático medio es
+$\mathrm{RMSE}=\sqrt{\frac{1}{n}\sum_{i=1}^{n}(y_i-\hat y_i)^2}$ y conserva
+las unidades de la magnitud comparada. En este trabajo, el error relativo
+porcentual (ERP) de una curva se calcula como
+$100\,\max_i|y_i-\hat y_i|/(\max_i y_i-\min_i y_i)$; se normaliza por el
+rango de la referencia y no es el error porcentual punto a punto. Cuando
+se comparan parámetros escalares, el ERP se calcula respecto al valor de
+referencia correspondiente.
+
+\textbf{Validación cualitativa:} Se evaluará la coincidencia funcional de los fenómenos reproducidos, verificando que el simulador capture correctamente:
+\begin{itemize}
+\item La forma de la curva de histéresis del memristor (figura en forma de lazo).
+\item La dependencia exponencial de la plasticidad sináptica respecto al intervalo de tiempo entre pulsos (ventana STDP).
+\item El comportamiento de integración y disparo de la neurona LIF (umbral, período refractario, frecuencia de disparo vs. corriente inyectada).
+\item La respuesta colectiva de la arquitectura crossbar ante patrones de entrada conocidos.
+\end{itemize}
+
+Se considerará que un modelo está \textbf{validado} cuando cumpla simultáneamente: ERP $<$ 10\% en parámetros clave, R$^2$ $>$ 0.90 en comparación de curvas, y coincidencia cualitativa completa con el fenómeno reportado.
+
+\section{Límites y Alcances}
+
+\subsection{Límites}
+
+Toda investigación requiere establecer límites que definan claramente el alcance de los resultados obtenidos y permitan delimitar el problema de estudio. En este trabajo, los límites establecidos responden a la naturaleza computacional del proyecto y a la necesidad de concentrar los esfuerzos en el análisis de sistemas neuromórficos basados en memristores.
+
+La presente investigación se limita al desarrollo de un simulador computacional orientado al análisis de dispositivos memristivos y arquitecturas neuromórficas. Por tanto, no contempla la fabricación física de memristores ni la implementación experimental de circuitos electrónicos sobre hardware real.
+
+El comportamiento de los dispositivos memristivos será representado mediante modelos matemáticos obtenidos de la literatura científica, incorporando fenómenos de variabilidad y comportamiento estocástico reportados experimentalmente. En consecuencia, los resultados obtenidos corresponderán a simulaciones numéricas y no a mediciones directas realizadas sobre dispositivos físicos.
+
+La investigación se enfocará principalmente en el estudio de neuronas tipo Leaky Integrate-and-Fire (LIF), por lo que otros modelos neuronales más complejos, tales como Hodgkin-Huxley, FitzHugh-Nagumo o Izhikevich, no serán considerados dentro del alcance del presente trabajo.
+
+Los mecanismos de aprendizaje implementados estarán limitados a procesos de plasticidad sináptica basados en STDP, utilizando memristores como elementos de almacenamiento de peso sináptico. No se abordarán otros esquemas de aprendizaje supervisado o no supervisado de mayor complejidad computacional.
+
+Asimismo, el análisis arquitectónico estará centrado en arreglos crossbar memristivos simplificados. No se abordará la implementación de arquitecturas neuromórficas especializadas de gran escala ni sistemas comerciales de computación neuromórfica.
+
+Finalmente, la validación de los modelos implementados se realizará mediante comparación con resultados reportados en la literatura científica, sin considerar procesos de caracterización experimental sobre dispositivos fabricados específicamente para esta investigación.
+
+\subsection{Alcances}
+
+El simulador desarrollado permitirá representar el comportamiento dinámico de dispositivos memristivos basados en el modelo de Strukov, incorporando fenómenos de variabilidad dispositivo a dispositivo y ciclo a ciclo observados en dispositivos reales.
+
+La plataforma permitirá analizar características fundamentales del memristor, incluyendo curvas de histéresis corriente-voltaje, evolución temporal de estados resistivos, modificación gradual de conductancia y efectos asociados a procesos de conmutación resistiva.
+
+Dentro del ámbito neuromórfico, el simulador incorporará neuronas tipo Leaky Integrate-and-Fire para representar mecanismos básicos de integración temporal y generación de pulsos neuronales. Estas neuronas podrán interactuar con sinapsis memristivas para reproducir comportamientos inspirados en procesos biológicos de aprendizaje.
+
+Asimismo, se implementará un mecanismo de plasticidad sináptica basado en STDP, permitiendo estudiar la evolución de pesos sinápticos bajo diferentes patrones de estimulación neuronal.
+
+La investigación también incluirá la implementación de arreglos crossbar memristivos simplificados orientados al análisis de arquitecturas de computación en memoria. Estas estructuras permitirán evaluar el comportamiento colectivo de múltiples dispositivos memristivos y estudiar fenómenos asociados al procesamiento paralelo de información.
+
+Finalmente, los modelos implementados serán validados mediante comparación con resultados reportados en la literatura científica, incluyendo trabajos relacionados con modelado memristivo, plasticidad sináptica, redes neuromórficas y arreglos crossbar, proporcionando evidencia cuantitativa y cualitativa de la capacidad del simulador para reproducir fenómenos observados en investigaciones previas.
+
+\section{Justificación}
+
+La computación neuromórfica se ha consolidado como una de las principales alternativas para superar las limitaciones energéticas y de escalabilidad presentes en las arquitecturas computacionales tradicionales. Dentro de este contexto, los memristores han despertado un creciente interés debido a su capacidad para almacenar información de forma no volátil y modificar gradualmente su conductancia, características que permiten representar el comportamiento de sinapsis biológicas \cite{2,26}.
+
+A pesar de los avances reportados en la literatura, el desarrollo experimental de sistemas neuromórficos basados en memristores continúa enfrentando desafíos asociados a la fabricación de dispositivos, la variabilidad inherente de los procesos de conmutación resistiva y la complejidad de validar arquitecturas de gran escala \cite{21,27,29}. Como consecuencia, las herramientas de simulación desempeñan un papel fundamental al permitir el análisis de estos fenómenos antes de la implementación física de los sistemas.
+
+Desde una perspectiva científica, el presente trabajo contribuye al estudio de la relación existente entre el comportamiento físico de los memristores y los mecanismos de aprendizaje inspirados biológicamente. La integración de modelos memristivos, plasticidad sináptica, neuronas artificiales y arquitecturas crossbar dentro de una misma plataforma permite analizar fenómenos neuromórficos de manera integral y facilita la reproducción de resultados reportados en investigaciones previas \cite{3,7}.
+
+Desde el punto de vista tecnológico, el simulador propuesto proporciona una herramienta capaz de evaluar configuraciones neuromórficas sin necesidad de recurrir inicialmente a procesos de fabricación especializados, reduciendo costos de desarrollo y facilitando la exploración de nuevas arquitecturas de computación en memoria \cite{5,11}.
+
+Finalmente, desde una perspectiva académica, la investigación integra conocimientos de electrónica, modelado matemático, sistemas dinámicos e inteligencia artificial, contribuyendo a la formación en un área de creciente relevancia para el desarrollo de tecnologías inspiradas en el cerebro.

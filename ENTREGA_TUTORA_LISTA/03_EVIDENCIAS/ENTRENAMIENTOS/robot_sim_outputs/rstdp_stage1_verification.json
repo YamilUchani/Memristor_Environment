@@ -1,0 +1,62 @@
+{
+  "stage": 1,
+  "status": "passed",
+  "network_shape": [
+    2,
+    2
+  ],
+  "timing": {
+    "pre_then_post_eligibility_00": 0.008607079764250578,
+    "post_then_pre_eligibility_00": -0.008607079764250578,
+    "norm_before_decay": 0.008607079764250578,
+    "norm_after_five_silent_steps": 0.007408182206817177
+  },
+  "rewarded_pre_then_post": {
+    "reward_error": 1.0,
+    "learning_rate_for_controlled_pulse_check": 0.05,
+    "requested_delta_x_00": -0.0004303539882125289,
+    "actual_delta_x_00": -0.0004001185767064097,
+    "x_before_00": 0.5000123015335748,
+    "x_after_00": 0.4996121829568684,
+    "conductance_before_00_S": 0.0001242205842424056,
+    "conductance_after_00_S": 0.0001243188305694789,
+    "pulse_stats": {
+      "requested_cells": 1,
+      "written_cells": 1,
+      "pulses": 4,
+      "actual_max": 0.0004001185767064097,
+      "off_target_changed_cells": 0,
+      "off_target_l1": 0.0,
+      "off_target_max": 0.0,
+      "target_actual_error_l1": 3.0235411506119203e-05
+    }
+  },
+  "punished_pre_then_post": {
+    "reward_error": -1.0,
+    "learning_rate_for_controlled_pulse_check": 0.05,
+    "requested_delta_x_00": 0.0004303539882125289,
+    "actual_delta_x_00": 0.00039988156373149675,
+    "x_before_00": 0.5000123015335748,
+    "x_after_00": 0.5004121830973063,
+    "conductance_before_00_S": 0.0001242205842424056,
+    "conductance_after_00_S": 0.00012412255113547775,
+    "pulse_stats": {
+      "requested_cells": 1,
+      "written_cells": 1,
+      "pulses": 4,
+      "actual_max": 0.00039988156373149675,
+      "off_target_changed_cells": 0,
+      "off_target_l1": 0.0,
+      "off_target_max": 0.0,
+      "target_actual_error_l1": 3.0472424481032168e-05
+    }
+  },
+  "no_activity_max_abs_delta_x": 0.0,
+  "volatile_stage_probe": {
+    "profile": "memristor_volatile.json",
+    "volatile_x_for_column_0": 0.8,
+    "crossbar_current_0": 6.060059948249651e-06,
+    "lif_input_current_0": 9.888330988020367e-06,
+    "nonvolatile_X_unchanged_by_probe": true
+  }
+}

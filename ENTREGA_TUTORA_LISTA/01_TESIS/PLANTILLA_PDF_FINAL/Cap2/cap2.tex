@@ -1,0 +1,443 @@
+\chapter{Marco Teórico}
+
+El presente capítulo expone los principales antecedentes científicos y tecnológicos relacionados con el desarrollo de sistemas neuromórficos basados en memristores. Se analizan diferentes enfoques reportados en la literatura científica, incluyendo el modelado físico de dispositivos memristivos, la incorporación de fenómenos de variabilidad estocástica, la implementación de redes neuromórficas basadas en memristores y el estudio de arquitecturas crossbar. Posteriormente, se presentan los fundamentos teóricos necesarios para comprender el funcionamiento de los modelos y algoritmos implementados en esta investigación.
+
+\section{Estado del Arte}
+
+Durante las últimas décadas, el desarrollo de dispositivos memristivos ha impulsado nuevas líneas de investigación orientadas a la construcción de sistemas computacionales inspirados en el cerebro biológico. La posibilidad de integrar almacenamiento y procesamiento dentro de una misma estructura física ha convertido a los memristores en una de las tecnologías más prometedoras para la computación neuromórfica. Como consecuencia, numerosos trabajos han abordado distintos aspectos relacionados con modelado físico, variabilidad, aprendizaje sináptico y arquitecturas de computación en memoria.
+
+A continuación, se presentan los principales enfoques identificados en la literatura científica que sustentan el desarrollo de la presente investigación.
+
+\subsection{Enfoque 1}
+
+Uno de los hitos más importantes en el área de dispositivos electrónicos emergentes fue la formulación teórica del memristor realizada por Leon Chua en 1971. En dicho trabajo se propuso la existencia de un cuarto elemento fundamental de circuito capaz de establecer una relación directa entre la carga eléctrica y el flujo magnético, complementando al resistor, capacitor e inductor tradicionales \cite{17}. Aunque inicialmente se trató de una propuesta teórica, este concepto abrió una nueva línea de investigación orientada al desarrollo de dispositivos con capacidad de memoria integrada.
+
+Décadas después, Strukov et al. demostraron experimentalmente la existencia física de un dispositivo con comportamiento memristivo basado en una estructura de dióxido de titanio (\ce{TiO2}) \cite{26}. Este trabajo constituye uno de los pilares fundamentales de la investigación moderna en memristores, ya que proporciona un modelo matemático capaz de describir la evolución temporal del estado interno del dispositivo mediante una variable de estado asociada al desplazamiento de vacancias de oxígeno.
+
+El modelo propuesto por Strukov describe un dispositivo compuesto por dos regiones con diferentes niveles de conductividad. La frontera entre ambas regiones varía en función de la corriente aplicada, modificando el valor instantáneo de resistencia del dispositivo. Como resultado, el memristor presenta una característica de histéresis en el plano corriente-voltaje, permitiendo almacenar información sin necesidad de alimentación continua \cite{26}.
+
+La simplicidad matemática del modelo de Strukov ha favorecido su utilización en simulaciones y estudios académicos. Sin embargo, investigaciones posteriores han demostrado que los dispositivos reales presentan comportamientos más complejos que aquellos descritos por el modelo ideal. Trabajos recientes han incorporado efectos físicos adicionales, restricciones de frontera y mecanismos no lineales para mejorar la representación de dispositivos memristivos fabricados experimentalmente \cite{21,28}.
+
+A pesar de sus limitaciones, el modelo de Strukov continúa siendo una referencia fundamental debido a su capacidad para capturar los principios esenciales del comportamiento memristivo y proporcionar una base sólida para el desarrollo de modelos más avanzados. Por esta razón, numerosos simuladores y plataformas de investigación utilizan este modelo como punto de partida para la implementación de sistemas neuromórficos basados en memristores.
+
+\subsection{Enfoque 2}
+
+Aunque los modelos ideales permiten comprender los principios fundamentales de operación de un memristor, diversos estudios experimentales han demostrado que los dispositivos físicos presentan fenómenos de variabilidad que afectan significativamente su comportamiento eléctrico. Estas variaciones pueden manifestarse tanto entre dispositivos fabricados bajo condiciones nominalmente idénticas como entre diferentes ciclos de operación de un mismo dispositivo \cite{27,29}.
+
+La variabilidad dispositivo a dispositivo, conocida como Device-to-Device (D2D), se encuentra asociada a diferencias estructurales introducidas durante los procesos de fabricación. Por otra parte, la variabilidad ciclo a ciclo, denominada Cycle-to-Cycle (C2C), se relaciona con fluctuaciones presentes durante procesos repetitivos de escritura y borrado. Ambos fenómenos generan dispersión en parámetros como voltajes de conmutación, resistencia de encendido y resistencia de apagado \cite{29}.
+
+Con el objetivo de representar estas características, diversos autores han propuesto modelos estocásticos capaces de incorporar incertidumbre dentro del comportamiento memristivo. Estos modelos incluyen distribuciones probabilísticas para parámetros físicos y mecanismos de transición resistiva, permitiendo reproducir comportamientos observados experimentalmente que no pueden ser capturados mediante modelos deterministas convencionales \cite{27,8}.
+
+La incorporación de variabilidad constituye un aspecto particularmente importante para aplicaciones neuromórficas, ya que las diferencias entre dispositivos pueden afectar procesos de aprendizaje, almacenamiento de información y estabilidad de redes neuronales. Como consecuencia, los modelos modernos de memristores tienden a integrar mecanismos estocásticos que permitan aproximar con mayor precisión el comportamiento observado en dispositivos reales \cite{21,29}.
+
+\subsection{Enfoque 3}
+
+La utilización de memristores dentro de sistemas neuromórficos ha dado lugar a una importante línea de investigación orientada a la implementación de sinapsis artificiales capaces de reproducir mecanismos de aprendizaje inspirados en procesos biológicos. Dentro de este contexto, uno de los trabajos más influyentes corresponde a la investigación desarrollada por Prezioso et al., quienes demostraron la operación de una red neuromórfica integrada basada en memristores de óxido metálico \cite{3}.
+
+El trabajo de Prezioso evidenció la posibilidad de emplear memristores como elementos de almacenamiento de pesos sinápticos dentro de redes neuronales artificiales. Mediante la modificación gradual de la conductancia de los dispositivos, los autores lograron implementar procesos de aprendizaje capaces de clasificar patrones de entrada sin necesidad de entrenamiento externo complejo \cite{3}.
+
+Paralelamente, diversos estudios han demostrado que los memristores pueden reproducir fenómenos de plasticidad sináptica observados en sistemas biológicos. Entre ellos destacan la potenciación a largo plazo (LTP), la depresión a largo plazo (LTD) y la plasticidad dependiente del tiempo de disparo (STDP), mecanismos considerados fundamentales para procesos de aprendizaje y adaptación neuronal \cite{2}.
+
+Estos avances han consolidado a los memristores como una de las tecnologías más prometedoras para el desarrollo de hardware neuromórfico, permitiendo implementar sinapsis artificiales compactas, energéticamente eficientes y capaces de almacenar información de forma no volátil \cite{6}.
+
+\subsection{Enfoque 4}
+
+El crecimiento de las redes neuromórficas basadas en memristores ha impulsado el desarrollo de arquitecturas capaces de conectar grandes cantidades de dispositivos dentro de una misma estructura física. Entre las alternativas más estudiadas destacan los arreglos tipo crossbar, los cuales permiten organizar memristores en forma matricial para realizar operaciones de computación en memoria mediante mecanismos altamente paralelos \cite{4,5}.
+
+Las arquitecturas crossbar presentan ventajas importantes en términos de densidad de integración, eficiencia energética y velocidad de procesamiento. Debido a que cada memristor puede representar un peso sináptico individual, estas estructuras resultan especialmente adecuadas para implementar redes neuronales artificiales y sistemas de inferencia neuromórfica \cite{5}.
+
+Sin embargo, el incremento del tamaño de los arreglos crossbar introduce fenómenos no ideales que afectan su funcionamiento, tales como corrientes parásitas y degradación del margen de ruido, los cuales han sido ampliamente estudiados en la literatura como limitaciones de escalabilidad \cite{7}. En el contexto de la presente investigación, se abordará el análisis de arreglos crossbar simplificados, dejando el estudio de estos fenómenos de escala masiva como una extensión natural para trabajos futuros.
+
+\subsection{Discusión}
+
+Los enfoques analizados evidencian la evolución progresiva de la investigación en sistemas neuromórficos basados en memristores. El modelo de Strukov proporciona una base matemática sólida para describir el comportamiento fundamental del dispositivo, mientras que los estudios de variabilidad permiten aproximar con mayor precisión las características observadas en dispositivos reales. Por otra parte, las investigaciones orientadas a redes neuromórficas demuestran la capacidad de los memristores para implementar mecanismos de aprendizaje inspirados biológicamente, y los estudios sobre arquitecturas crossbar muestran su potencial para desarrollar sistemas de computación en memoria de alta densidad.
+
+Sin embargo, la mayoría de los trabajos revisados abordan estos aspectos de forma independiente. En consecuencia, existe la necesidad de contar con herramientas capaces de integrar modelado memristivo, variabilidad estocástica, plasticidad sináptica y análisis arquitectónico dentro de una misma plataforma. Esta necesidad constituye la principal motivación para el desarrollo del simulador neuromórfico propuesto en la presente investigación.
+
+\section{Fundamentos Teóricos}
+
+La presente investigación integra conceptos provenientes de la electrónica, la computación neuromórfica y el modelado matemático de dispositivos memristivos. En esta sección se presentan los fundamentos teóricos necesarios para comprender el funcionamiento de los modelos implementados dentro del simulador propuesto. Se abordan los principios de operación del memristor, los mecanismos de variabilidad presentes en dispositivos reales, los modelos neuronales utilizados en sistemas neuromórficos y las arquitecturas de interconexión empleadas para la implementación de redes neuronales basadas en memristores.
+
+\subsection{Memristor}
+
+El memristor fue propuesto por Leon Chua en 1971 como el cuarto elemento fundamental de los circuitos eléctricos, complementando al resistor, capacitor e inductor \cite{17}. Su principal característica consiste en establecer una relación funcional entre la carga eléctrica acumulada y el flujo magnético asociado al dispositivo.
+
+A diferencia de un resistor convencional, cuya resistencia permanece constante para un determinado valor de temperatura, el memristor posee una resistencia dependiente de la historia de excitaciones eléctricas previamente aplicadas. Como consecuencia, el dispositivo es capaz de almacenar información incluso después de retirar la alimentación eléctrica, propiedad conocida como memoria no volátil.
+
+Matemáticamente, la relación fundamental propuesta por Chua puede expresarse como:
+
+\begin{equation}
+d\phi=M(q)dq
+\end{equation}
+
+donde $\phi$ representa el flujo magnético, $q$ corresponde a la carga eléctrica acumulada y $M(q)$ define la memristancia del dispositivo.
+
+Esta característica permite que el memristor conserve información acerca de estados previos, convirtiéndolo en un candidato ideal para representar sinapsis artificiales dentro de sistemas neuromórficos \cite{17,26}.
+
+\subsection{Modelo de Strukov}
+\label{sec:convenciones_estado}
+
+La primera demostración experimental de un dispositivo memristivo fue realizada por Strukov et al. en 2008 mediante una estructura basada en dióxido de titanio (\ce{TiO2}) \cite{26}. El dispositivo se encuentra formado por dos regiones con diferente conductividad: una región dopada con alta conductancia y una región no dopada con baja conductancia.
+
+La resistencia total del dispositivo puede expresarse mediante:
+
+\begin{equation}
+R(w)=R_{ON}\frac{w}{D}+R_{OFF}\left(1-\frac{w}{D}\right)
+\end{equation}
+
+Definiendo la fracción dopada normalizada $x=w/D\in[0,1]$, la expresión
+equivalente es $R(x)=R_{ON}x+R_{OFF}(1-x)$. En esta tesis se usa también
+la variable complementaria $X=1-x$, que representa la fracción no dopada:
+\[
+R(X)=R_{ON}+X(R_{OFF}-R_{ON}).
+\]
+Ambas expresiones son equivalentes. En el simulador del agente se emplea
+$X$ porque la matriz de estado del crossbar se representa directamente con
+esta variable y la conductancia se obtiene como $G=1/R(X)$. Todas las medias
+y desviaciones de $X$ reportadas en el Capítulo~3 corresponden a esta
+variable de estado; no son estadísticas de $G$.
+
+La Tabla~\ref{tab:convenciones_memristor} resume los símbolos y su
+interpretación.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Convenciones de variables y parámetros del memristor y del crossbar.}
+\label{tab:convenciones_memristor}
+\begin{tabularx}{\textwidth}{c X c c X}
+\hline
+\textbf{Símbolo} & \textbf{Definición} & \textbf{Unidades} &
+\textbf{Rango} & \textbf{Efecto} \\
+\hline
+$w$ & Ancho de la región dopada & m & [0,$D$] & Aumenta al crecer la región dopada \\
+$D$ & Espesor total de la capa activa & m & $D>0$ & Normaliza la posición de la frontera \\
+$x$ & Fracción dopada, $x=w/D$ & -- & [0,1] & Si $x$ aumenta, $R$ disminuye \\
+$X$ & Fracción no dopada, $X=1-x$ & -- & [0,1] & Si $X$ aumenta, $R$ aumenta \\
+$R$ & Resistencia del dispositivo & $\Omega$ & [$R_{ON},R_{OFF}$] & -- \\
+$G$ & Conductancia, $G=1/R$ & S & [$1/R_{OFF},1/R_{ON}$] & -- \\
+$w_s$ & Peso sináptico normalizado & -- & [0,1] & Si $w_s$ aumenta, $G$ aumenta \\
+\hline
+\end{tabularx}
+\end{table}
+
+En la notación de la tabla:
+
+\begin{itemize}
+\item $R_{ON}$ representa la resistencia mínima.
+\item $R_{OFF}$ representa la resistencia máxima.
+\item $D$ corresponde al espesor total del dispositivo.
+\item $w$ define la posición de la frontera entre las regiones dopada y no dopada.
+\end{itemize}
+
+La evolución temporal ideal de la variable de estado se encuentra
+dada por:
+
+\begin{equation}
+\frac{dx}{dt}=\frac{1}{D}\frac{dw}{dt}
+=\mu_v\frac{R_{ON}}{D^2}i(t)
+\end{equation}
+
+donde $\mu_v$ representa la movilidad efectiva de vacancias de
+oxígeno e $i(t)$ corresponde a la corriente que atraviesa el
+dispositivo. En la configuración Strukov--Biolek del simulador, esta
+dinámica se multiplica además por la función de ventana
+$f_B(x,i)=1-(x-\operatorname{stp}(-i))^{2p}$, con $p=5$, para atenuar
+la evolución al acercarse a los límites del estado, donde
+$\operatorname{stp}(-i)=1$ si $i<0$ y $0$ en caso contrario. El
+estado inicial del archivo de configuración es $x_0=0.1$. Si el agente
+deriva su estado complementario de ese valor sin una sobrescritura,
+resulta $X_0=1-x_0=0.9$. Sin embargo, la configuración de CartPole
+analizada pasa explícitamente \texttt{initial\_X=0.1}; por tanto, en
+esas corridas el valor explícito prevalece y equivale a $x_0=0.9$.
+Esta distinción entre el parámetro del dispositivo y el estado inicial
+explícito del agente se mantiene en la tabla de parámetros del
+Capítulo~3.
+
+Este modelo permite reproducir la característica de histéresis observada experimentalmente en memristores y constituye la base de numerosos simuladores utilizados en investigación neuromórfica \cite{26}.
+
+\subsection{Variabilidad Estocástica en Memristores}
+
+Aunque el modelo de Strukov permite describir adecuadamente los principios fundamentales de operación de un memristor, diversos estudios experimentales han demostrado que los dispositivos físicos presentan comportamientos que difieren de las predicciones obtenidas mediante modelos ideales \cite{21,27,29}. Estas diferencias se encuentran asociadas a procesos de fabricación, defectos estructurales, fluctuaciones térmicas y mecanismos microscópicos involucrados en la formación y ruptura de filamentos conductivos.
+
+Uno de los fenómenos más importantes observados en dispositivos memristivos reales corresponde a la variabilidad estocástica. Este comportamiento se manifiesta mediante diferencias en los parámetros eléctricos de dispositivos nominalmente idénticos y mediante fluctuaciones observadas durante ciclos repetidos de operación.
+
+La variabilidad suele clasificarse en dos categorías principales:
+
+\begin{itemize}
+\item Variabilidad dispositivo a dispositivo (Device-to-Device, D2D).
+\item Variabilidad ciclo a ciclo (Cycle-to-Cycle, C2C).
+\end{itemize}
+
+La variabilidad D2D se encuentra asociada a diferencias introducidas durante los procesos de fabricación. Factores como el espesor de las capas activas, la distribución de defectos cristalinos y la concentración de vacancias pueden generar diferencias significativas entre dispositivos fabricados bajo condiciones aparentemente idénticas \cite{29}.
+
+Por otra parte, la variabilidad C2C se produce cuando un mismo dispositivo presenta respuestas diferentes durante ciclos consecutivos de escritura y borrado. Este fenómeno está relacionado con la naturaleza probabilística de los procesos de migración iónica y formación de filamentos conductivos \cite{27}.
+
+Como consecuencia, parámetros como la resistencia de encendido ($R_{ON}$), la resistencia de apagado ($R_{OFF}$), los voltajes de conmutación y la conductancia alcanzada después de cada pulso pueden presentar distribuciones estadísticas en lugar de valores únicos deterministas.
+
+La incorporación de mecanismos estocásticos dentro de los modelos memristivos resulta particularmente importante en aplicaciones neuromórficas. A diferencia de sistemas digitales convencionales, donde la variabilidad suele considerarse una fuente de error, diversos estudios han demostrado que ciertos niveles de aleatoriedad pueden contribuir positivamente a procesos de aprendizaje y adaptación inspirados biológicamente \cite{8}.
+
+Por esta razón, los simuladores modernos de sistemas neuromórficos incorporan modelos probabilísticos capaces de representar fenómenos de variabilidad observados experimentalmente, permitiendo aproximar con mayor precisión el comportamiento de dispositivos físicos reales \cite{21,27,29}.
+
+\subsection{Neurona Leaky Integrate-and-Fire}
+
+Las neuronas constituyen la unidad básica de procesamiento dentro del sistema nervioso biológico. Su función principal consiste en integrar señales provenientes de múltiples sinapsis y generar impulsos eléctricos cuando la actividad acumulada supera un determinado umbral.
+
+Dentro de los diferentes modelos neuronales existentes, la neurona Leaky Integrate-and-Fire (LIF) representa una de las aproximaciones más utilizadas debido a su simplicidad matemática y capacidad para reproducir los mecanismos fundamentales de integración temporal observados en neuronas biológicas.
+Su formulación constituye una aproximación clásica en el modelado de neuronas de disparo \cite{36}.
+
+El modelo LIF considera que el potencial de membrana evoluciona de acuerdo con la ecuación:
+
+\begin{equation}
+\tau_m \frac{dV_m}{dt}=-(V_m-V_{rest})+RI(t)
+\end{equation}
+
+donde:
+
+\begin{itemize}
+\item $V_m$ representa el potencial de membrana.
+\item $V_{rest}$ corresponde al potencial de reposo.
+\item $\tau_m$ es la constante de tiempo de la membrana.
+\item $R$ representa la resistencia equivalente.
+\item $I(t)$ corresponde a la corriente de entrada.
+\end{itemize}
+
+La neurona integra continuamente la corriente recibida desde sus entradas. Cuando el potencial de membrana alcanza un valor umbral previamente definido, la neurona genera un pulso de salida o \textit{spike}.
+
+Posteriormente, el potencial de membrana es reiniciado a un valor de reposo, iniciando nuevamente el proceso de integración.
+
+La simplicidad computacional del modelo LIF ha favorecido su utilización en sistemas neuromórficos y simuladores de redes neuronales de gran escala. Asimismo, su comportamiento resulta adecuado para estudiar mecanismos de plasticidad sináptica basados en el tiempo relativo de ocurrencia de eventos neuronales.
+
+\subsection{Plasticidad Sináptica}
+
+La capacidad de aprendizaje del sistema nervioso biológico se encuentra estrechamente relacionada con la plasticidad sináptica, proceso mediante el cual la intensidad de conexión entre neuronas puede modificarse en respuesta a diferentes patrones de actividad neuronal. Este mecanismo permite que las redes neuronales adapten su comportamiento a partir de experiencias previas, constituyendo una de las bases fundamentales del aprendizaje y la memoria.
+
+En sistemas neuromórficos, los memristores resultan particularmente adecuados para representar sinapsis artificiales debido a su capacidad para modificar y conservar estados de conductancia de manera no volátil. Como consecuencia, numerosos trabajos han explorado el uso de dispositivos memristivos para implementar mecanismos de plasticidad inspirados en procesos biológicos \cite{2,3}.
+
+En la literatura se documentan diversos fenómenos de plasticidad, entre los cuales destacan la Potenciación a Largo Plazo (LTP) y la Depresión a Largo Plazo (LTD), que describen cambios progresivos en la eficacia sináptica tras estímulos repetitivos. Estos fenómenos constituyen la base conceptual de múltiples mecanismos de aprendizaje en sistemas neuromórficos.
+
+No obstante, uno de los mecanismos de aprendizaje más importantes y biológicamente relevantes en neurociencia computacional corresponde a la Plasticidad Dependiente del Tiempo de Disparo (Spike-Timing Dependent Plasticity, STDP). Este mecanismo establece que la modificación de una conexión sináptica depende de la diferencia temporal precisa entre los disparos de una neurona presináptica y una neurona postsináptica.
+
+Si la neurona presináptica dispara antes que la neurona postsináptica, la conexión sináptica tiende a fortalecerse. Por el contrario, si la neurona postsináptica dispara antes que la neurona presináptica, la conexión tiende a debilitarse.
+
+Una ventana STDP exponencial ideal puede expresarse como referencia
+conceptual, siguiendo los estudios de plasticidad dependiente del
+tiempo y dispositivos memristivos \cite{33,30}:
+
+\begin{equation}
+\Delta w =
+\begin{cases}
+A_{+}e^{-\Delta t/\tau_{+}}, & \Delta t > 0 \\
+-A_{-}e^{\Delta t/\tau_{-}}, & \Delta t < 0
+\end{cases}
+\end{equation}
+
+donde:
+
+\begin{itemize}
+\item $\Delta w$ representa la variación del peso sináptico.
+\item $\Delta t$ corresponde a la diferencia temporal entre disparos.
+\item $A_{+}$ y $A_{-}$ definen las amplitudes de potenciación y depresión.
+\item $\tau_{+}$ y $\tau_{-}$ representan constantes temporales del proceso.
+\end{itemize}
+
+Con $w_0=0$, la regla STDP implementada en
+\texttt{neurolab.synapses.stdp} normaliza el cambio porcentual de
+conductancia:
+\begin{equation}
+\Delta G_{ij}
+=G_{ij}\frac{p_{\max}}{100}f(\Delta t), \qquad
+f(\Delta t)=
+\begin{cases}
+e^{-\Delta t/\tau_{+}}, & \Delta t>0,\\
+-e^{\Delta t/\tau_{-}}, & \Delta t<0,\\
+0, & \Delta t=0,
+\end{cases}
+\end{equation}
+El valor $p_{\max}=0.5\%$ por evento corresponde al parámetro
+\texttt{max\_percent\_change} de \texttt{STDPRule}.
+Esta normalización preserva la forma exponencial y limita el cambio
+respecto de la conductancia actual; la forma ideal en $\Delta w$
+anterior se conserva como referencia conceptual.
+
+Los valores digitalizados atribuidos a Jo et al. en
+\texttt{jo2010\_stdp.csv} presentan asimetría: los cambios observados
+incluyen $-18.48\%$ a $\Delta t=-8.64$ ms y $+12.63\%$ a
+$\Delta t=9.01$ ms. Un ajuste exponencial de mínimos cuadrados por
+separado a los puntos de cada signo da los parámetros de referencia
+de la Tabla~\ref{tab:parametros_stdp}. Este ajuste a puntos
+digitalizados no se interpreta como una medición adicional ni como
+una parametrización que el agente utilice.
+
+\begin{table}[H]
+\centering
+\caption{Parámetros de la ventana STDP: ajuste a la serie atribuida a Jo et al. y configuración del módulo local.}
+\label{tab:parametros_stdp}
+\begin{tabular}{lcc}
+\hline
+\textbf{Parámetro} & \textbf{Ajuste a serie Jo et al.} & \textbf{Módulo \texttt{STDPRule}} \\
+\hline
+$A_{+}$ & $16.12\%$ & $0.05$ \\
+$|A_{-}|$ (magnitud) & $25.58\%$ & $A_{-}=-0.025$ \\
+$\tau_{+}$ & $40.50~\mathrm{ms}$ & $17~\mathrm{ms}$ \\
+$\tau_{-}$ & $23.55~\mathrm{ms}$ & $34~\mathrm{ms}$ \\
+$p_{\max}$ & -- & $0.5\%$ por evento \\
+\hline
+\end{tabular}
+\end{table}
+
+El ajuste se realizó sobre la magnitud de cada rama, con
+$|\Delta w|=|A_{\pm}|\exp(-|\Delta t|/\tau_{\pm})$; por ello
+$|A_{-}|>|A_{+}|$ en la serie digitalizada. Los parámetros del
+módulo son valores normalizados de configuración (adimensionales),
+donde $A_{-}$ se guarda con signo negativo, y no se sustituyen por
+el ajuste de referencia.
+En \texttt{STDPRule}, $A_{+}$ y $A_{-}$ normalizan la fracción
+aplicada a la conductancia; con $w_0=0$ se cancelan en esa operación.
+Por tanto, el coeficiente porcentual máximo es $p_{\max}$ para ambas
+ramas y la asimetría de la respuesta de conductancia procede de las
+constantes temporales, no de los valores configurados de $A_{\pm}$.
+El ajuste no lineal de mínimos cuadrados presentó RMSE de
+$1.35$ puntos porcentuales para la rama de potenciación y
+$1.04$ puntos porcentuales para la rama de depresión. Debido a su
+capacidad para modificar gradualmente la conductancia en función de estímulos eléctricos,
+los memristores constituyen una plataforma adecuada para implementar
+mecanismos STDP \cite{2,3}. El módulo STDP se conserva para el
+análisis de plasticidad del sustrato; la regla REINFORCE con baseline
+del agente se describe por separado en el Capítulo~3.
+
+\subsection{Arquitecturas Crossbar Memristivas}
+
+Uno de los principales desafíos en la implementación de sistemas neuromórficos consiste en conectar un gran número de neuronas y sinapsis de forma eficiente. Para abordar este problema, los memristores suelen organizarse en estructuras matriciales conocidas como arreglos crossbar, las cuales permiten implementar redes neuronales de alta densidad mediante una disposición regular de filas y columnas conductoras \cite{4,5}.
+
+Un arreglo crossbar está formado por un conjunto de líneas horizontales y verticales que se intersectan entre sí. En cada punto de intersección se ubica un dispositivo memristivo cuya conductancia representa el peso sináptico asociado a una conexión neuronal. Esta organización permite almacenar grandes cantidades de información dentro de un área física reducida y facilita la implementación de operaciones de computación en memoria.
+
+La principal ventaja de las arquitecturas crossbar radica en su capacidad para realizar operaciones de multiplicación matriz-vector directamente sobre el hardware. Esta característica resulta especialmente relevante para redes neuronales artificiales, ya que gran parte de los procesos de inferencia y aprendizaje pueden expresarse mediante este tipo de operaciones matemáticas.
+
+Considerando un vector de entrada representado por tensiones aplicadas a las filas del arreglo, la corriente obtenida en cada columna puede expresarse mediante la Ley de Ohm y la Ley de Corrientes de Kirchhoff como:
+
+\begin{equation}
+I_j=\sum_{i=1}^{N} G_{ij}V_i
+\end{equation}
+
+Con la convención de este trabajo, $\mathbf{G}\in\mathbb{R}^{N\times M}$
+tiene una fila por entrada y una columna por salida, mientras que
+$\mathbf{V}\in\mathbb{R}^{N}$ contiene los voltajes aplicados a las
+filas. Por tanto, el vector de corrientes de columna es
+$\mathbf{I}=\mathbf{G}^{\mathsf T}\mathbf{V}\in\mathbb{R}^{M}$.
+
+donde:
+
+\begin{itemize}
+\item $I_j$ representa la corriente de salida en la columna $j$.
+\item $V_i$ corresponde a la tensión aplicada en la fila $i$.
+\item $G_{ij}$ representa la conductancia del memristor ubicado en la intersección $(i,j)$.
+\end{itemize}
+
+Esta ecuación muestra que el arreglo crossbar realiza de manera natural una multiplicación matriz-vector, donde la matriz de conductancias actúa como conjunto de pesos sinápticos de la red neuronal.
+
+Gracias a esta propiedad, los arreglos crossbar han sido ampliamente estudiados como una alternativa para implementar computación en memoria, reduciendo significativamente el movimiento de datos entre memoria y procesador característico de las arquitecturas tradicionales \cite{5}. Asimismo, su elevada densidad de integración los convierte en una de las estructuras más prometedoras para el desarrollo de hardware neuromórfico escalable.
+
+En el contexto de esta investigación, se analizan arreglos crossbar
+simplificados para evaluar el comportamiento colectivo de múltiples
+dispositivos memristivos y su integración con neuronas LIF. El
+protocolo de lectura del agente resuelve mediante MNA la red eléctrica
+incluida en su topología y considera resistencias de línea y de
+sensado, como se detalla en la siguiente sección. Esto no equivale a
+simular todas las configuraciones de \textit{sneak paths}, en
+particular la prueba clásica con líneas no seleccionadas flotantes.
+El análisis de escalabilidad a arreglos de alta densidad, selectores y
+margen de ruido se considera una extensión para trabajos futuros
+\cite{7}.
+
+\subsection{Sneak Paths y Margen de Ruido}
+
+A medida que aumenta el tamaño de los arreglos crossbar memristivos, aparecen fenómenos eléctricos que no están presentes en estructuras de pequeña escala. Uno de los más importantes corresponde a las corrientes parásitas conocidas como \textit{Sneak Paths}, las cuales constituyen uno de los principales obstáculos para la implementación de sistemas memristivos de alta densidad \cite{7}.
+
+Un Sneak Path aparece cuando la corriente eléctrica encuentra rutas alternativas distintas de la trayectoria prevista durante operaciones de lectura o escritura. Debido a la naturaleza altamente interconectada de los arreglos crossbar, la corriente puede propagarse a través de múltiples dispositivos memristivos, generando contribuciones no deseadas que alteran el valor medido en la celda objetivo.
+
+La presencia de estas corrientes produce errores en la estimación de estados resistivos y puede afectar significativamente la precisión de operaciones realizadas sobre el arreglo. Este problema se vuelve especialmente crítico cuando el número de filas y columnas aumenta, ya que la cantidad de rutas alternativas disponibles crece rápidamente con el tamaño de la matriz \cite{7}.
+
+Otro parámetro importante asociado al desempeño de arreglos crossbar corresponde al margen de ruido (\textit{Noise Margin}). Este parámetro permite cuantificar la capacidad del sistema para distinguir correctamente entre diferentes estados lógicos o resistivos en presencia de perturbaciones eléctricas.
+
+Una reducción excesiva del margen de ruido incrementa la probabilidad de errores durante operaciones de lectura y limita la escalabilidad de la arquitectura. Como consecuencia, numerosos estudios han propuesto técnicas orientadas a minimizar los efectos de Sneak Paths mediante modificaciones arquitectónicas, dispositivos selectores o estrategias de polarización especializadas \cite{7}.
+
+El análisis de \textit{sneak paths} y margen de ruido resulta
+fundamental para evaluar la viabilidad de arquitecturas neuromórficas
+basadas en memristores. En este trabajo, la lectura del crossbar del
+agente se resuelve mediante análisis nodal modificado (MNA), con
+resistencias de línea $R_{\mathrm{wire}}=1\,\mathrm{m}\Omega$ y de
+sensado $R_{\mathrm{sense}}=100\,\Omega$. El solver representa las
+corrientes y caídas de tensión que resultan de esa red modelada; el
+Experimento~10 evalúa el acoplamiento entre columnas bajo la excitación
+indicada. No se implementó la configuración clásica de lectura con una
+celda seleccionada y las demás líneas flotantes, ni la dinámica de
+programación/escritura con rutas parásitas. Esos casos y la
+caracterización física de hardware quedan fuera del alcance.
+
+\subsection{Parámetros del modelo de referencia}
+\label{subsec:parametros-modelo}
+
+La Tabla~\ref{tab:parametros_modelo} reúne los valores de la
+configuración Strukov--Biolek y del agente CartPole usada como
+referencia. Los valores de lectura y aprendizaje corresponden al
+protocolo del agente; los parámetros eléctricos y LIF se convierten a
+unidades SI desde los archivos JSON.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Parámetros del dispositivo, crossbar y agente de referencia.}
+\label{tab:parametros_modelo}
+\begin{tabularx}{\textwidth}{c c c X X}
+\hline
+\textbf{Símbolo} & \textbf{Valor} & \textbf{Unidad} &
+\textbf{Fuente} & \textbf{Uso} \\
+\hline
+$R_{\mathrm{ON}}$ & $100$ & $\Omega$ &
+\texttt{strukov\_ideal.json} & Strukov y agente \\
+$R_{\mathrm{OFF}}$ & $16\,000$ & $\Omega$ &
+\texttt{strukov\_ideal.json} & Strukov y agente \\
+$D$ & $10$ & $\mathrm{nm}$ &
+\texttt{strukov\_ideal.json} & Modelo Strukov \\
+$\mu_v$ & $10^{-14}$ & $\mathrm{m^2/(V\,s)}$ &
+\texttt{strukov\_ideal.json} & Modelo Strukov \\
+$x_0$ & $0.1$ & adimensional &
+\texttt{strukov\_ideal.json} & Estado físico inicial; $X_0=0.1$ en el agente \\
+$X_0$ & $0.1$ & adimensional &
+\texttt{run\_robot.py} & Estado inicial del agente; equivale a $x_0=0.9$ \\
+$p$ (Biolek) & $5$ & adimensional &
+\texttt{strukov\_ideal.json} & Ventana de frontera \\
+$V_{\mathrm{th}}$ (Strukov) & $0.1$ & $\mathrm{V}$ &
+\texttt{StrukovConfig}, \texttt{StrukovMathModel} &
+Umbral predeterminado del modelo; no medido fisicamente \\
+$V_{\mathrm{read}}$ & $0.05$ & $\mathrm{V}$ &
+\texttt{run\_robot.py} & Rail de lectura; ruta MNA sin actualizacion de X \\
+$R_{\mathrm{wire}}$ & $10^{-3}$ & $\Omega$ &
+\texttt{crossbar\_brain.py} & Solver MNA del agente \\
+$R_{\mathrm{sense}}$ & $100$ & $\Omega$ &
+\texttt{crossbar\_brain.py} & Solver MNA del agente \\
+$C_m$ & $100$ & $\mathrm{nF}$ &
+\texttt{lif\_config.json} & Neurona LIF \\
+$R_{\mathrm{series}}$ & $100$ & $\mathrm{k}\Omega$ &
+\texttt{lif\_config.json} & Neurona LIF \\
+$R_{\mathrm{leak}}$ & $1$ & $\mathrm{M}\Omega$ &
+\texttt{lif\_config.json} & Neurona LIF \\
+$V_{\mathrm{th,LIF}}$ & $1.0$ & $\mathrm{V}$ &
+\texttt{lif\_config.json} & Umbral LIF \\
+$t_{\mathrm{ref}}$ & $2\times10^{-3}$ & $\mathrm{s}$ &
+\texttt{lif\_config.json}, \texttt{lab\_bridge.py} &
+LIF (el JSON almacena $2$ ms y el puente lo convierte a segundos) \\
+$\eta$ & $0.005$ & adimensional &
+\texttt{run\_robot.py} & Tasa de aprendizaje REINFORCE \\
+$T_{\mathrm{init}}$ & $1.0$ o $0.05$ & adimensional &
+\texttt{run\_robot.py} & Temperatura inicial seleccionable \\
+$T_{\min}$ & $0.05$ & adimensional &
+\texttt{run\_robot.py} & Temperatura mínima \\
+$T_{\mathrm{decay}}$ & $0.995$ & adimensional &
+\texttt{run\_robot.py} & Decaimiento de temperatura por episodio \\
+$W_b$ & $200$ & episodios &
+\texttt{run\_robot.py} & Ventana del baseline móvil \\
+\hline
+\end{tabularx}
+\end{table}

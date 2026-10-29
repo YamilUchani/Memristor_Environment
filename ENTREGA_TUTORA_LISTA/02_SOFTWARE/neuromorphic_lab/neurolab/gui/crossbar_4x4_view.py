@@ -1,0 +1,1605 @@
+"""
+neurolab.gui.crossbar_4x4_view
+==============================
+Vista interactiva del crossbar 4×4 en PySide6 (Qt6).
+
+Layout Matricial Físicamente Completo:
+    Filas (PRE, Horizontales):
+        S1 (V1) ──[M11]──[M12]──[M13]──[M14]──► Fila 1 (PRE)
+        S2 (V2) ──[M21]──[M22]──[M23]──[M24]──► Fila 2 (PRE)
+        S3 (V3) ──[M31]──[M32]──[M33]──[M34]──► Fila 3 (PRE)
+        S4 (V4) ──[M41]──[M42]──[M43]──[M44]──► Fila 4 (PRE)
+
+    Columnas (POST, Verticales):
+        Columna 1: M11 → M21 → M31 → M41 ──► LIF_1 ──► Act_1
+        Columna 2: M12 → M22 → M32 → M42 ──► LIF_2 ──► Act_2
+        Columna 3: M13 → M23 → M33 → M43 ──► LIF_3 ──► Act_3
+        Columna 4: M14 → M24 → M34 → M44 ──► LIF_4 ──► Act_4
+"""
+
+import math
+import random
+from typing import Dict, Any, Optional
+import numpy as np
+
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame,
+    QMessageBox, QInputDialog, QDialog, QGroupBox, QFormLayout,
+    QComboBox, QDoubleSpinBox, QSpinBox
+)
+from PySide6.QtGui import QPainter, QPen, QBrush, QColor, QFont, QCursor
+from PySide6.QtCore import Qt, QRectF, QPointF, QTimer
+
+from neurolab.gui.styles import COLORS, FONTS, CANVAS, get_qcolor
+from neurolab.gui.crossbar_elements import (
+    SensorElement, MemristorElement, VolatileMemristorElement,
+    NeuronElement, ActuatorElement, VisualElement,
+    get_G_matrix, set_G_matrix, compute_currents, matrix_to_heatmap_string
+)
+from neurolab.gui.config_dialogs import ConfigDialog
+from neurolab.gui.base_view import BaseCrossbarCanvas
+from neurolab.crossbar.addressing import (
+    AddressDecoder, RowDriver, ColumnDriver,
+    ReadConfig, WriteConfig
+)
+from neurolab.crossbar.core import Crossbar
+from neurolab.gui.crossbar.controller_4x4 import Crossbar4x4Controller
+from neurolab.crossbar.configs import CrossbarConfig
+from neurolab.crossbar.plasticity import (
+    STDPRule, RSTDPRule,
+    STDPConfig, RSTDPConfig,
+    Trace,
+)
+from neurolab.gui.read_write_config_dialog import ReadWriteConfigDialog
+
+
+
+class BatchVolatileDialog(QDialog):
+    """Diálogo modal para configurar todos los memristores volátiles (M_v1..M_v4) simultáneamente."""
+
+    def __init__(self, parent=None, current_elements=None):
+        super().__init__(parent)
+        self.elements = current_elements or {}
+        self.setWindowTitle("⚡ Configurar Todos los Memristores Volátiles (M_v1 .. M_v4)")
+        self.resize(480, 360)
+        self.setModal(True)
+        self.setStyleSheet(f"""
+            QDialog {{ background-color: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', sans-serif; }}
+            QGroupBox {{ border: 1px solid #45475a; border-radius: 6px; margin-top: 10px; font-weight: bold; color: #89b4fa; padding-top: 10px; }}
+            QGroupBox::title {{ subcontrol-origin: margin; left: 8px; padding: 0 4px; }}
+            QLabel {{ color: #a6adc8; }}
+            QComboBox, QDoubleSpinBox {{ background-color: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 4px; padding: 4px; }}
+            QPushButton {{ background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 6px 14px; border-radius: 4px; }}
+            QPushButton:hover {{ background-color: #b4befe; }}
+        """)
+        self._init_ui()
+
+    def _init_ui(self):
+        layout = QVBoxLayout(self)
+
+        grp = QGroupBox("Parámetros Globales Memristores Volátiles (M_v1 .. M_v4)")
+        form = QFormLayout(grp)
+
+        self.combo_model = QComboBox()
+        self.combo_model.addItem("HfO₂ Volátil Neurona (Wang et al. 2025)", "HfO2_volatile")
+        self.combo_model.addItem("Ag:SiO₂ Difusivo (Yang et al. 2017)", "diffusive_Ag_SiO2")
+        self.combo_model.addItem("NbOₓ Threshold Switch (Pickett et al. 2013)", "NbOx_threshold")
+
+        self.spin_tau = QDoubleSpinBox()
+        self.spin_tau.setRange(0.001, 10.0)
+        self.spin_tau.setSingleStep(0.05)
+        self.spin_tau.setValue(0.30)
+        self.spin_tau.setSuffix(" s")
+
+        self.spin_ron = QDoubleSpinBox()
+        self.spin_ron.setRange(0.1, 500.0)
+        self.spin_ron.setValue(10.0)
+        self.spin_ron.setSuffix(" kΩ")
+
+        self.spin_roff = QDoubleSpinBox()
+        self.spin_roff.setRange(1.0, 50000.0)
+        self.spin_roff.setValue(500.0)
+        self.spin_roff.setSuffix(" kΩ")
+
+        self.spin_x0 = QDoubleSpinBox()
+        self.spin_x0.setRange(0.001, 1.0)
+        self.spin_x0.setSingleStep(0.01)
+        self.spin_x0.setValue(0.05)
+
+        form.addRow("Modelo Volátil:", self.combo_model)
+        form.addRow("Tiempo Relajación (τ_relax):", self.spin_tau)
+        form.addRow("Resistencia R_ON:", self.spin_ron)
+        form.addRow("Resistencia R_OFF:", self.spin_roff)
+        form.addRow("Estado Inicial x_0:", self.spin_x0)
+
+        layout.addWidget(grp)
+
+        btn_box = QHBoxLayout()
+        btn_apply = QPushButton("✓ Aplicar a los 4 Memristores Volátiles")
+        btn_cancel = QPushButton("Cancelar")
+        btn_cancel.setStyleSheet("background-color: #313244; color: #cdd6f4;")
+
+        btn_apply.clicked.connect(self._apply)
+        btn_cancel.clicked.connect(self.reject)
+
+        btn_box.addStretch()
+        btn_box.addWidget(btn_cancel)
+        btn_box.addWidget(btn_apply)
+        layout.addLayout(btn_box)
+
+    def _apply(self):
+        model_key = self.combo_model.currentData()
+        tau = self.spin_tau.value()
+        ron = self.spin_ron.value() * 1e3
+        roff = self.spin_roff.value() * 1e3
+        x0 = self.spin_x0.value()
+
+        for j in range(4):
+            key = f'M_v{j+1}'
+            if key in self.elements:
+                mv = self.elements[key]
+                mv.params['model'] = model_key
+                mv.params['tau_relax'] = tau
+                mv.params['volatile_tau_relax'] = tau
+                mv.params['RON'] = ron
+                mv.params['ROFF'] = roff
+                mv.params['x0'] = x0
+                if hasattr(mv, 'on_params_changed'):
+                    mv.on_params_changed()
+
+        self.accept()
+
+
+class BatchGridDialog(QDialog):
+    """Diálogo modal para configurar memristores de la matriz 4x4 por orden/subgrilla (1x1, 2x2, 1x3, 4x4, etc.)."""
+
+    def __init__(self, parent=None, current_elements=None):
+        super().__init__(parent)
+        self.elements = current_elements or {}
+        self.setWindowTitle("🔲 Programación por Orden / Sub-Matriz (R×C)")
+        self.resize(500, 440)
+        self.setModal(True)
+        self.setStyleSheet(f"""
+            QDialog {{ background-color: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', sans-serif; }}
+            QGroupBox {{ border: 1px solid #45475a; border-radius: 6px; margin-top: 10px; font-weight: bold; color: #89b4fa; padding-top: 10px; }}
+            QGroupBox::title {{ subcontrol-origin: margin; left: 8px; padding: 0 4px; }}
+            QLabel {{ color: #a6adc8; }}
+            QComboBox, QDoubleSpinBox, QSpinBox {{ background-color: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 4px; padding: 4px; }}
+            QPushButton {{ background-color: #a6e3a1; color: #11111b; font-weight: bold; padding: 6px 14px; border-radius: 4px; }}
+            QPushButton:hover {{ background-color: #94e2d5; }}
+        """)
+        self._init_ui()
+
+    def _init_ui(self):
+        layout = QVBoxLayout(self)
+
+        grp_order = QGroupBox("1. Orden / Sub-Matriz Afectada")
+        form_order = QFormLayout(grp_order)
+
+        self.combo_preset = QComboBox()
+        self.combo_preset.addItem("1×1 — Solo M11 (1 memristor)", (1, 1))
+        self.combo_preset.addItem("2×2 — Submatriz M11..M22 (4 memristores)", (2, 2))
+        self.combo_preset.addItem("1×3 — Submatriz M11..M13 (3 memristores)", (1, 3))
+        self.combo_preset.addItem("3×3 — Submatriz M11..M33 (9 memristores)", (3, 3))
+        self.combo_preset.addItem("4×4 — Toda la Matriz Crossbar (16 memristores)", (4, 4))
+        self.combo_preset.addItem("Personalizado...", None)
+        self.combo_preset.setCurrentIndex(1)  # Default 2x2
+
+        self.spin_r = QSpinBox()
+        self.spin_r.setRange(1, 4)
+        self.spin_r.setValue(2)
+
+        self.spin_c = QSpinBox()
+        self.spin_c.setRange(1, 4)
+        self.spin_c.setValue(2)
+
+        self.combo_preset.currentIndexChanged.connect(self._on_preset_change)
+
+        form_order.addRow("Preset por Orden:", self.combo_preset)
+        form_order.addRow("Filas (R):", self.spin_r)
+        form_order.addRow("Columnas (C):", self.spin_c)
+
+        layout.addWidget(grp_order)
+
+        grp_model = QGroupBox("2. Modelo No Volátil y Conductancia")
+        form_model = QFormLayout(grp_model)
+
+        self.combo_model = QComboBox()
+        self.combo_model.addItem("Strukov (TiO₂-x, Nature 2008)", "strukov")
+        self.combo_model.addItem("Prezioso 2015 (Al₂O₃/TiO₂-x, Nature 2015)", "prezioso")
+        self.combo_model.addItem("Jo 2010 (Ag/a-Si, Nano Lett 2010)", "jo2010")
+
+        self.spin_g = QDoubleSpinBox()
+        self.spin_g.setRange(1.0, 2000.0)
+        self.spin_g.setSingleStep(10.0)
+        self.spin_g.setValue(200.0)
+        self.spin_g.setSuffix(" μS")
+
+        self.spin_x0 = QDoubleSpinBox()
+        self.spin_x0.setRange(0.01, 1.0)
+        self.spin_x0.setSingleStep(0.05)
+        self.spin_x0.setValue(0.10)
+
+        form_model.addRow("Modelo Memristores:", self.combo_model)
+        form_model.addRow("Conductancia Objetivo G:", self.spin_g)
+        form_model.addRow("Estado Inicial x_0:", self.spin_x0)
+
+        layout.addWidget(grp_model)
+
+        btn_box = QHBoxLayout()
+        btn_apply = QPushButton("✓ Programar Sub-Matriz Seleccionada")
+        btn_cancel = QPushButton("Cancelar")
+        btn_cancel.setStyleSheet("background-color: #313244; color: #cdd6f4;")
+
+        btn_apply.clicked.connect(self._apply)
+        btn_cancel.clicked.connect(self.reject)
+
+        btn_box.addStretch()
+        btn_box.addWidget(btn_cancel)
+        btn_box.addWidget(btn_apply)
+        layout.addLayout(btn_box)
+
+    def _on_preset_change(self):
+        val = self.combo_preset.currentData()
+        if val is not None:
+            r, c = val
+            self.spin_r.setValue(r)
+            self.spin_c.setValue(c)
+
+    def _apply(self):
+        n_r = self.spin_r.value()
+        n_c = self.spin_c.value()
+        model_key = self.combo_model.currentData()
+        G_uS = self.spin_g.value()
+        x0_val = self.spin_x0.value()
+
+        for i in range(n_r):
+            for j in range(n_c):
+                key = f'M{i+1}{j+1}'
+                if key in self.elements:
+                    mem = self.elements[key]
+                    mem.params['model'] = model_key
+                    RON = float(mem.params.get('RON', 100.0))
+                    ROFF = float(mem.params.get('ROFF', 16000.0))
+                    R_target = 1.0 / (G_uS * 1e-6) if G_uS > 0 else ROFF
+                    if ROFF != RON:
+                        x_calc = float(np.clip((R_target - ROFF) / (RON - ROFF), 0.01, 1.0))
+                        mem.params['x0'] = x_calc
+                        mem.params['x'] = x_calc
+                    else:
+                        mem.params['x0'] = x0_val
+                        mem.params['x'] = x0_val
+
+                    if hasattr(mem, 'on_params_changed'):
+                        mem.on_params_changed()
+
+        self.accept()
+
+
+class Crossbar4x4Canvas(BaseCrossbarCanvas):
+    """Canvas del crossbar 4×4."""
+
+    MIN_WIDTH = 1100
+    MIN_HEIGHT = 1000
+
+    def __init__(self, parent=None, elements=None, on_element_clicked=None, on_zoom_changed=None):
+        super().__init__(parent, elements, on_element_clicked, on_zoom_changed)
+        self.spike_flashes = [0.0, 0.0, 0.0, 0.0]
+
+    def _draw_wires(self, painter: QPainter):
+        wire_w = 3
+        pen_row = QPen(get_qcolor('sensor'), wire_w)
+        pen_col = QPen(get_qcolor('neuron'), wire_w)
+        pen_act = QPen(get_qcolor('wire'), wire_w)
+
+        x_memristores = [300, 480, 660, 840]
+        y_filas = [150, 310, 470, 630]
+
+        # --- FILAS (HORIZONTALES / PRE - AZUL) ---
+        painter.setPen(pen_row)
+        for i in range(4):
+            S = self.elements.get(f'S{i+1}')
+            M1 = self.elements.get(f'M{i+1}1')
+            M4 = self.elements.get(f'M{i+1}4')
+            if S and M1 and M4:
+                painter.drawLine(int(S.x + 45), int(S.y), int(M1.x - 45), int(M1.y))
+                for j in range(3):
+                    Ma = self.elements.get(f'M{i+1}{j+1}')
+                    Mb = self.elements.get(f'M{i+1}{j+2}')
+                    if Ma and Mb:
+                        painter.drawLine(int(Ma.x + 45), int(Ma.y), int(Mb.x - 45), int(Mb.y))
+                pen_dash = QPen(get_qcolor('sensor'), 2, Qt.DashLine)
+                painter.setPen(pen_dash)
+                painter.drawLine(int(M4.x + 45), int(M4.y), int(M4.x + 130), int(M4.y))
+                painter.setPen(pen_row)
+                painter.drawLine(int(M4.x + 120), int(M4.y - 5), int(M4.x + 135), int(M4.y))
+                painter.drawLine(int(M4.x + 120), int(M4.y + 5), int(M4.x + 135), int(M4.y))
+
+        # Etiquetas de fila
+        painter.setFont(FONTS['subtitle'])
+        view = self.view
+        v_rows = getattr(view, 'V_rows', np.full(4, 0.2))
+        v_cols = getattr(view, 'V_cols', np.zeros(4))
+        is_prog = (view and hasattr(view, 'mode') and view.mode == 'program_v2')
+
+        for i in range(4):
+            S = self.elements.get(f'S{i+1}')
+            if S:
+                v_r_val = float(v_rows[i])
+                if is_prog:
+                    tg_r, _ = getattr(view, 'target_cell', (0, 0))
+                    col_str = get_qcolor('selected') if i == tg_r else get_qcolor('sensor')
+                else:
+                    col_str = QColor('#f38ba8') if abs(v_r_val) > 0.49 else get_qcolor('sensor')
+                painter.setPen(col_str)
+                painter.drawText(QRectF(S.x - 70, S.y - 52, 140, 20), Qt.AlignCenter,
+                                 f"FILA {i+1} (V={v_r_val:+.2f}V)")
+
+        # --- COLUMNAS (VERTICALES / POST - VERDE) ---
+        winner_col = getattr(view, 'winner_j', None)
+
+        for j in range(4):
+            M1 = self.elements.get(f'M1{j+1}')
+            M4 = self.elements.get(f'M4{j+1}')
+            Mv = self.elements.get(f'M_v{j+1}')
+            LIF = self.elements.get(f'LIF_{j+1}')
+            if M1 and M4 and Mv and LIF:
+                if is_prog and j == getattr(view, 'target_cell', (0, 0))[1]:
+                    painter.setPen(QPen(QColor('#f38ba8'), wire_w))
+                elif winner_col is not None:
+                    if j == winner_col:
+                        glow_pen = QPen(QColor(166, 227, 161, 80), 9)
+                        painter.setPen(glow_pen)
+                        painter.drawLine(int(M1.x), int(M1.y - 60), int(M1.x), int(LIF.y - 35))
+                        painter.setPen(QPen(QColor('#a6e3a1'), 5))
+                    else:
+                        painter.setPen(QPen(QColor('#313244'), 1.5))
+                else:
+                    painter.setPen(pen_col)
+
+                painter.drawLine(int(M1.x), int(M1.y - 60), int(M1.x), int(M1.y - 30))
+                for i in range(3):
+                    Ma = self.elements.get(f'M{i+1}{j+1}')
+                    Mb = self.elements.get(f'M{i+2}{j+1}')
+                    if Ma and Mb:
+                        painter.drawLine(int(Ma.x), int(Ma.y + 30), int(Mb.x), int(Mb.y - 30))
+                painter.drawLine(int(M4.x), int(M4.y + 30), int(Mv.x), int(Mv.y - 25))
+
+                if winner_col is not None:
+                    col_wire_pen = QPen(QColor('#a6e3a1'), 5) if j == winner_col else QPen(QColor('#313244'), 1.5)
+                    painter.setPen(col_wire_pen)
+                else:
+                    painter.setPen(pen_col)
+
+                painter.drawLine(int(Mv.x), int(Mv.y + 25), int(LIF.x), int(LIF.y - 35))
+                painter.drawLine(int(LIF.x - 5), int(LIF.y - 45), int(LIF.x), int(LIF.y - 35))
+                painter.drawLine(int(LIF.x + 5), int(LIF.y - 45), int(LIF.x), int(LIF.y - 35))
+
+        # Etiquetas de columna
+        painter.setFont(FONTS['subtitle'])
+        for j in range(4):
+            M1 = self.elements.get(f'M1{j+1}')
+            if M1:
+                v_c_val = float(v_cols[j])
+                if is_prog:
+                    _, tg_c = getattr(view, 'target_cell', (0, 0))
+                    col_str = QColor('#f38ba8') if j == tg_c else get_qcolor('neuron')
+                    lbl_col = f"COL {j+1} (V={v_c_val:+.2f}V)"
+                elif winner_col is not None:
+                    if j == winner_col:
+                        col_str = QColor('#f9e2af')
+                        lbl_col = f"🏆 COL {j+1} (GANADORA)"
+                    else:
+                        col_str = QColor('#6c7086')
+                        lbl_col = f"COL {j+1} (INHIBIDA)"
+                else:
+                    col_str = get_qcolor('neuron')
+                    lbl_col = f"COL {j+1} (V={v_c_val:+.2f}V)"
+
+                painter.setPen(col_str)
+                painter.drawText(QRectF(M1.x - 85, 88, 170, 20), Qt.AlignCenter, lbl_col)
+
+        # --- LIF → Actuador ---
+        for j in range(4):
+            LIF = self.elements.get(f'LIF_{j+1}')
+            Act = self.elements.get(f'Act_{j+1}')
+            if LIF and Act:
+                if winner_col is not None:
+                    act_pen = QPen(QColor('#a6e3a1'), 4) if j == winner_col else QPen(QColor('#313244'), 1.5)
+                else:
+                    act_pen = pen_act
+                painter.setPen(act_pen)
+                painter.drawLine(int(LIF.x), int(LIF.y + 35), int(Act.x), int(Act.y - 30))
+                painter.drawLine(int(Act.x - 5), int(Act.y - 40), int(Act.x), int(Act.y - 30))
+                painter.drawLine(int(Act.x + 5), int(Act.y - 40), int(Act.x), int(Act.y - 30))
+
+        # --- Animación en tiempo real ---
+        if self.is_animating:
+            for i in range(4):
+                S = self.elements.get(f'S{i+1}')
+                M4 = self.elements.get(f'M{i+1}4')
+                if S and M4:
+                    for p_idx in range(4):
+                        offset = (self.anim_time * 1.5 + p_idx / 4.0) % 1.0
+                        px = (S.x + 45) + offset * (M4.x + 130 - (S.x + 45))
+                        py = S.y
+                        painter.setPen(Qt.NoPen)
+                        painter.setBrush(QBrush(QColor(137, 180, 250, 230)))
+                        painter.drawEllipse(QPointF(px, py), 4.0, 4.0)
+            for j in range(4):
+                M1 = self.elements.get(f'M1{j+1}')
+                LIF = self.elements.get(f'LIF_{j+1}')
+                if M1 and LIF:
+                    y_start = M1.y - 60
+                    y_end = LIF.y - 35
+                    for p_idx in range(4):
+                        offset = (self.anim_time * 1.2 + p_idx / 4.0) % 1.0
+                        px = M1.x
+                        py = y_start + offset * (y_end - y_start)
+                        painter.setPen(Qt.NoPen)
+                        particle_col = QColor(166, 227, 161, 240) if (winner_col is None or j == winner_col) else QColor(108, 112, 134, 100)
+                        painter.setBrush(QBrush(particle_col))
+                        painter.drawEllipse(QPointF(px, py), 4.0, 4.0)
+
+    def _draw_extra(self, painter: QPainter):
+        """Decoders + drivers + título + ecuación matricial limpiamente distribuidos."""
+        view = self.view
+        if not view or not hasattr(view, 'row_decoder'):
+            return
+
+        painter.setFont(FONTS['small'])
+
+        # 1. Decoders y Drivers Fila (Esquina superior izquierda)
+        painter.setPen(QPen(QColor('#f9e2af'), 1.5))
+        painter.setBrush(QBrush(QColor('#181825')))
+        painter.drawRoundedRect(QRectF(15, 10, 210, 24), 5, 5)
+        painter.setPen(QColor('#f9e2af'))
+        addr_row_str = view.row_decoder.address_to_binary(view.row_decoder.last_address) \
+            if view.mode == 'program_v2' else "OFF"
+        painter.drawText(QRectF(15, 10, 210, 24), Qt.AlignCenter,
+                         f"🎯 Decoder ROW [{addr_row_str}] → Addr {view.row_decoder.last_address}")
+
+        painter.setPen(QPen(QColor('#f38ba8'), 1.5))
+        painter.setBrush(QBrush(QColor('#181825')))
+        painter.drawRoundedRect(QRectF(15, 38, 210, 24), 5, 5)
+        painter.setPen(QColor('#f38ba8'))
+        painter.drawText(QRectF(15, 38, 210, 24), Qt.AlignCenter,
+                         f"⚡ Driver ROW (WL): {view.row_driver.V_active:+.2f}V")
+
+        # 2. Decoders y Drivers Columna (Esquina superior derecha)
+        painter.setPen(QPen(QColor('#f9e2af'), 1.5))
+        painter.setBrush(QBrush(QColor('#181825')))
+        painter.drawRoundedRect(QRectF(750, 10, 220, 24), 5, 5)
+        painter.setPen(QColor('#f9e2af'))
+        addr_col_str = view.col_decoder.address_to_binary(view.col_decoder.last_address) \
+            if view.mode == 'program_v2' else "OFF"
+        painter.drawText(QRectF(750, 10, 220, 24), Qt.AlignCenter,
+                         f"🎯 Decoder COL [{addr_col_str}] → Addr {view.col_decoder.last_address}")
+
+        painter.setPen(QPen(QColor('#f38ba8'), 1.5))
+        painter.setBrush(QBrush(QColor('#181825')))
+        painter.drawRoundedRect(QRectF(750, 38, 220, 24), 5, 5)
+        painter.setPen(QColor('#f38ba8'))
+        painter.drawText(QRectF(750, 38, 220, 24), Qt.AlignCenter,
+                         f"⚡ Driver COL (BL): {view.col_driver.V_active:+.2f}V")
+
+        # 3. Badge Título Central (Limpio y sin solapamientos)
+        painter.setPen(QPen(QColor('#313244'), 1))
+        painter.setBrush(QBrush(QColor('#181825')))
+        painter.drawRoundedRect(QRectF(240, 14, 490, 28), 6, 6)
+
+        painter.setFont(FONTS['subtitle'])
+        painter.setPen(get_qcolor('text'))
+        mode_str = " — ⚡ TIEMPO REAL ACTIVO" if self.is_animating else ""
+        painter.drawText(QRectF(240, 14, 490, 28), Qt.AlignCenter,
+                         f"CROSSBAR 4×4 — MATRIZ DE 16 MEMRISTORES STRUKOV{mode_str}")
+
+        # 4. Bus de Inhibición Lateral Interneuronal WTA (si hay un ganador activo)
+        winner_j = getattr(view, 'winner_j', None)
+        if winner_j is not None:
+            LIF_win = self.elements.get(f'LIF_{winner_j+1}')
+            LIF_1 = self.elements.get('LIF_1')
+            LIF_4 = self.elements.get('LIF_4')
+            if LIF_win and LIF_1 and LIF_4:
+                y_inhib = LIF_win.y
+                pen_inhib = QPen(QColor('#f38ba8'), 2, Qt.DashLine)
+                painter.setPen(pen_inhib)
+                painter.drawLine(int(LIF_1.x - 30), int(y_inhib), int(LIF_4.x + 30), int(y_inhib))
+
+                painter.setFont(FONTS['small'])
+                painter.setPen(QColor('#f38ba8'))
+                painter.drawText(QRectF(LIF_1.x - 40, y_inhib - 48, (LIF_4.x - LIF_1.x) + 80, 18),
+                                 Qt.AlignCenter, "⚡ BUS DE INHIBICIÓN LATERAL WTA (R-STDP LTD ACTIVO)")
+
+        # 5. Ecuación matricial de lectura en la parte inferior (telemetría en tiempo real)
+        G = get_G_matrix(self.elements, 4, 4)
+        view = getattr(self, 'view', None)
+
+        # FIX: Extraer rigurosamente el vector V_rows que inyecta el controlador
+        if view is not None and hasattr(view, 'V_rows') and view.V_rows is not None:
+            # En modo programación V/2, los drivers dominan el voltaje
+            if getattr(view, 'mode', 'read') == "program_v2":
+                tg_r = getattr(view, 'target_cell', (0, 0))[0]
+                V = np.zeros(4)
+                V[tg_r] = view.write_cfg.V_program / 2.0  # Usar voltaje del Driver real
+            else:
+                V = np.asarray(view.V_rows, dtype=float)
+        else:
+            V = np.zeros(4)
+
+        I = compute_currents(G, V)
+        painter.setFont(FONTS['mono'])
+        painter.setPen(get_qcolor('success'))
+        text_i = "   │   ".join([f"I_{j+1} = {I[j]*1e6:.1f} μA" for j in range(4)])
+        painter.drawText(QRectF(0, self.height() - 35, self.width(), 25),
+                         Qt.AlignCenter,
+                         f"⚡ Operación Matricial Real-Time I = G^T · V:   {text_i}")
+
+
+class Crossbar4x4View(QWidget):
+    """Vista interactiva completa del Crossbar 4×4 integrada en PySide6 (Qt6)."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.elements: Dict[str, VisualElement] = {}
+
+        # --- Crossbar Core Backend ---
+        self.crossbar = Crossbar(CrossbarConfig(n_rows=4, n_cols=4, enable_d2d=False))
+        self.controller = Crossbar4x4Controller(self.elements, self.crossbar)
+
+        # --- Decodificadores y drivers explícitos de Hardware ---
+        self.row_decoder = AddressDecoder(n_lines=4)
+        self.col_decoder = AddressDecoder(n_lines=4)
+        self.row_driver = RowDriver(n_rows=4)
+        self.col_driver = ColumnDriver(n_cols=4)
+
+        # --- Configuraciones explícitas ---
+        self.read_cfg = ReadConfig()
+        self.write_cfg = WriteConfig()
+
+        # --- Modos de Operación Crossbar Real ---
+        self.mode = "read"         # "read" (Lectura no destructiva) o "program_v2" (Programación V/2)
+        self.target_cell = (0, 0)  # Celda objetivo para programación V/2 (row, col)
+        self.V_rows = np.full(4, 0.2)
+        self.V_cols = np.zeros(4)
+
+        # ═══════════════════════════════════════════════════════════════
+        # Modos de Plasticidad (OFF / STDP / R-STDP)
+        # ═══════════════════════════════════════════════════════════════
+        self.plasticity_mode = "off"   # 'off' | 'stdp' | 'rstdp'
+
+        # Reglas: viven en el CONTROLLER, no en el view.
+        stdp_cfg = STDPConfig(
+            A_plus=15.0e-6,    # Calibración interactiva: 15 μS por coincidencia
+            A_minus=10.0e-6,   # LTD: 10 μS por coincidencia
+            G_min=1e-6,
+            G_max=500e-6,
+            tau_plus=20e-3,
+            tau_minus=20e-3,
+        )
+        self.controller.stdp_rule = STDPRule(stdp_cfg)
+        self.controller.stdp_rule.reset(4, 4)
+
+        rstdp_cfg = RSTDPConfig(
+            A_plus=15.0e-6,    # Calibración interactiva: 15 μS por coincidencia
+            A_minus=10.0e-6,   # LTD: 10 μS por coincidencia
+            G_min=1e-6,
+            G_max=500e-6,
+            R=0.0,
+        )
+        self.controller.rstdp_rule = RSTDPRule(rstdp_cfg)
+        self.controller.rstdp_rule.reset(4, 4)
+
+        # Eventos binarios por tick (NO niveles sostenidos)
+        self.spike_pre = np.zeros(4, dtype=bool)     # {0,1} por fila
+        self.spike_post = np.zeros(4, dtype=bool)    # {0,1} por columna
+        self.reward = 0.0
+
+        # Auto-Entorno RL (Azar Coherente)
+        self.auto_rl_enabled = False
+        self.auto_rl_target_col = 0
+        self.auto_rl_switch_time = 0.0
+        self.auto_rl_interval = 4.0   # Cambia la meta cada 4 segundos
+        self.auto_rl_last_applied_time = 0.0
+
+        # Intercalado de Fases y Patrones Estocásticos en R-STDP
+        self.rstdp_phase = "read"    # 'read' (Inferencia/Lectura) | 'write' (Modulación R-STDP) | 'rest' (Reposo 0V)
+        self.rstdp_phase_timer = 0.0
+        self.rstdp_active_sensors = np.array([True, True, True, True], dtype=bool)
+        self.RSTDP_PHASE_DURATIONS = {'read': 2.0, 'write': 0.5, 'rest': 1.0}
+
+        # RNG dedicado a Poisson (reproducible, independiente del RNG de memristores)
+        self._spike_rng = np.random.default_rng(seed=12345)
+
+        # Tasa de disparo máxima a V_ref = 1V (Hz). Biológico: 10–200 Hz.
+        self.SENSOR_MAX_RATE_HZ = 100.0
+        self.SENSOR_MIN_RATE_HZ = 5.0
+        self.SENSOR_V_REF = 1.0
+        self.time_scale_factor = 1.0
+
+        # WTA first-to-fire (sin evidencia)
+        self.winner_j = None
+        self.winner_lock_time = 0.0
+        self.WINNER_LOCK_DURATION = 0.20   # 200 ms de lock
+        self.refractory_time = np.zeros(4)
+        self.REFRACTORY_DURATION = 0.15   # 150 ms
+
+        # Parámetros LIF (fijos, no se cambian por tick)
+        self.LIF_C_m = 10e-9           # 10 nF
+        self.LIF_R_leak = 100e6        # 100 MΩ
+        self.LIF_V_th_base = 1.0       # 1.0 V
+        self.LIF_V_adapt_inc = 0.5     # 0.5 V por spike (SPA fuerte)
+        self.LIF_tau_adapt = 0.05      # 50 ms decaimiento
+        self.LIF_I_scale = 1e-4        # Escalado de corriente
+
+        # Weight decay (LTD suave a perdedores)
+        self.G_base = 69.4e-6          # Conductancia base inicial
+        self.G_decay_rate = 0.005      # 0.5% por tick hacia base
+
+        # Secuencia de filas
+        self.sequence_index = 0
+        self.sequence_period_ticks = 40   # 200 ms por fila (antes 30)
+        self._sequence_counter = 0
+
+        self.anim_timer = QTimer(self)
+        self.anim_timer.setInterval(30)
+        self.anim_timer.timeout.connect(self._anim_tick)
+
+        self._build_elements()
+        self._init_ui()
+
+
+
+    def _build_elements(self):
+        # Coordenadas generadas dinámicamente sin magic numbers quemados aleatoriamente
+        x_sensores = 80
+        x_spacing = 180
+        y_spacing = 160
+        x_memristores = [300 + j * x_spacing for j in range(4)]
+        y_filas = [150 + i * y_spacing for i in range(4)]
+
+        # 4 Sensores (Filas 1 a 4)
+        for i in range(4):
+            key = f'S{i+1}'
+            self.elements[key] = SensorElement(key, x=x_sensores, y=y_filas[i])
+            self.elements[key].params['name'] = f'Sensor {i+1}'
+            self.elements[key].params['V_out'] = 0.8 if i == 0 else 0.4 if i == 1 else 0.3 if i == 2 else 0.2
+
+        # 16 Memristores (Matriz 4x4)
+        for i in range(4):
+            for j in range(4):
+                key = f'M{i+1}{j+1}'
+                self.elements[key] = MemristorElement(key, row=i, col=j, x=x_memristores[j], y=y_filas[i])
+
+        y_volatiles = y_filas[-1] + 110
+        y_neuronas = y_volatiles + 110
+        y_actuadores = y_neuronas + 100
+
+        acciones = ['girar_izq', 'girar_der', 'avanzar', 'retroceder']
+
+        for j in range(4):
+            key_mv = f'M_v{j+1}'
+            self.elements[key_mv] = VolatileMemristorElement(key_mv, x=x_memristores[j], y=y_volatiles)
+            self.elements[key_mv].params['volatile_tau_relax'] = 0.3
+
+            key_lif = f'LIF_{j+1}'
+            self.elements[key_lif] = NeuronElement(key_lif, x=x_memristores[j], y=y_neuronas)
+            self.elements[key_lif].params['C_m'] = 100e-9
+            self.elements[key_lif].params['R_leak'] = 1e6
+            self.elements[key_lif].params['V_th_base'] = 1.0
+            self.elements[key_lif].params['V_th'] = 1.0
+            self.elements[key_lif].params['V_adapt_inc'] = 0.15
+            self.elements[key_lif].params['tau_adapt'] = 0.05
+            self.elements[key_lif].params['V_m'] = 0.0
+            self.elements[key_lif].params['spike_count'] = 0
+
+            key_act = f'Act_{j+1}'
+            self.elements[key_act] = ActuatorElement(key_act, x=x_memristores[j], y=y_actuadores)
+            self.elements[key_act].params['action'] = acciones[j]
+
+    def closeEvent(self, event):
+        if hasattr(self, 'anim_timer') and self.anim_timer.isActive():
+            self.anim_timer.stop()
+        super().closeEvent(event)
+
+    def _init_ui(self):
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(8, 8, 8, 8)
+        main_layout.setSpacing(6)
+
+        # ═══════════════════════════════════════════════════════════════
+        # FILA 1: MODOS Y SEÑALES DE PLASTICIDAD
+        # ═══════════════════════════════════════════════════════════════
+        toolbar_modes_main = QHBoxLayout()
+
+        lbl_m_title = QLabel("🔷 Modo:")
+        lbl_m_title.setStyleSheet("color: #89b4fa; font-weight: bold; font-size: 11px;")
+        toolbar_modes_main.addWidget(lbl_m_title)
+
+        self.btn_mode_read = QPushButton("📖 1. Lectura")
+        self.btn_mode_prog = QPushButton("⚡ 2. Modo V/2")
+        self.btn_plast_stdp = QPushButton("🧠 3. STDP")
+        self.btn_plast_rstdp = QPushButton("🎯 4. R-STDP")
+        self.btn_plast_off = QPushButton("🔒 OFF")  # Alias interno para tests
+
+        self.btn_mode_read.setToolTip("Modo 1: Lectura paralela no destructiva (G no cambia)")
+        self.btn_mode_prog.setToolTip("Modo 2: Programación manual celda target V/2 con La Cruz")
+        self.btn_plast_stdp.setToolTip("Modo 3: Aprendizaje no supervisado por coincidencia temporal local")
+        self.btn_plast_rstdp.setToolTip("Modo 4: Aprendizaje por refuerzo modulado por señal global R")
+
+        self.btn_mode_read.clicked.connect(self._set_mode_1_read)
+        self.btn_mode_prog.clicked.connect(self._set_mode_2_v2)
+        self.btn_plast_stdp.clicked.connect(self._set_mode_3_stdp)
+        self.btn_plast_rstdp.clicked.connect(self._set_mode_4_rstdp)
+
+        self.btn_pulse_ltp = QPushButton("➕ LTP (+2V)")
+        self.btn_pulse_ltd = QPushButton("➖ LTD (-2V)")
+        self.btn_pulse_ltp.clicked.connect(lambda: self._apply_programming_pulse(+self.write_cfg.V_program))
+        self.btn_pulse_ltd.clicked.connect(lambda: self._apply_programming_pulse(-self.write_cfg.V_program))
+
+        self.btn_reward_plus = QPushButton("✅ Éxito (+1)")
+        self.btn_reward_minus = QPushButton("❌ Error (−1)")
+        self.btn_auto_rl = QPushButton("🎲 Auto-RL (Off)")
+        self.btn_auto_rl.setToolTip("Modo Entorno Estocástico: Cambia la columna meta al azar y recompensa/castiga automáticamente")
+        self.btn_reward_plus.setStyleSheet(
+            "QPushButton { background-color: #a6e3a1; color: #11111b; font-weight: bold; padding: 4px 8px; border-radius: 4px; }"
+        )
+        self.btn_reward_minus.setStyleSheet(
+            "QPushButton { background-color: #f38ba8; color: #11111b; font-weight: bold; padding: 4px 8px; border-radius: 4px; }"
+        )
+        self.btn_auto_rl.setStyleSheet(
+            "QPushButton { background-color: #313244; color: #cba6f7; font-weight: bold; padding: 4px 8px; border-radius: 4px; border: 1px solid #45475a; }"
+        )
+        self.btn_reward_plus.clicked.connect(lambda: self._apply_reward(+1.0))
+        self.btn_reward_minus.clicked.connect(lambda: self._apply_reward(-1.0))
+        self.btn_auto_rl.clicked.connect(self._toggle_auto_rl)
+
+        toolbar_modes_main.addWidget(self.btn_mode_read)
+        toolbar_modes_main.addWidget(self.btn_mode_prog)
+        toolbar_modes_main.addWidget(self.btn_plast_stdp)
+        toolbar_modes_main.addWidget(self.btn_plast_rstdp)
+        toolbar_modes_main.addSpacing(10)
+        toolbar_modes_main.addWidget(self.btn_pulse_ltp)
+        toolbar_modes_main.addWidget(self.btn_pulse_ltd)
+        toolbar_modes_main.addSpacing(10)
+        toolbar_modes_main.addWidget(self.btn_reward_plus)
+        toolbar_modes_main.addWidget(self.btn_reward_minus)
+        toolbar_modes_main.addWidget(self.btn_auto_rl)
+        toolbar_modes_main.addStretch()
+
+        main_layout.addLayout(toolbar_modes_main)
+
+        # ═══════════════════════════════════════════════════════════════
+        # FILA 2: SENSORES S1..S4 Y PARÁMETROS TEMPORALES
+        # ═══════════════════════════════════════════════════════════════
+        toolbar_sensors_main = QHBoxLayout()
+
+        lbl_s_title = QLabel("⚡ Sensores S1..S4:")
+        lbl_s_title.setStyleSheet("color: #a6e3a1; font-weight: bold; font-size: 11px;")
+        toolbar_sensors_main.addWidget(lbl_s_title)
+
+        self.spin_v1 = QDoubleSpinBox()
+        self.spin_v2 = QDoubleSpinBox()
+        self.spin_v3 = QDoubleSpinBox()
+        self.spin_v4 = QDoubleSpinBox()
+        self.sensor_spinboxes = [self.spin_v1, self.spin_v2, self.spin_v3, self.spin_v4]
+
+        for i, sb in enumerate(self.sensor_spinboxes):
+            sb.setRange(-5.0, 5.0)
+            sb.setSingleStep(0.1)
+            sb.setDecimals(2)
+            sb.setValue(float(self.elements[f'S{i+1}'].params.get('V_out', 0.2)))
+            sb.setPrefix(f"S{i+1}: ")
+            sb.setSuffix("V")
+            sb.setStyleSheet("""
+                QDoubleSpinBox {
+                    background-color: #1e1e2e; color: #a6e3a1; font-weight: bold;
+                    border: 1px solid #45475a; border-radius: 4px; padding: 2px 4px; font-size: 11px;
+                }
+            """)
+            idx = i
+            sb.valueChanged.connect(lambda val, s_idx=idx: self._on_sensor_spinbox_changed(s_idx, val))
+            toolbar_sensors_main.addWidget(sb)
+
+        # Refractory UI
+        lbl_refractory = QLabel("⏳ Refractario:")
+        lbl_refractory.setStyleSheet("color: #fab387; font-weight: bold; font-size: 11px;")
+        toolbar_sensors_main.addWidget(lbl_refractory)
+
+        self.spin_refractory = QDoubleSpinBox()
+        self.spin_refractory.setRange(0.0, 1.0)
+        self.spin_refractory.setSingleStep(0.05)
+        self.spin_refractory.setDecimals(2)
+        self.spin_refractory.setValue(self.REFRACTORY_DURATION)
+        self.spin_refractory.setSuffix(" s")
+        self.spin_refractory.setStyleSheet("""
+            QDoubleSpinBox {
+                background-color: #1e1e2e; color: #fab387; font-weight: bold;
+                border: 1px solid #45475a; border-radius: 4px; padding: 2px 4px; font-size: 11px;
+            }
+        """)
+        self.spin_refractory.valueChanged.connect(self._on_refractory_changed)
+        toolbar_sensors_main.addWidget(self.spin_refractory)
+
+        # Time Scale UI
+        lbl_scale = QLabel("⏱ Escala de Tiempo:")
+        lbl_scale.setStyleSheet("color: #f9e2af; font-weight: bold; font-size: 11px;")
+        toolbar_sensors_main.addWidget(lbl_scale)
+
+        self.combo_timescale = QComboBox()
+        self.combo_timescale.addItems(["Rápido (dt=30ms)", "Normal (dt=5ms)", "Lento (dt=1ms)"])
+        self.combo_timescale.currentIndexChanged.connect(self._on_timescale_changed)
+        self.combo_timescale.setCurrentIndex(1)  # Default Normal
+        self._on_timescale_changed(1)
+        self.combo_timescale.setStyleSheet("""
+            QComboBox {
+                background-color: #1e1e2e; color: #f9e2af; font-weight: bold;
+                border: 1px solid #45475a; border-radius: 4px; padding: 2px 4px; font-size: 11px;
+            }
+        """)
+        toolbar_sensors_main.addWidget(self.combo_timescale)
+        toolbar_sensors_main.addStretch()
+
+        main_layout.addLayout(toolbar_sensors_main)
+
+        # ═══════════════════════════════════════════════════════════════
+        # FILA 3: ACCIONES DE SIMULACIÓN Y NAVEGACIÓN
+        # ═══════════════════════════════════════════════════════════════
+        toolbar_actions_main = QHBoxLayout()
+
+        btn_style_default = """
+            QPushButton {
+                background-color: #313244; color: #cdd6f4; font-weight: bold;
+                padding: 4px 8px; border-radius: 4px; border: 1px solid #45475a; font-size: 11px;
+            }
+            QPushButton:hover { background-color: #45475a; color: #89b4fa; }
+        """
+        btn_style_primary = """
+            QPushButton {
+                background-color: #89b4fa; color: #11111b; font-weight: bold;
+                padding: 4px 8px; border-radius: 4px; font-size: 11px;
+            }
+            QPushButton:hover { background-color: #b4befe; }
+        """
+        btn_style_warning = """
+            QPushButton {
+                background-color: #f38ba8; color: #11111b; font-weight: bold;
+                padding: 4px 8px; border-radius: 4px; font-size: 11px;
+            }
+            QPushButton:hover { background-color: #f5e0dc; }
+        """
+        btn_style_accent = """
+            QPushButton {
+                background-color: #cba6f7; color: #11111b; font-weight: bold;
+                padding: 4px 8px; border-radius: 4px; font-size: 11px;
+            }
+            QPushButton:hover { background-color: #f5c2e7; }
+        """
+
+        self.btn_simulate = QPushButton("▶ Simular")
+        self.btn_realtime = QPushButton("⚡ Tiempo Real")
+        self.btn_reset = QPushButton("⏹ Reset")
+        self.btn_matrix = QPushButton("📊 Matriz G")
+        self.btn_grid_config = QPushButton("🔲 Sub-Matriz")
+        self.btn_rw_config = QPushButton("⚙️ Config R/W")
+
+        self.btn_simulate.setStyleSheet(btn_style_primary)
+        self.btn_realtime.setStyleSheet(btn_style_default)
+        self.btn_reset.setStyleSheet(btn_style_warning)
+        self.btn_matrix.setStyleSheet(btn_style_default)
+        self.btn_grid_config.setStyleSheet(btn_style_default)
+        self.btn_rw_config.setStyleSheet(btn_style_accent)
+
+        self.btn_simulate.clicked.connect(self._on_simulate)
+        self.btn_realtime.clicked.connect(self.toggle_realtime)
+        self.btn_reset.clicked.connect(self._on_reset)
+        self.btn_matrix.clicked.connect(self._on_show_matrix)
+        self.btn_grid_config.clicked.connect(self._on_config_grid)
+        self.btn_rw_config.clicked.connect(self._on_open_rw_config)
+
+        toolbar_actions_main.addWidget(self.btn_simulate)
+        toolbar_actions_main.addWidget(self.btn_realtime)
+        toolbar_actions_main.addWidget(self.btn_reset)
+        toolbar_actions_main.addWidget(self.btn_matrix)
+        toolbar_actions_main.addWidget(self.btn_grid_config)
+        toolbar_actions_main.addWidget(self.btn_rw_config)
+
+        self.btn_zoom_in = QPushButton("🔍 +")
+        self.btn_zoom_out = QPushButton("🔍 -")
+        self.btn_zoom_reset = QPushButton("📌 Reset Vista")
+        self.lbl_zoom = QLabel("100%")
+
+        self.btn_zoom_in.setStyleSheet(btn_style_default)
+        self.btn_zoom_out.setStyleSheet(btn_style_default)
+        self.btn_zoom_reset.setStyleSheet(btn_style_default)
+        self.lbl_zoom.setStyleSheet("color: #89b4fa; font-weight: bold; font-size: 11px;")
+
+        toolbar_actions_main.addWidget(self.btn_zoom_in)
+        toolbar_actions_main.addWidget(self.btn_zoom_out)
+        toolbar_actions_main.addWidget(self.btn_zoom_reset)
+        toolbar_actions_main.addWidget(self.lbl_zoom)
+        toolbar_actions_main.addStretch()
+
+        main_layout.addLayout(toolbar_actions_main)
+        self._update_mode_button_styles()
+
+
+        # Canvas Qt
+        self.canvas = Crossbar4x4Canvas(
+            self,
+            elements=self.elements,
+            on_element_clicked=self._open_config,
+            on_zoom_changed=self._update_zoom_label
+        )
+        self.btn_zoom_in.clicked.connect(self.canvas.zoom_in)
+        self.btn_zoom_out.clicked.connect(self.canvas.zoom_out)
+        self.btn_zoom_reset.clicked.connect(self.canvas.reset_view)
+
+        main_layout.addWidget(self.canvas, 1)
+
+        # Status Label
+        self.status_frame = QFrame()
+        self.status_frame.setStyleSheet("background-color: #181825; border-radius: 4px; border: 1px solid #45475a;")
+        status_layout = QHBoxLayout(self.status_frame)
+        status_layout.setContentsMargins(10, 4, 10, 4)
+
+        self.status_label = QLabel("Crossbar 4×4 listo. Click para configurar. 💡 Panning: Arrastra con el mouse | Zoom: Rueda del mouse.")
+        self.status_label.setStyleSheet("color: #a6adc8; font-size: 11px;")
+        status_layout.addWidget(self.status_label)
+
+        main_layout.addWidget(self.status_frame)
+
+    def _update_zoom_label(self, zoom: float):
+        self.lbl_zoom.setText(f"{int(zoom * 100)}%")
+
+    def _on_timescale_changed(self, index: int):
+        """Convierte la selección visible en un paso de simulación coherente."""
+        self.time_scale_factor = (1.0, 6.0, 30.0)[max(0, min(2, index))]
+
+    def _set_mode_1_read(self):
+        """Modo 1: Lectura (Inferencia Pura - G no cambia)."""
+        self.mode = "read"
+        self.plasticity_mode = "off"
+        self.reward = 0.0
+        if hasattr(self.controller, 'rstdp_rule') and self.controller.rstdp_rule:
+            self.controller.set_reward(0.0)
+        self._update_mode_button_styles()
+        self.status_label.setText("📖 Modo 1 [Lectura]: Voltajes V_i aplican inferencia I = G^T · V (Conductancias G persistentes e inalteradas).")
+        self.canvas.update()
+
+    def _set_mode_2_v2(self):
+        """Modo 2: Programación V/2 (La Cruz)."""
+        self.mode = "program_v2"
+        self.plasticity_mode = "off"
+        self.reward = 0.0
+        if hasattr(self.controller, 'rstdp_rule') and self.controller.rstdp_rule:
+            self.controller.set_reward(0.0)
+        self._update_mode_button_styles()
+        self._sync_sensors_to_mode()
+        tg = self.target_cell
+        self.status_label.setText(f"⚡ Modo 2 [Programación V/2]: Target = M{tg[0]+1}{tg[1]+1} (🔴 Full V_P = 2.0V | 🟡 Half V_P/2 = 1.0V en la CRUZ).")
+        self.canvas.update()
+
+    def _set_mode_3_stdp(self):
+        """Modo 3: STDP (Aprendizaje No Supervisado Hebbiano)."""
+        self.mode = "read"  # Modo física = "read"
+        self.plasticity_mode = "stdp"
+        self.reward = 0.0
+        if hasattr(self.controller, 'rstdp_rule') and self.controller.rstdp_rule:
+            self.controller.set_reward(0.0)
+        if hasattr(self.controller, 'stdp_rule') and self.controller.stdp_rule:
+            self.controller.stdp_rule.reset(4, 4)
+        if not self.canvas.is_animating:
+            self.toggle_realtime()
+        self._update_mode_button_styles()
+        self.status_label.setText("🧠 Modo 3 [STDP Activo]: Aprendizaje Hebbiano no supervisado por coincidencia temporal local (Sin decodificador).")
+        self.canvas.update()
+
+    def _set_mode_4_rstdp(self):
+        """Modo 4: R-STDP (Aprendizaje por Refuerzo modulado por R)."""
+        self.mode = "read"  # Modo física = "read"
+        self.plasticity_mode = "rstdp"
+        if hasattr(self.controller, 'rstdp_rule') and self.controller.rstdp_rule:
+            self.controller.rstdp_rule.reset(4, 4)
+        self.reward = 0.0
+        if hasattr(self.controller, 'rstdp_rule') and self.controller.rstdp_rule:
+            self.controller.set_reward(0.0)
+
+        # Iniciar ciclo intercalado de fases y sensores activos
+        self.rstdp_phase = "read"
+        self.rstdp_phase_timer = getattr(self.controller, 'sim_time', 0.0)
+        self._select_random_active_sensors()
+
+        if not self.canvas.is_animating:
+            self.toggle_realtime()
+        self._update_mode_button_styles()
+        self.status_label.setText("🎯 Modo 4 [R-STDP Activo]: Intercalando Lectura (Estimulación) ➔ Escritura (Recompensa) ➔ Reposo (0V).")
+        self.canvas.update()
+
+    def _set_mode_read(self):
+        self._set_mode_1_read()
+
+    def _set_mode_prog(self):
+        self._set_mode_2_v2()
+
+    def _set_plasticity_off(self):
+        self._set_mode_1_read()
+
+    def _set_plasticity_stdp(self):
+        self._set_mode_3_stdp()
+
+    def _set_plasticity_rstdp(self):
+        self._set_mode_4_rstdp()
+
+    def _sync_sensors_to_mode(self):
+        """Sincroniza los spinboxes de los sensores con la simulación V/2 actual."""
+        if self.mode == "program_v2":
+            tg_r, _ = self.target_cell
+            v_half = float(self.write_cfg.V_program) / 2.0
+            for i in range(4):
+                v_val = v_half if i == tg_r else 0.0
+                self.elements[f'S{i+1}'].params['V_out'] = v_val
+            self._update_sensor_spinboxes()
+
+    def _update_mode_button_styles(self):
+        style_active = "QPushButton { background-color: #a6e3a1; color: #11111b; font-weight: bold; padding: 5px 12px; border-radius: 4px; }"
+        style_inactive = "QPushButton { background-color: #313244; color: #cdd6f4; font-weight: bold; padding: 5px 12px; border-radius: 4px; border: 1px solid #45475a; }"
+        style_pulse_active = "QPushButton { background-color: #f9e2af; color: #11111b; font-weight: bold; padding: 5px 12px; border-radius: 4px; } QPushButton:hover { background-color: #fab387; }"
+        style_pulse_inactive = "QPushButton { background-color: #313244; color: #f9e2af; font-weight: bold; padding: 5px 12px; border-radius: 4px; border: 1px solid #45475a; }"
+
+        # Determinar cuál de los 4 modos está activo de forma estricta
+        is_m1 = (self.mode == "read" and self.plasticity_mode == "off")
+        is_m2 = (self.mode == "program_v2" and self.plasticity_mode == "off")
+        is_m3 = (self.plasticity_mode == "stdp")
+        is_m4 = (self.plasticity_mode == "rstdp")
+
+        self.btn_mode_read.setStyleSheet(style_active if is_m1 else style_inactive)
+        self.btn_mode_prog.setStyleSheet(style_active if is_m2 else style_inactive)
+        self.btn_plast_stdp.setStyleSheet(style_active if is_m3 else style_inactive)
+        self.btn_plast_rstdp.setStyleSheet(style_active if is_m4 else style_inactive)
+
+        # Estilo de botones V/2 (Modo 2)
+        self.btn_pulse_ltp.setStyleSheet(style_pulse_active if is_m2 else style_pulse_inactive)
+        self.btn_pulse_ltd.setStyleSheet(style_pulse_active if is_m2 else style_pulse_inactive)
+
+        # Estilo de botones Recompensa R (Modo 4)
+        style_reward_plus_active = "QPushButton { background-color: #a6e3a1; color: #11111b; font-weight: bold; padding: 5px 10px; border-radius: 4px; border: 2px solid #ffffff; }"
+        style_reward_plus_inactive = "QPushButton { background-color: #313244; color: #a6e3a1; font-weight: bold; padding: 5px 10px; border-radius: 4px; border: 1px solid #45475a; }"
+        style_reward_minus_active = "QPushButton { background-color: #f38ba8; color: #11111b; font-weight: bold; padding: 5px 10px; border-radius: 4px; border: 2px solid #ffffff; }"
+        style_reward_minus_inactive = "QPushButton { background-color: #313244; color: #f38ba8; font-weight: bold; padding: 5px 10px; border-radius: 4px; border: 1px solid #45475a; }"
+
+        style_auto_rl_active = "QPushButton { background-color: #cba6f7; color: #11111b; font-weight: bold; padding: 5px 10px; border-radius: 4px; border: 2px solid #ffffff; }"
+        style_auto_rl_inactive = "QPushButton { background-color: #313244; color: #cba6f7; font-weight: bold; padding: 5px 10px; border-radius: 4px; border: 1px solid #45475a; }"
+
+        self.btn_reward_plus.setStyleSheet(style_reward_plus_active if (is_m4 and self.reward > 0) else style_reward_plus_inactive)
+        self.btn_reward_minus.setStyleSheet(style_reward_minus_active if (is_m4 and self.reward < 0) else style_reward_minus_inactive)
+        self.btn_auto_rl.setStyleSheet(style_auto_rl_active if (is_m4 and getattr(self, 'auto_rl_enabled', False)) else style_auto_rl_inactive)
+
+        target_str = f"🎲 Meta Col {self.auto_rl_target_col+1} (ON)" if getattr(self, 'auto_rl_enabled', False) else "🎲 Auto-RL (Off)"
+        self.btn_auto_rl.setText(target_str)
+
+        # Los botones de acción permanecen habilitados para respuesta inmediata y compatibilidad con tests
+        self.btn_pulse_ltp.setEnabled(True)
+        self.btn_pulse_ltd.setEnabled(True)
+        self.btn_reward_plus.setEnabled(True)
+        self.btn_reward_minus.setEnabled(True)
+        self.btn_auto_rl.setEnabled(True)
+
+    def _apply_reward(self, R: float, is_auto: bool = False):
+        """
+        Aplica recompensa R-STDP.
+        NO modifica G directamente: setea la recompensa en el RSTDPRule y deja
+        que el siguiente tick del _anim_tick haga la actualización real usando
+        las trazas pre/post acumuladas.
+        """
+        if self.plasticity_mode != "rstdp":
+            self.mode = "read"
+            self.plasticity_mode = "rstdp"
+            if hasattr(self.controller, 'rstdp_rule') and self.controller.rstdp_rule:
+                self.controller.rstdp_rule.reset(4, 4)
+            self._update_mode_button_styles()
+
+        self.reward = float(R)
+        self.controller.set_reward(R)
+        self._last_reward_time = getattr(self.controller, 'sim_time', 0.0)
+
+        tag = "✅ ÉXITO (+1)" if R > 0 else "❌ PENALIZACIÓN ERROR (−1)"
+        auto_tag = " [AUTO-ENTORNO]" if is_auto else " [MANUAL]"
+        self.status_label.setText(
+            f"🎯 R-STDP {tag}{auto_tag} │ R = {R:+.0f} │ "
+            f"La próxima actualización de G usará esta recompensa modulando las trazas acumuladas."
+        )
+        self._update_mode_button_styles()
+        self.canvas.update()
+
+    def _toggle_auto_rl(self):
+        """Activa/desactiva el entorno de prueba con Azar Coherente R-STDP."""
+        if self.plasticity_mode != "rstdp":
+            self._set_mode_4_rstdp()
+
+        self.auto_rl_enabled = not getattr(self, 'auto_rl_enabled', False)
+        if self.auto_rl_enabled:
+            sim_t = getattr(self.controller, 'sim_time', 0.0)
+            self.auto_rl_target_col = int(self._spike_rng.integers(0, 4))
+            self.auto_rl_switch_time = sim_t + self.auto_rl_interval
+            self.rstdp_phase = "read"
+            self.rstdp_phase_timer = sim_t
+            self._select_random_active_sensors()
+            self.status_label.setText(
+                f"🎲 Auto-RL ACTIVADO │ Meta Objetivo Inicial: Columna {self.auto_rl_target_col+1} "
+                f"│ Intercalando fases y variación estocástica de sensores."
+            )
+        else:
+            self.status_label.setText("🎲 Auto-RL DESACTIVADO │ Control de recompensa manual restaurado.")
+        self._update_mode_button_styles()
+        self.canvas.update()
+
+    def _select_random_active_sensors(self):
+        """Selecciona de 1 a 3 sensores activos al azar para variar el patrón de entrada usando los voltajes del usuario."""
+        k = int(self._spike_rng.integers(1, 4))  # Activar entre 1 y 3 filas al azar
+        active_indices = self._spike_rng.choice(4, size=k, replace=False)
+        mask = np.zeros(4, dtype=bool)
+        mask[active_indices] = True
+        self.rstdp_active_sensors = mask
+
+
+
+
+
+    def _update_plasticity_button_styles(self):
+        """Actualiza estilos de los botones de plasticidad."""
+        style_active = """
+            QPushButton {
+                background-color: #a6e3a1; color: #11111b;
+                font-weight: bold; padding: 6px 12px; border-radius: 4px;
+            }
+        """
+        style_inactive = """
+            QPushButton {
+                background-color: #313244; color: #cdd6f4;
+                font-weight: bold; padding: 6px 12px;
+                border-radius: 4px; border: 1px solid #45475a;
+            }
+        """
+        if not hasattr(self, 'btn_plast_off'):
+            return
+
+        modes = [
+            (self.btn_plast_off, "off"),
+            (self.btn_plast_stdp, "stdp"),
+            (self.btn_plast_rstdp, "rstdp"),
+        ]
+        for btn, mode in modes:
+            btn.setStyleSheet(style_active if self.plasticity_mode == mode else style_inactive)
+
+        if hasattr(self, 'btn_pulse_ltp') and hasattr(self, 'btn_pulse_ltd'):
+            self.btn_pulse_ltp.setEnabled(True)
+            self.btn_pulse_ltd.setEnabled(True)
+
+
+
+
+    def _apply_programming_pulse(self, v_pulse: float):
+        if self.mode != "program_v2":
+            self.status_label.setText("⚠️ Los pulsos V/2 solo se aplican en Modo 2 (Programación V/2). Selecciona Modo 2 para usar este botón.")
+            return
+            
+        tg_r, tg_c = self.target_cell
+        s_key = f'S{tg_r+1}'
+        v_sensor = float(self.elements[s_key].params.get('V_out', 0.2)) if s_key in self.elements else 0.2
+        if abs(v_sensor) > abs(v_pulse):
+            v_pulse = v_sensor if v_pulse > 0 else -v_sensor
+
+        target_mem = self.elements.get(f'M{tg_r+1}{tg_c+1}')
+        if not target_mem: return
+        g_old = float(target_mem.params.get('G', 69.4e-6)) * 1e6
+
+        # Delegate to Controller
+        n_pulses = max(1, int(self.write_cfg.n_pulses))
+        for _ in range(n_pulses):
+            self.controller.apply_programming_pulse(
+                tg_r, tg_c, v_pulse, dt_pulse=self.write_cfg.t_pulse
+            )
+
+        g_new = float(target_mem.params.get('G', 69.4e-6)) * 1e6
+        tag = "➕ LTP" if v_pulse > 0 else "➖ LTD"
+        self.status_label.setText(f"⚡ Pulso {tag} aplicado a M{tg_r+1}{tg_c+1}: G cambió de {g_old:.1f} μS → {g_new:.1f} μS │ (Core Physics Delegated)")
+        self.canvas.update()
+
+    def _on_sensor_spinbox_changed(self, sensor_idx: int, val: float):
+        s_key = f'S{sensor_idx+1}'
+        if s_key in self.elements:
+            self.elements[s_key].params['V_out'] = val
+
+            v_tag = "⚡ ESCRITURA" if abs(val) > 0.49 else "📖 LECTURA"
+            self.status_label.setText(f"{v_tag} en {s_key}: Voltaje ajustado a {val:.2f} V")
+            self.canvas.update()
+
+    def _on_refractory_changed(self, val: float):
+        self.REFRACTORY_DURATION = val
+        self.status_label.setText(f"⏳ Período refractario ajustado a {val:.2f} s")
+
+    def _set_all_sensors_read(self):
+        for i, sb in enumerate(self.sensor_spinboxes):
+            sb.setValue(self.read_cfg.V_read)
+        self.status_label.setText("📖 Todos los sensores ajustados a Voltaje de Lectura No Destructivo (0.20V)")
+        self.canvas.update()
+
+    def _set_sensor_write(self, sensor_idx: int, v_write: float = 2.0):
+        if 0 <= sensor_idx < 4:
+            self.sensor_spinboxes[sensor_idx].setValue(v_write)
+            self.status_label.setText(f"⚡ Voltaje de ESCRITURA (+{v_write:.2f}V) aplicado a S{sensor_idx+1}. ¡Memristores de la Fila {sensor_idx+1} evolucionando conductancia!")
+            self.canvas.update()
+
+    def _update_sensor_spinboxes(self):
+        for i, sb in enumerate(self.sensor_spinboxes):
+            v_val = float(self.V_rows[i]) if hasattr(self, 'V_rows') and i < len(self.V_rows) else float(self.elements[f'S{i+1}'].params.get('V_out', 0.2))
+            sb.blockSignals(True)
+            sb.setValue(v_val)
+            sb.blockSignals(False)
+
+    def _open_config(self, element: VisualElement):
+        for elem in self.elements.values():
+            elem.selected = False
+        element.selected = True
+
+        if isinstance(element, MemristorElement):
+            self.target_cell = (element.row, element.col)
+            if self.mode == "program_v2":
+                self.status_label.setText(
+                    f"🎯 Target V/2 seleccionado: {element.element_id} (Fila {element.row+1}, Columna {element.col+1}). Aplica pulsos ➕ LTP o ➖ LTD."
+                )
+                self.canvas.update()
+
+        if isinstance(element, SensorElement):
+            v_curr = float(element.params.get('V_out', 0.2))
+            if v_curr <= 0.5:
+                v_new = 2.0
+                msg = f"⚡ Voltaje de ESCRITURA (+{v_new:.2f}V) activo en {element.element_id} (Fila {element.element_id[1]})"
+            else:
+                v_new = 0.2
+                msg = f"📖 Voltaje de LECTURA ({v_new:.2f}V) activo en {element.element_id}"
+            element.params['V_out'] = v_new
+            self._update_sensor_spinboxes()
+            self.status_label.setText(msg)
+            self.canvas.update()
+            return
+
+        if self.canvas.is_animating:
+            self.status_label.setText(f"Seleccionado: {element.element_id} │ ⚡ [TIEMPO REAL ACTIVO] (Pausa la simulación para editar parámetros en diálogo)")
+            self.canvas.update()
+            return
+
+        self.canvas.update()
+        self.status_label.setText(f"Configurando: {element.element_id}")
+        dlg = ConfigDialog(self, element, on_save=self._on_config_saved)
+        dlg.exec()
+
+    def _on_config_saved(self, element: VisualElement):
+        self.status_label.setText(f"✓ Configuración actualizada: {element.element_id}")
+        if hasattr(element, 'on_params_changed'):
+            element.on_params_changed()
+        self.canvas.update()
+
+    def toggle_realtime(self):
+        if self.canvas.is_animating:
+            self.anim_timer.stop()
+            self.canvas.is_animating = False
+            self.btn_realtime.setText("⚡ Tiempo Real (OFF)")
+            self.btn_realtime.setStyleSheet("""
+                QPushButton {
+                    background-color: #313244; color: #a6adc8; font-weight: bold;
+                    padding: 6px 14px; border-radius: 4px; border: 1px solid #45475a;
+                }
+                QPushButton:hover { background-color: #45475a; }
+            """)
+            self.status_label.setText("⏸ Simulación en tiempo real pausada.")
+        else:
+            self.canvas.is_animating = True
+            self.anim_timer.start()
+            self.btn_realtime.setText("⚡ Tiempo Real (ACTIVO)")
+            self.btn_realtime.setStyleSheet("""
+                QPushButton {
+                    background-color: #a6e3a1; color: #11111b; font-weight: bold;
+                    padding: 6px 14px; border-radius: 4px;
+                }
+                QPushButton:hover { background-color: #94e2d5; }
+            """)
+            self.status_label.setText("⚡ Simulación 4×4 en tiempo real activa... 💡 Haz clic en los Sensores (S1..S4) para simular detección!")
+
+
+
+    def _anim_tick(self):
+        # 1. Reloj único: dt = intervalo real del timer, sin factores ocultos
+        dt_wall = self.anim_timer.interval() / 1000.0     # 0.030 s
+        dt = dt_wall / max(0.1, self.time_scale_factor)   # slow-motion explícito
+        self.canvas.anim_time += dt_wall                  # animación SIEMPRE en wall-clock
+
+        # 2. Estado de voltajes y eventos pre-spike según modo
+        self.spike_pre = np.zeros(4, dtype=bool)
+
+        if self.mode == "program_v2":
+            tg_r, tg_c = self.target_cell
+            self.V_rows = np.zeros(4)
+            self.V_cols = np.zeros(4)
+            self.V_rows[tg_r] = +self.write_cfg.V_program / 2.0
+            self.V_cols[tg_c] = -self.write_cfg.V_program / 2.0
+
+        elif self.plasticity_mode == "rstdp" and self.canvas.is_animating:
+            sim_t = self.controller.sim_time
+            dt_phase = sim_t - getattr(self, 'rstdp_phase_timer', 0.0)
+            target_duration = self.RSTDP_PHASE_DURATIONS.get(self.rstdp_phase, 1.0)
+
+            # Transición entre Fases Intercaladas (Lectura -> Escritura -> Reposo 0V)
+            if dt_phase >= target_duration:
+                self.rstdp_phase_timer = sim_t
+                if self.rstdp_phase == "read":
+                    self.rstdp_phase = "write"
+                    # Aplicar evaluación de recompensa si Auto-RL está activo
+                    if getattr(self, 'auto_rl_enabled', False) and self.winner_j is not None:
+                        if self.winner_j == self.auto_rl_target_col:
+                            self._apply_reward(+1.0, is_auto=True)
+                        else:
+                            self._apply_reward(-1.0, is_auto=True)
+                elif self.rstdp_phase == "write":
+                    self.rstdp_phase = "rest"
+                else:  # "rest" -> regresar a "read"
+                    self.rstdp_phase = "read"
+                    # Cambiar meta de Auto-RL si expiró el intervalo
+                    if getattr(self, 'auto_rl_enabled', False) and sim_t >= getattr(self, 'auto_rl_switch_time', 0.0):
+                        cols = [c for c in range(4) if c != self.auto_rl_target_col]
+                        self.auto_rl_target_col = int(self._spike_rng.choice(cols))
+                        self.auto_rl_switch_time = sim_t + self.auto_rl_interval
+                        self._update_mode_button_styles()
+
+                    # Seleccionar nuevo patrón de sensores activos
+                    self._select_random_active_sensors()
+
+            # Configuración de voltajes y spikes según la fase actual
+            if self.rstdp_phase == "rest":
+                self.V_rows = np.zeros(4)
+                self.V_cols = np.zeros(4)
+                self.spike_pre = np.zeros(4, dtype=bool)
+            else:
+                for i in range(4):
+                    user_v = float(self.elements[f'S{i+1}'].params.get('V_out', 0.0))
+                    is_active = self.rstdp_active_sensors[i] if hasattr(self, 'rstdp_active_sensors') else True
+                    v_i = user_v if is_active else 0.0
+
+                    if abs(v_i) < 0.1:
+                        rate_hz = 0.0
+                    else:
+                        v_norm = np.clip(abs(v_i) / self.SENSOR_V_REF, 0.0, 1.0)
+                        rate_hz = self.SENSOR_MIN_RATE_HZ + (self.SENSOR_MAX_RATE_HZ - self.SENSOR_MIN_RATE_HZ) * v_norm
+
+                    if rate_hz > 0:
+                        p_spike = min(1.0, rate_hz * dt)
+                        if self._spike_rng.random() < p_spike:
+                            self.spike_pre[i] = True
+
+                self.V_rows = np.array([
+                    (float(self.elements[f'S{i+1}'].params.get('V_out', 0.0)) if self.rstdp_active_sensors[i] else 0.0)
+                    for i in range(4)
+                ])
+                self.V_cols = np.zeros(4)
+
+        elif self.plasticity_mode == "stdp" and self.canvas.is_animating:
+            for i in range(4):
+                v_i = float(self.elements[f'S{i+1}'].params.get('V_out', 0.0))
+                if abs(v_i) < 0.1:
+                    rate_hz = 0.0
+                else:
+                    v_norm = np.clip(abs(v_i) / self.SENSOR_V_REF, 0.0, 1.0)
+                    rate_hz = self.SENSOR_MIN_RATE_HZ + (self.SENSOR_MAX_RATE_HZ - self.SENSOR_MIN_RATE_HZ) * v_norm
+
+                if rate_hz > 0:
+                    p_spike = min(1.0, rate_hz * dt)
+                    if self._spike_rng.random() < p_spike:
+                        self.spike_pre[i] = True
+
+            self.V_rows = np.array([float(self.elements[f'S{i+1}'].params.get('V_out', 0.2)) for i in range(4)])
+            self.V_cols = np.zeros(4)
+
+        else:
+            self.V_rows = np.array([float(self.elements[f'S{i+1}'].params.get('V_out', 0.2)) for i in range(4)])
+            self.V_cols = np.full(4, self.read_cfg.V_col)
+
+        # 3. Física: controller integra LIF + STDP/R-STDP
+        result = self.controller.step(
+            dt=dt,
+            mode=self.mode,
+            plasticity_mode=self.plasticity_mode,
+            is_animating=self.canvas.is_animating,
+            V_rows=self.V_rows,
+            V_cols=self.V_cols,
+            spike_pre=self.spike_pre,
+        )
+
+        if isinstance(result, dict):
+            I_cols = result["I_cols"]
+            self.spike_post = result["spike_post"]
+            self.winner_j = result.get("winner_j", None)
+        else:
+            I_cols = result
+            self.winner_j = self.controller.winner_j
+
+        # Entorno de Recompensa Estocástica (Auto-RL Azar Coherente)
+        if self.plasticity_mode == "rstdp" and getattr(self, 'auto_rl_enabled', False) and self.canvas.is_animating:
+            sim_t = self.controller.sim_time
+            # Cambiar de meta dinámicamente al azar cada N segundos
+            if sim_t >= getattr(self, 'auto_rl_switch_time', 0.0):
+                cols = [c for c in range(4) if c != self.auto_rl_target_col]
+                self.auto_rl_target_col = int(self._spike_rng.choice(cols))
+                self.auto_rl_switch_time = sim_t + self.auto_rl_interval
+                self._update_mode_button_styles()
+
+            # Aplicar recompensa o castigo cuando hay un ganador activo
+            if self.winner_j is not None:
+                if (sim_t - getattr(self, 'auto_rl_last_applied_time', 0.0)) >= 0.050:
+                    self.auto_rl_last_applied_time = sim_t
+                    if self.winner_j == self.auto_rl_target_col:
+                        self._apply_reward(+1.0, is_auto=True)
+                    else:
+                        self._apply_reward(-1.0, is_auto=True)
+
+        n_pre = int(self.spike_pre.sum())
+        n_post = int(self.spike_post.sum())
+        spikes_str = " ".join(f"LIF_{j+1}={self.elements[f'LIF_{j+1}'].params.get('spike_count', 0)}" for j in range(4))
+        self.status_label.setText(
+            f"⚡ [4×4 RT] t_sim={self.controller.sim_time:.3f}s "
+            f"(dt={dt*1e3:.1f}ms, factor={self.time_scale_factor:.2f}×) │ "
+            f"spikes pre={n_pre} post={n_post} │ "
+            f"I=[{I_cols[0]*1e6:.1f}, {I_cols[1]*1e6:.1f}, {I_cols[2]*1e6:.1f}, {I_cols[3]*1e6:.1f}] μA │ "
+            f"{spikes_str}"
+        )
+        self.canvas.update()
+
+    def _on_simulate(self):
+        # Ejecutar 1 tick de simulación estandarizado en lugar de matemática paralela
+        dt = 0.01
+        self._anim_tick()  # Fuerza un ciclo completo del motor principal
+
+        # Extraer la telemetría ya calculada
+        G = get_G_matrix(self.elements, 4, 4)
+        I = compute_currents(G, self.V_rows)
+        self.status_label.setText(
+            f"▶ Simulación Paso Completa: I = [{I[0]*1e6:.1f}, {I[1]*1e6:.1f}, {I[2]*1e6:.1f}, {I[3]*1e6:.1f}] μA"
+        )
+        self.canvas.update()
+
+    def _on_reset(self):
+        if self.canvas.is_animating:
+            self.toggle_realtime()
+
+        self.controller.reset()
+        self.spike_pre = np.zeros(4, dtype=bool)
+        self.spike_post = np.zeros(4, dtype=bool)
+        self.winner_j = None
+        self.reward = 0.0
+        self.auto_rl_enabled = False
+        self.auto_rl_target_col = 0
+        self.auto_rl_switch_time = 0.0
+        self.auto_rl_last_applied_time = 0.0
+        self.rstdp_phase = "read"
+        self.rstdp_phase_timer = 0.0
+        self.rstdp_active_sensors = np.array([True, True, True, True], dtype=bool)
+        self.V_rows = np.full(4, self.read_cfg.V_read)
+        self.V_cols = np.full(4, self.read_cfg.V_col)
+
+        # Resetear voltajes de sensores a estado inicial
+        for i in range(4):
+            s_key = f'S{i+1}'
+            if s_key in self.elements:
+                self.elements[s_key].params['V_out'] = 0.8 if i == 0 else 0.4 if i == 1 else 0.3 if i == 2 else 0.2
+        self._update_sensor_spinboxes()
+
+        for elem in self.elements.values():
+            elem.selected = False
+            elem.hover = False
+
+        for i in range(4):
+            for j in range(4):
+                mem = self.elements.get(f'M{i+1}{j+1}')
+                if mem:
+                    x0 = float(mem.params.get('x0', 0.10))
+                    mem.params['x'] = x0
+                    mem.params['seed'] = random.randint(10000, 999999)
+                    mem.on_params_changed()
+                    self.controller.crossbar.set_conductance(i, j, float(mem.params.get('G', 69.4e-6)))
+
+        for j in range(4):
+            mv = self.elements.get(f'M_v{j+1}')
+            if mv:
+                x0_v = float(mv.params.get('x0', 0.05))
+                mv.params['x'] = x0_v
+                mv.params['seed'] = random.randint(10000, 999999)
+                if hasattr(mv, 'on_params_changed'):
+                    mv.on_params_changed()
+
+        for i in range(4):
+            lif = self.elements[f'LIF_{i+1}']
+            lif.params['V_m'] = 0.0
+            lif.params['V_th'] = float(lif.params.get('V_th_base', 1.0))
+            lif.params['spike_count'] = 0
+            act = self.elements[f'Act_{i+1}']
+            act.params['is_winner'] = False
+            act.params['action'] = 'listo'
+
+        self.status_label.setText("⏹ Reset completo: Sensores, conductancias x0 (~69.4 μS) y trazas STDP completamente reiniciadas.")
+        self.canvas.update()
+
+    def _on_reset_matrix(self):
+        for i in range(4):
+            for j in range(4):
+                mem = self.elements[f'M{i+1}{j+1}']
+                mem.params['x0'] = 0.10
+                mem.params['x'] = 0.10
+                mem.params['seed'] = random.randint(10000, 999999)
+                if hasattr(mem, 'on_params_changed'):
+                    mem.on_params_changed()
+
+        self.status_label.setText("🎯 Matriz 4×4 reiniciada (Nuevas semillas estocásticas asignadas)")
+        self.canvas.update()
+
+    def _on_show_matrix(self):
+        G = get_G_matrix(self.elements, 4, 4)
+        msg = matrix_to_heatmap_string(G)
+        QMessageBox.information(self, "Matriz G del Crossbar 4×4", msg)
+
+    def _on_config_volatiles(self):
+        dlg = BatchVolatileDialog(self, current_elements=self.elements)
+        if dlg.exec():
+            self.status_label.setText("⚡ Todos los 4 memristores volátiles (M_v1..M_v4) actualizados")
+            self.canvas.update()
+
+    def _on_config_grid(self):
+        dlg = BatchGridDialog(self, current_elements=self.elements)
+        if dlg.exec():
+            r = dlg.spin_r.value()
+            c = dlg.spin_c.value()
+            self.status_label.setText(f"🔲 Sub-matriz {r}×{c} programada con éxito")
+            self.canvas.update()
+
+    def _on_open_rw_config(self):
+        """Abre el diálogo de configuración explícita de lectura/escritura."""
+        dlg = ReadWriteConfigDialog(
+            self,
+            read_cfg=self.read_cfg,
+            write_cfg=self.write_cfg
+        )
+        if dlg.exec():
+            self.read_cfg = dlg.get_read_config()
+            self.write_cfg = dlg.get_write_config()
+
+            # Sincronizar con drivers
+            self.row_driver.V_active = self.write_cfg.V_row_active()
+            self.col_driver.V_active = self.write_cfg.V_col_active()
+
+            self.status_label.setText(
+                f"⚙️ Configuración actualizada │ {self.read_cfg.describe()} │ {self.write_cfg.describe()}"
+            )
+            self.canvas.update()
+
+    def _on_config_voltages(self):
+        for i in range(4):
+            val, ok = QInputDialog.getDouble(
+                self, f"Voltaje V_{i+1}", f"Voltaje Sensor S{i+1} (V):",
+                value=float(self.elements[f'S{i+1}'].params.get('V_out', 0.5)),
+                minValue=0.0, maxValue=5.0, decimals=2
+            )
+            if ok:
+                self.elements[f'S{i+1}'].params['V_out'] = val
+
+        self.status_label.setText("✓ Voltajes de los 4 sensores actualizados")
+        self.canvas.update()
+
+    def _on_uniform(self):
+        G_val, ok = QInputDialog.getDouble(
+            self, "Programación Uniforme", "Conductancia Objetivo G (μS):",
+            value=200.0, minValue=62.5, maxValue=500.0, decimals=1
+        )
+        if ok:
+            G_mat = np.full((4, 4), G_val * 1e-6)
+            set_G_matrix(self.elements, G_mat)
+            self.status_label.setText(f"📐 Matriz 4×4 programada a {G_val:.1f} μS")
+            self.canvas.update()

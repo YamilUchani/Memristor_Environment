@@ -1,0 +1,31 @@
+{
+  "N": 24,
+  "M": 8,
+  "crossbar_seed": 523,
+  "convention": "X = 1 - x",
+  "initial_X": 0.9,
+  "json_memristor_nv": "strukov_ideal.json",
+  "variability": {
+    "d2d_enabled": false,
+    "d2d_sigma": 0.08,
+    "c2c_enabled": false,
+    "c2c_sigma": 0.05,
+    "c2c_theta": 1.0,
+    "c2c_dt": 0.02
+  },
+  "task": "auto2d",
+  "algorithm": "R-STDP",
+  "encoder": "auto2d",
+  "encoder_mode": "auto2d",
+  "training_seed": 523,
+  "action_names": [
+    "accelerate_straight",
+    "coast_straight",
+    "gentle_left",
+    "gentle_right",
+    "sharp_left",
+    "sharp_right",
+    "brake_left",
+    "brake_right"
+  ]
+}

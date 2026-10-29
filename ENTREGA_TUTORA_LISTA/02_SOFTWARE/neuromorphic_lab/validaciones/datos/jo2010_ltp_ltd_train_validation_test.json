@@ -1,0 +1,121 @@
+{
+  "source": "Jo et al. (2010), Fig. 2a digitized CSV",
+  "n_total": 87,
+  "n_excluded_outside_simulated_pulse_range": 2,
+  "n_train": 50,
+  "n_validation": 17,
+  "n_test": 18,
+  "split_method": "Separately within LTP/LTD, sort covered points by pulse count; first 60% train, next 20% validation, last 20% test.",
+  "simulator": {
+    "device": "Strukov linear-drift model",
+    "initial_state_x": 0.03792897233959046,
+    "r_on_ohm": 22293551.182883848,
+    "r_off_ohm": 80958012.75291972,
+    "effective_drift_coefficient_per_amp_second": 754746783.9160461,
+    "set_pulse_voltage_V": 3.2,
+    "reset_pulse_voltage_V": -2.8,
+    "pulse_width_s": 0.0003,
+    "pulse_count_per_phase": 100,
+    "read_voltage_V": 1.0,
+    "switching_threshold_magnitude_V": 2.2,
+    "read_state_update": "disabled; read voltage is below the reported threshold"
+  },
+  "parameter_fit": "Fit R_on, R_off-R_on, effective drift coefficient, and x0 on training points only. No post-fit current scale or offset is applied. Select among three predeclared optimizer initializations using validation RMSE.",
+  "candidates": [
+    {
+      "initial_guess": [
+        7.0,
+        8.0,
+        10.0,
+        0.05
+      ],
+      "optimizer_success": true,
+      "train_rmse_100nA": 0.043409795561940454,
+      "validation_rmse_100nA": 0.09154494765656902
+    },
+    {
+      "initial_guess": [
+        7.5,
+        8.5,
+        11.0,
+        0.1
+      ],
+      "optimizer_success": true,
+      "train_rmse_100nA": 0.04340979556188529,
+      "validation_rmse_100nA": 0.09154495400970632
+    },
+    {
+      "initial_guess": [
+        8.0,
+        9.0,
+        12.0,
+        0.02
+      ],
+      "optimizer_success": true,
+      "train_rmse_100nA": 0.08573595718657442,
+      "validation_rmse_100nA": 0.14308542610908023
+    }
+  ],
+  "selected_parameters": {
+    "r_on_ohm": 22293551.182883848,
+    "r_off_ohm": 80958012.75291972,
+    "initial_state_x": 0.03792897233959046,
+    "effective_drift_coefficient_per_amp_second": 754746783.9160461
+  },
+  "metrics": {
+    "train": {
+      "r2": 0.7423773876657731,
+      "mae_nA": 3.691425933367287,
+      "rmse_nA": 4.340979556194045,
+      "erp_range_pct": 24.075435566154038,
+      "n_points": 50
+    },
+    "validation": {
+      "r2": 0.6031472134398963,
+      "mae_nA": 8.851095909095438,
+      "rmse_nA": 9.154494765656903,
+      "erp_range_pct": 35.082522001230394,
+      "n_points": 17
+    },
+    "test": {
+      "r2": 0.7398763693791006,
+      "mae_nA": 8.349141602077124,
+      "rmse_nA": 8.618087595075814,
+      "erp_range_pct": 31.22858254137844,
+      "n_points": 18
+    }
+  },
+  "test_metrics_by_phase": {
+    "LTP": {
+      "r2": -8.542436432189508,
+      "mae_nA": 7.653720490077262,
+      "rmse_nA": 8.089307746798736,
+      "erp_range_pct": 132.45773637659877,
+      "n_points": 10,
+      "pearson_r": null,
+      "pearson_r_squared": null
+    },
+    "LTD": {
+      "r2": -829.9940135565436,
+      "mae_nA": 9.218417992076951,
+      "rmse_nA": 9.23659034838487,
+      "erp_range_pct": 960.2730779493536,
+      "n_points": 8,
+      "pearson_r": -0.2217019008282826,
+      "pearson_r_squared": 0.04915173283087365
+    }
+  },
+  "test_metrics": {
+    "residual_r2": 0.7398763693791006,
+    "pearson_r": 0.9930276277951119,
+    "pearson_r_squared": 0.9861038695643872,
+    "mae_100nA_units": 0.08349141602077123,
+    "mae_nA": 8.349141602077124,
+    "rmse_100nA_units": 0.08618087595075813,
+    "rmse_nA": 8.618087595075814,
+    "erp_range_pct": 31.22858254137844,
+    "n_points": 18
+  },
+  "csv": "jo2010_ltp_ltd_train_validation_test.csv",
+  "interpretation": "The fitted parameters are calibrated to this digitized device trace; held-out points test the protocol simulation against the same experiment, not prediction of an independent device."
+}

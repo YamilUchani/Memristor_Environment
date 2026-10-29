@@ -1,0 +1,2 @@
+﻿domain,algorithm,seed,initial_X,episodes_completed,solved,stopped_at_episode,final_window_success_rate,mean_abs_crossbar_change,elapsed_seconds,result_path
+car,REINFORCE,0,0.1,428,False,,0.5333333333333333,0.04770131705740616,62.34550029999809,runs\car_reinforce_seed0_X0_0.1\result.json

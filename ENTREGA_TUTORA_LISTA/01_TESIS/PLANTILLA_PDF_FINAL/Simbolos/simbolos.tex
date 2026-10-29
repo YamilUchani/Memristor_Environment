@@ -1,0 +1,62 @@
+\addcontentsline{toc}{chapter}{\numberline{}Notación}
+\textbf{\LARGE Notación}\\\\
+
+Esta sección presenta los símbolos y acrónimos utilizados a lo largo del presente documento.
+
+\renewcommand{\arraystretch}{1.3}
+
+\section*{Símbolos}
+
+\begin{longtable}[l]{>{}l<{}l}
+\textbf{Símbolo} & \textbf{Término} \\[0.6ex] \hline
+$C2C$      & Variabilidad ciclo a ciclo (\textit{Cycle-to-Cycle}) \\
+$D$        & Espesor del dispositivo memristivo [nm] \\
+$D2D$      & Variabilidad dispositivo a dispositivo (\textit{Device-to-Device}) \\
+$G$        & Conductancia de la celda memristiva, $G=1/R(X)$ [S] \\
+$\mathbf{G}$ & Matriz de conductancias del crossbar, $\mathbb{R}^{N\times M}$ [S] \\
+$I_{col}$  & Corriente integrada por columna del crossbar [A] \\
+$I_{ideal}$ & Corriente ideal sin efectos parásitos [A] \\
+$R_{ON}$   & Resistencia en el estado de baja resistencia (LRS) [$\Omega$] \\
+$R_{OFF}$  & Resistencia en el estado de alta resistencia (HRS) [$\Omega$] \\
+$R_S$      & Resistencia sináptica [$\Omega$] \\
+$R_{sense}$ & Resistencia de sensado del amplificador [$\Omega$] \\
+$R_{wire}$ & Resistencia de línea conductora [$\Omega$] \\
+$V_{in}$   & Voltaje de entrada [V] \\
+$V_{th}$   & Voltaje umbral de disparo [V] \\
+$V_{read}$ & Voltaje de lectura; no altera el estado en el protocolo simulado [V] \\
+$w$        & Posición de la frontera de vacancias [nm] \\
+$x$        & Variable de estado interna del memristor ($x = w/D$) \\
+$X$        & Fracción no dopada del estado, $X=1-x$; variable usada por el agente \\
+$\Delta t$ & Desfase temporal entre spikes, $t_{\mathrm{post}}-t_{\mathrm{pre}}$ [ms] \\
+$\Delta x$ & Cambio de la variable de estado $x$ [adimensional] \\
+$\Delta X$ & Cambio de la variable de estado $X$ [adimensional] \\
+$\eta$     & Tasa de aprendizaje \\
+$\tau_m$   & Constante de tiempo de membrana [s] \\
+$\tau_+, \tau_-$ & Constantes temporales de la ventana STDP [ms] \\
+\end{longtable}
+
+\vspace{5ex}
+
+\section*{Glosario}
+
+\begin{longtable}[l]{>{}l<{}l}
+\textbf{Abreviatura} & \textbf{Término} \\[0.5ex] \hline
+$C2C$   & \textit{Cycle-to-Cycle} --- Variabilidad ciclo a ciclo \\
+$D2D$   & \textit{Device-to-Device} --- Variabilidad dispositivo a dispositivo \\
+$DVS$   & \textit{Dynamic Vision Sensor} --- Sensor de visión dinámica \\
+$HRS$   & \textit{High Resistance State} --- Estado de alta resistencia \\
+$ISI$   & \textit{Inter-Spike Interval} --- Intervalo entre disparos neuronales \\
+$LIF$   & \textit{Leaky Integrate-and-Fire} --- Neurona de integración y disparo \\
+$LRS$   & \textit{Low Resistance State} --- Estado de baja resistencia \\
+$LTD$   & \textit{Long-Term Depression} --- Depresión a largo plazo \\
+$LTP$   & \textit{Long-Term Potentiation} --- Potenciación a largo plazo \\
+$MNA$   & \textit{Modified Nodal Analysis} --- Análisis nodal modificado \\
+$REINFORCE$ & Gradiente de política con baseline para aprendizaje por refuerzo \\
+$SNN$   & \textit{Spiking Neural Network} --- Red neuronal de pulsos \\
+$STDP$  & \textit{Spike-Timing Dependent Plasticity} \\
+$TSM$   & \textit{Threshold Switching Memristor} \\
+$VMM$   & \textit{Vector-Matrix Multiplication} --- Multiplicación matriz-vector \\
+$WTA$   & \textit{Winner-Takes-All} --- Ganador absoluto \\
+\end{longtable}
+
+\setlength{\extrarowheight}{0pt}

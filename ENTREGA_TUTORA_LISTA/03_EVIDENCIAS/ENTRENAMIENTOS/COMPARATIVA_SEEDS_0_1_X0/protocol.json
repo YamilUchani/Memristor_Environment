@@ -1,0 +1,32 @@
+{
+  "domains": [
+    "robot",
+    "vision",
+    "obstacle",
+    "car"
+  ],
+  "algorithms": [
+    "reinforce",
+    "rstdp"
+  ],
+  "seeds": [
+    0,
+    1
+  ],
+  "X0": [
+    0.1,
+    0.9
+  ],
+  "max_episodes_per_run": 10000,
+  "success_window": 300,
+  "target_success": 0.9,
+  "skip_car_reinforce": true,
+  "runs_expected": 28,
+  "success_definitions": {
+    "car": "episode reaches goal",
+    "vision": "greedy prediction is correct",
+    "obstacle": "agent reaches goal",
+    "robot": "CartPole reaches its time limit without termination"
+  },
+  "stop_definition": "stop after the rolling window first contains at least strictly more than window * target_success successful episodes"
+}

@@ -1,0 +1,10 @@
+============================================================
+  RESULTADOS DE VALIDACIÓN: STDP (Spike-Timing Plasticity)
+============================================================
+STDP Hebbiano Max: ΔW_max = +0.0373 en Δt = 5.0 ms
+STDP Hebbiano Min: ΔW_min = -0.0216 en Δt = -5.0 ms
+Parámetros: τ+ = 17.0 ms, τ- = 34.0 ms
+A_plus = 0.05, A_minus = -0.025
+Gráfica guardada en: G:\Github\Software de simulacion\Memristor_Environment\neuromorphic_lab\validaciones\validacion_stdp.png
+Datos exportados a:  G:\Github\Software de simulacion\Memristor_Environment\neuromorphic_lab\validaciones\validacion_stdp.csv
+============================================================

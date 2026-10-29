@@ -1,0 +1,5 @@
+﻿domain,algorithm,seed,initial_X,episodes_completed,solved,stopped_at_episode,final_window_success_rate,mean_abs_crossbar_change,elapsed_seconds,result_path
+car,R-STDP,2,0.1,750,True,750,0.9033333333333333,0.0020153812007879033,58.64060590000008,runs\car_rstdp_seed2_X0_0.1\result.json
+car,R-STDP,2,0.9,1548,True,1548,0.9033333333333333,0.0031564626018947294,117.44035430000076,runs\car_rstdp_seed2_X0_0.9\result.json
+car,R-STDP,4,0.1,10000,False,,0.08,0.02287273058234024,722.7123862999979,runs\car_rstdp_seed4_X0_0.1\result.json
+car,R-STDP,4,0.9,10000,False,,0.10666666666666667,0.022660147458319766,756.9405229000004,runs\car_rstdp_seed4_X0_0.9\result.json

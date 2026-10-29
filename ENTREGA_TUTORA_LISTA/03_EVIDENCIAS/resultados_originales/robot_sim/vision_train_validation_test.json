@@ -1,0 +1,426 @@
+{
+  "protocol": {
+    "task": "vision",
+    "stages": {
+      "training": "Three independently initialized checkpoints (seeds 0-2), each trained for 5000 episodes on the eight canonical binary patterns.",
+      "validation": "Frozen checkpoints ranked using validation-only scenarios or generated examples.",
+      "test": "Only the validation-selected checkpoint is evaluated; the test set is not used for tuning or selection."
+    },
+    "validation_seed_or_set": 10000,
+    "test_seed_or_set": 20000,
+    "vision_pixel_flip_probability": 0.05,
+    "vision_examples_per_class": {
+      "validation": 20,
+      "test": 50
+    },
+    "vision_training_examples_excluded": true,
+    "validation_test_disjoint": true,
+    "selection_metric": "accuracy",
+    "selection_tie_break": "Lower training seed",
+    "learning_enabled_during_validation_and_test": false,
+    "weights_unchanged_checked": true,
+    "selected_checkpoint": "run_vision_seed1_X.npy"
+  },
+  "validation_candidates": [
+    {
+      "training_seed": 0,
+      "checkpoint": "run_vision_seed0_X.npy",
+      "checkpoint_metadata": "missing; loader assumes the legacy convention X = 1 - x",
+      "examples": 160,
+      "accuracy": 0.39375,
+      "per_class_recall": [
+        0.05,
+        0.1,
+        0.3,
+        0.4,
+        0.35,
+        0.95,
+        0.0,
+        1.0
+      ],
+      "confusion_matrix": [
+        [
+          1,
+          0,
+          0,
+          0,
+          2,
+          16,
+          0,
+          1
+        ],
+        [
+          0,
+          2,
+          0,
+          0,
+          4,
+          14,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          6,
+          0,
+          0,
+          12,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          8,
+          0,
+          11,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          7,
+          13,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          19,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          18,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          20
+        ]
+      ],
+      "weights_unchanged": true
+    },
+    {
+      "training_seed": 1,
+      "checkpoint": "run_vision_seed1_X.npy",
+      "checkpoint_metadata": "missing; loader assumes the legacy convention X = 1 - x",
+      "examples": 160,
+      "accuracy": 0.41875,
+      "per_class_recall": [
+        0.05,
+        0.75,
+        0.05,
+        0.1,
+        0.0,
+        1.0,
+        0.4,
+        1.0
+      ],
+      "confusion_matrix": [
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          18,
+          0,
+          1
+        ],
+        [
+          0,
+          15,
+          0,
+          0,
+          0,
+          5,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          1,
+          0,
+          0,
+          7,
+          5,
+          5
+        ],
+        [
+          0,
+          0,
+          0,
+          2,
+          0,
+          8,
+          7,
+          3
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          19,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          20,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          7,
+          8,
+          5
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          20
+        ]
+      ],
+      "weights_unchanged": true
+    },
+    {
+      "training_seed": 2,
+      "checkpoint": "run_vision_seed2_X.npy",
+      "checkpoint_metadata": "missing; loader assumes the legacy convention X = 1 - x",
+      "examples": 160,
+      "accuracy": 0.41875,
+      "per_class_recall": [
+        0.0,
+        0.2,
+        0.45,
+        0.7,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "confusion_matrix": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          19,
+          0,
+          1
+        ],
+        [
+          0,
+          4,
+          0,
+          1,
+          0,
+          15,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          9,
+          0,
+          0,
+          10,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          0,
+          14,
+          0,
+          6,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          20,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          20,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          2,
+          1,
+          0,
+          10,
+          0,
+          7
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          20
+        ]
+      ],
+      "weights_unchanged": true
+    }
+  ],
+  "test": {
+    "training_seed": 1,
+    "checkpoint": "run_vision_seed1_X.npy",
+    "checkpoint_metadata": "missing; loader assumes the legacy convention X = 1 - x",
+    "examples": 400,
+    "accuracy": 0.4425,
+    "per_class_recall": [
+      0.04,
+      0.64,
+      0.12,
+      0.14,
+      0.0,
+      1.0,
+      0.6,
+      1.0
+    ],
+    "confusion_matrix": [
+      [
+        2,
+        0,
+        0,
+        0,
+        0,
+        48,
+        0,
+        0
+      ],
+      [
+        0,
+        32,
+        0,
+        0,
+        0,
+        9,
+        0,
+        9
+      ],
+      [
+        0,
+        2,
+        6,
+        0,
+        0,
+        20,
+        16,
+        6
+      ],
+      [
+        0,
+        0,
+        0,
+        7,
+        0,
+        24,
+        12,
+        7
+      ],
+      [
+        0,
+        1,
+        0,
+        0,
+        0,
+        43,
+        0,
+        6
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        50,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        9,
+        30,
+        11
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        50
+      ]
+    ],
+    "weights_unchanged": true
+  }
+}

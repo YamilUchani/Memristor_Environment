@@ -1,0 +1,153 @@
+\chapter{Estructura del Código Fuente y Módulos}
+\label{ch:apendice_codigo}
+\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
+
+En este apéndice se resume la organización actual del paquete \texttt{neurolab} y la cobertura de las pruebas de Neuromorphic Lab y Robot Sim. El árbol muestra rutas principales y omite archivos de respaldo y módulos auxiliares.
+
+% =====================================================================
+\section{Árbol de directorios del paquete \texttt{neurolab}}
+\label{sec:arbol_codigo}
+
+La estructura vigente dentro de \texttt{neuromorphic\_lab/neurolab/} incluye los siguientes módulos principales:
+
+\begin{verbatim}
+neurolab/
+|-- __init__.py
+|-- core/
+|   |-- base_device.py       # Interfaces de modelos y modificadores
+|   |-- config.py
+|   |-- memristor.py
+|   +-- validation_metrics.py
+|-- devices/
+|   |-- strukov.py           # Modelo lineal Strukov 2008
+|   |-- yakopcic.py          # Modelo asimétrico Yakopcic 2011
+|   |-- models/strukov.py
+|   +-- realism/             # c2c, d2d, noise, volatile, window
+|-- neurons/
+|   |-- lif.py               # Neurona Leaky Integrate-and-Fire
+|   +-- base.py
+|-- synapses/
+|   |-- memristive_synapse.py# Conexión sináptica basada en memristor
+|   +-- stdp.py
+|-- circuits/
+|   +-- hybrid.py
+|-- crossbar/
+|   |-- core.py              # Clase Crossbar unificada (M x N)
+|   |-- nodal_solver.py
+|   |-- line_resistance.py
+|   +-- validation.py
+|-- gui/
+|   |-- main_window.py       # Ventana principal PySide6
+|   |-- base_view.py         # Canvas base genérico BaseCrossbarCanvas
+|   |-- crossbar_view.py     # Panel multitab Crossbar
+|   |-- crossbar_2x2_view.py # Vista interactiva 2x2
+|   |-- crossbar_4x4_view.py # Vista interactiva 4x4
+|   +-- widgets/             # Componentes Matplotlib y sliders
+|-- io/
+|   +-- validation_loader.py
++-- robot/
+|   |-- env_wrapper.py
+|   |-- rl_loop.py
+|   +-- crossbar_brain.py
++-- validation/
+    |-- statistics.py
+    |-- prezioso2015_s3.py
+    +-- jo2010_stdp.py
+\end{verbatim}
+
+% =====================================================================
+\section{Descripción de los módulos principales}
+\label{sec:descripcion_modulos}
+
+\begin{table}[H]
+\caption{Resumen de módulos del paquete \texttt{neurolab}.}
+\label{tab:modulos_neurolab}
+\centering
+\begin{tabular}{l p{10cm}}
+\toprule
+Módulo & Responsabilidad Principal \\
+\midrule
+\texttt{neurolab.core} & Define la configuración, el dispositivo memristivo base y las métricas de validación. \\
+\texttt{neurolab.devices} & Implementa los modelos memristivos (Strukov, Yakopcic, Memristor Volátil). \\
+\texttt{neurolab.neurons} & Implementa la neurona Leaky Integrate-and-Fire (LIF) y su configuración. \\
+\texttt{neurolab.synapses} & Implementa la sinapsis memristiva y las reglas LTP/LTD y STDP. Los runners ofrecen REINFORCE y R-STDP: el primero actualiza $X$ con elegibilidad de pol\'itica; el segundo usa elegibilidad pre/acci\'on modulada por retornos descontados. En ambos, el memristor vol\'atil modula la corriente de entrada a las LIF. El R-STDP actual no usa el spike LIF como evento post ni aplica pulsos f\'isicos. El piloto de comparaci\'on est\'a en el ap\'endice de datos; no permite concluir superioridad estad\'istica. \\
+\texttt{neurolab.circuits} & Ensambla el circuito híbrido memristor-neurona. \\
+\texttt{neurolab.crossbar} & Gestiona matrices, solver nodal, resistencias de línea y validación. \\
+\texttt{neurolab.gui} & Proporciona la interfaz gráfica PySide6 con renderizado dinámico interactivo. \\
+\texttt{neurolab.io} & Gestiona la carga de perfiles y datos de validación. \\
+\texttt{neurolab.validation} & Agrupa validaciones estadísticas y comparaciones de referencia. Las métricas generales están en \texttt{neurolab.core.\allowbreak{}validation\_metrics}. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =====================================================================
+\input{Apendices/B_catalogos}
+
+% =====================================================================
+\section{Resumen de la suite de pruebas unitarias (Pytest)}
+\label{sec:suite_tests}
+
+El paquete declara Python 3.10 como versión mínima. Las pruebas de ambos subsistemas se ejecutaron el 27 de octubre de 2026
+bajo Python 3.14, desde la carpeta \texttt{02\_SOFTWARE} de la entrega,
+mediante el comando:
+\begin{quote}
+\raggedright\small
+\url{python -B -m pytest -q -p no:cacheprovider --basetemp .pytest-tmp neuromorphic_lab/tests robot_sim/tests}
+\end{quote}
+Se ejecutaron 165 pruebas y las 165 pasaron. La prueba adicional
+\textit{de invariancia del estado durante la lectura} realiza 1000 lecturas
+consecutivas y comprueba que el estado $X$ y la conductancia derivada
+$G$ permanezcan idénticos antes y después de la lectura. Esta ejecución
+verifica las pruebas automatizadas de ambos subsistemas, no reproduce
+por sí sola todas las métricas científicas transcritas en los apéndices.
+
+\begin{table}[H]
+\caption{Pruebas automatizadas de Neuromorphic Lab y Robot Sim: 165 aprobadas (27 de octubre de 2026).}
+\label{tab:resumen_tests}
+\centering
+\begin{tabular}{l c}
+\toprule
+Resultado & Número de pruebas \\
+\midrule
+Ejecutadas y aprobadas & 119 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =====================================================================
+\section{Fragmentos de Código Centrales}
+\label{sec:fragmentos_codigo}
+
+A continuación se exponen fragmentos representativos del núcleo matemático del simulador \texttt{neurolab}, ilustrando la aplicación de tipado estático, modularidad y las leyes físicas descritas en el marco teórico.
+
+\subsection{Modelo Matemático de Strukov (\texttt{strukov.py})}
+Implementación de la ecuación diferencial gobernante (dx/dt) encapsulada como un módulo matemático independiente.
+
+\begin{verbatim}
+class StrukovMathModel(BaseMathModel):
+    """
+    Modelo Matemático Determinista de Strukov et al. (Nature 2008).
+    Ecuación diferencial de deriva iónica normalizada:
+        dx/dt = (mu_v * R_on / D^2) * I(t)
+    """
+    def compute_dxdt(
+        self, state: float, voltage: float, current: float, 
+        electrical: ElectricalConfig,
+        model_config: Optional[StrukovConfig] = None
+    ) -> float:
+        cfg = model_config if model_config is not None else StrukovConfig()
+        v_th = float(getattr(cfg, "V_th", getattr(cfg, "v_th", 0.1)))
+        if v_th > 0 and abs(voltage) <= v_th:
+            return 0.0
+        return float((cfg.mu_v * electrical.r_on / (cfg.D ** 2)) * current)
+\end{verbatim}
+
+\subsection{Paso del Dispositivo (\texttt{core/memristor.py})}
+La API vigente obtiene la corriente antes de actualizar el estado y devuelve esa corriente. La integración y los modificadores se aplican en \texttt{update}.
+
+\begin{verbatim}
+def step(self, voltage: float, dt: float) -> float:
+    i = self.current(voltage)
+    self.update(voltage, dt)
+    return i
+\end{verbatim}

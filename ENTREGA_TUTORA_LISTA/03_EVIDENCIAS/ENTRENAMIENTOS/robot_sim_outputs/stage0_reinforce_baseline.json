@@ -1,0 +1,53 @@
+{
+  "stage": 0,
+  "purpose": "Frozen REINFORCE control reference before adding R-STDP",
+  "runner": "robot_sim/run_robot.py",
+  "runner_learning_rule": "REINFORCE default plus a separate R-STDP agent option",
+  "volatile_stage_required": true,
+  "reference_run": {
+    "log": "run_robot_reinforce_crossbar0_env0_encoder0_1000ep_stop430_20261023_171619_X0_0.1.json",
+    "weights_source": null,
+    "episodes_configured": 1000,
+    "episodes_recorded": 234,
+    "seeds": {
+      "crossbar": 0,
+      "environment": 0,
+      "encoder": 0,
+      "actions": 0
+    },
+    "initial_X": 0.1,
+    "initial_X_mean_observed": 0.09969404227987197,
+    "volatile_profile": "memristor_volatile.json",
+    "volatile_stage": {
+      "enabled": true,
+      "coupling": "series_thevenin",
+      "initial_x_min": 0.05,
+      "initial_x_max": 0.05
+    },
+    "reward_max": 490.5451340675354,
+    "last_20_reward_mean": 471.56198975145816,
+    "best_20_episode_mean": 472.4393717676401
+  },
+  "additional_reference_runs": [
+    {
+      "log": "run_robot_reinforce_crossbar5_env3_encoder2_1000ep_stop430_20261023_172958_X0_0.1.json",
+      "episodes_recorded": 193,
+      "weights_source": null,
+      "reward_max": 489.9015386104584,
+      "last_20_reward_mean": 474.2536420732737
+    },
+    {
+      "log": "run_robot_reinforce_crossbar4_env2_encoder3_1000ep_stop430_20261023_172346_X0_0.9.json",
+      "episodes_recorded": 860,
+      "weights_source": null,
+      "reward_max": 498.3072991967201,
+      "last_20_reward_mean": 479.74398942887785
+    }
+  ],
+  "invariants_for_later_stages": [
+    "Do not change the REINFORCE update path.",
+    "Keep the volatile memristor between crossbar current readout and LIF input.",
+    "Keep the same runner configuration and seed logging for REINFORCE comparisons.",
+    "Do not load saved crossbar weights unless the run explicitly selects them."
+  ]
+}

@@ -1,0 +1,7 @@
+quantity,value,units
+reference_voltage_min,-2.036583365368046,V
+reference_voltage_max,1.0118879160646346,V
+simulation_voltage_min,-2.0518257217752094,V
+simulation_voltage_max,1.027130272471798,V
+reference_voltage_coverage,100.0,%
+fit_metrics,not calculated,

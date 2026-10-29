@@ -1,0 +1,7 @@
+{
+  "N": 24,
+  "M": 12,
+  "convention": "X = 1 - x",
+  "initial_X": 0.1,
+  "json_memristor_nv": "strukov_ideal.json"
+}

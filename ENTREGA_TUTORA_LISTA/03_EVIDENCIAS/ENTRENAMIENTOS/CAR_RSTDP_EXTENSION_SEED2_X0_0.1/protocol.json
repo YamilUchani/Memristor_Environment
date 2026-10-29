@@ -1,0 +1,21 @@
+{
+  "evidence_type": "unique suffix from a deterministic replay; not an independent condition",
+  "date": "2026-10-28",
+  "runner": "robot_sim/run_car_rstdp.py",
+  "task": "2D autonomous car navigation (auto2d)",
+  "algorithm_label_in_logs": "R-STDP",
+  "seed": 2,
+  "initial_X": 0.1,
+  "crossbar_shape": [
+    24,
+    8
+  ],
+  "source_run_episodes_requested": 9000,
+  "source_run_episodes_completed": 2098,
+  "retained_episodes": [
+    751,
+    2098
+  ],
+  "duplicate_prefix_reference": "CAR_RSTDP_EVAL100_SEEDS_2_4_X0/runs/car_rstdp_seed2_X0_0.1/result.json (episodes 1-750)",
+  "interpretation": "The original run was replayed from its initial conditions. Episodes 1-750 match the retained seed-2, X0=0.1 trajectory and are omitted here to avoid duplicate episode records. Episodes 751-2098 are unique relative to that retained record. This is not a resumed checkpoint or an independent replicate. Training, same-map greedy, and held-out rates are distinct metrics."
+}

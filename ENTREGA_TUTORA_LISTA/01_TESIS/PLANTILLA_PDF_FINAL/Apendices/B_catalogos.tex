@@ -1,0 +1,131 @@
+% =====================================================================
+\section{Conjuntos de datos y salidas guardadas}
+\label{sec:catalogo_datos}
+
+La Tabla~\ref{tab:csv_datasets} reúne archivos de entrada y resultados
+guardados citados en los Apéndices A y D. Se indican sus rutas y estado de
+disponibilidad; la procedencia científica se mantiene según la atribución
+registrada en el proyecto. Los archivos de salida de simulación se
+distinguen expresamente de las referencias.
+
+\begingroup
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{longtable}{>{\raggedright\arraybackslash}p{3.8cm} >{\raggedright\arraybackslash}p{4.4cm} >{\raggedright\arraybackslash}p{5.2cm}}
+\caption{Inventario centralizado de datos de entrada y salidas CSV citados.}
+\label{tab:csv_datasets}
+\\
+\toprule
+\textbf{Archivo y ubicación} & \textbf{Contenido o uso} & \textbf{Estado en el proyecto} \\
+\midrule
+\endfirsthead
+\caption[]{Inventario de datos (continuación)} \\
+\toprule
+\textbf{Archivo y ubicación} & \textbf{Contenido o uso} & \textbf{Estado en el proyecto} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{r}{\textit{Continúa en la siguiente página...}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\url{02_SOFTWARE/neuromorphic_lab/data_validation/strukov_2008/CvsT.csv},
+\url{.../VvsT.csv} y \url{.../WDvsT.csv} &
+Series digitalizadas de corriente, voltaje y estado atribuidas a Strukov (2008) &
+Incluidas; son datos de referencia, no salidas del simulador \\
+\url{02_SOFTWARE/neuromorphic_lab/data_validation/prezioso/VvsC_Prezioso.csv} &
+Ciclo I--V asociado a Prezioso (2014) &
+Presente \\
+\url{02_SOFTWARE/neuromorphic_lab/data_validation/jo2010/jo2010_stdp.csv} y
+\url{.../jo2010_ltp_ltd.csv} &
+Series de referencia STDP y LTP/LTD &
+Presentes; asociadas a Jo et al. (2010) \\
+\url{02_SOFTWARE/neuromorphic_lab/validaciones/datos/validacion_wang2025.csv} &
+Resumen asociado a la validación Wang 2025; no contiene las señales originales &
+Incluido; es un resumen, no una serie temporal de referencia \\
+\url{02_SOFTWARE/neuromorphic_lab/validaciones/datos/validacion_strukov.csv} &
+Trazas simuladas $t$, $V$, $I$, $x$, $R$, $G$ y $P$ &
+Presente; salida del modelo, no CSV de referencia \\
+\url{02_SOFTWARE/neuromorphic_lab/validaciones/datos/validacion_d2d_c2c.csv} &
+Resumen de comprobaciones estadísticas sintéticas D2D/C2C &
+Presente; no contiene mediciones físicas \\
+\url{02_SOFTWARE/neuromorphic_lab/validaciones/datos/lif_fi_curve.csv} &
+Frecuencia LIF simulada y solución analítica para 14 corrientes &
+Generado por \texttt{26\_lif\_fi\_curve.py}; no es referencia experimental \\
+\url{02_SOFTWARE/neuromorphic_lab/validaciones/datos/validacion_estadistica_completa.csv} &
+Resultados estadísticos archivados de variabilidad D2D/C2C &
+Presente; fuente de los valores archivados señalados en C-1 \\
+\url{02_SOFTWARE/neuromorphic_lab/validaciones/datos/prezioso_s3a_modelo_ejemplo.csv} y variantes \texttt{s3b/s3c} &
+Curvas, matriz e histograma sintéticos para D-21/D-22 &
+Presentes; datos generados por el modelo local, no mediciones publicadas \\
+\url{02_SOFTWARE/neuromorphic_lab/validaciones/datos/lif_behavior_qualitative.csv} &
+Traza temporal LIF que acompaña la figura de comportamiento &
+Incluida; salida simulada, no datos experimentales de Wang \\
+\url{02_SOFTWARE/neuromorphic_lab/validaciones/datos/validacion_iv_ltp_ltd.csv} &
+Datos guardados de la simulación de histéresis I--V &
+Presente; asociado a V21 y al script \texttt{19\_iv\_histeresis.py} \\
+\url{02_SOFTWARE/neuromorphic_lab/validaciones/datos/lif_rc_validation.csv} &
+Trazas de la prueba numérica LIF subumbral frente a la solución RC analítica &
+Presente; CSV archivado asociado a V22, separado de la comparación cualitativa con Wang \\
+\end{longtable}
+\endgroup
+
+% =====================================================================
+\section{Catálogo de figuras y scripts asociados}
+\label{sec:catalogo_figuras}
+
+El catálogo es una guía de localización de 26 entradas que agrupan 32
+archivos gráficos representativos. No sustituye las figuras y explicaciones
+técnicas del Apéndice D ni constituye un inventario exhaustivo de todos los
+recursos del repositorio.
+
+\begingroup
+\small
+\renewcommand{\arraystretch}{0.9}
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{>{\centering\arraybackslash}p{0.8cm} >{\raggedright\arraybackslash}p{4cm} >{\raggedright\arraybackslash}p{3.5cm} >{\raggedright\arraybackslash}p{5.8cm}}
+\caption[Selección de figuras generadas]{Selección de figuras y scripts asociados; 26 entradas agrupan 32 archivos gráficos.}
+\label{tab:catalogo_figuras} \\
+\toprule
+\# & Archivo de figura & Script asociado & Contenido representado \\
+\midrule
+\endfirsthead
+\caption[]{Catálogo de figuras y scripts asociados (continuación)} \\
+\toprule
+\# & Archivo de figura & Script asociado & Contenido representado \\
+\midrule
+\endhead
+\midrule
+\multicolumn{4}{r}{\textit{Continúa en la siguiente página...}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+1 & \texttt{fig\_\allowbreak{}01\_\allowbreak{}strukov.png} & \texttt{01\_\allowbreak{}strukov\_\allowbreak{}2008.py} & Seis paneles de Strukov \\
+2 & \texttt{fig\_\allowbreak{}02\_\allowbreak{}prezioso.png} & \texttt{02\_\allowbreak{}prezioso\_\allowbreak{}2014.py} & Curva del modelo Yakopcic \\
+3 & \texttt{fig\_\allowbreak{}03\_\allowbreak{}lif.png} & \texttt{03\_\allowbreak{}lif\_\allowbreak{}analitica.py} & Respuesta subumbral LIF \\
+4 & \texttt{fig\_\allowbreak{}04\_\allowbreak{}convergencia.png} & \texttt{04\_\allowbreak{}convergencia.py} & Convergencia temporal \\
+5 & \texttt{fig\_\allowbreak{}05\_\allowbreak{}d2d\_\allowbreak{}c2c.png} & \texttt{05\_\allowbreak{}d2d\_\allowbreak{}c2c.py} & Variabilidad D2D y C2C \\
+6 & \texttt{fig\_\allowbreak{}06\_\allowbreak{}hfo2\_\allowbreak{}isi\_\allowbreak{}legible.pdf} & \texttt{06\_\allowbreak{}hfo2\_\allowbreak{}isi.py} & Acoplamiento HfO$_2$--LIF \\
+7 & \texttt{fig\_07\_r\_x.png} & \texttt{07\_\allowbreak{}r\_\allowbreak{}x\_\allowbreak{}consistencia.py} & Relación $R(x)$ \\
+8 & \texttt{fig\_\allowbreak{}08\_\allowbreak{}rs\_\allowbreak{}x.png} & \texttt{08\_\allowbreak{}rs\_\allowbreak{}de\_\allowbreak{}x.py} & Resistencia $R_S$ frente a $x(t)$ \\
+9 & \texttt{fig\_\allowbreak{}09\_\allowbreak{}dt\_\allowbreak{}extremos.png} & \texttt{09\_\allowbreak{}dt\_\allowbreak{}extremos.py} & Estabilidad temporal \\
+10 & \texttt{fig\_\allowbreak{}10\_\allowbreak{}triangular.png} & \texttt{10\_\allowbreak{}triangular.py} & Respuesta a excitación triangular \\
+11 & \texttt{fig\_\allowbreak{}11\_\allowbreak{}ruido.png} & \texttt{11\_\allowbreak{}ruido.py} & Sensibilidad paramétrica al ruido \\
+12 & \texttt{fig\_\allowbreak{}12\_\allowbreak{}estadistica.png} & \texttt{12\_\allowbreak{}estadistica.py} & Estadística D2D/C2C archivada \\
+13 & \texttt{fig\_\allowbreak{}13\_\allowbreak{}lif\_\allowbreak{}behavior.pdf} & \texttt{25\_\allowbreak{}lif\_\allowbreak{}behavior.py} & Integración y disparo LIF cualitativos \\
+14 & \texttt{fig\_\allowbreak{}14\_\allowbreak{}ltp\_\allowbreak{}ltd.png} & \texttt{14\_\allowbreak{}ltp\_\allowbreak{}ltd.py} & Pulsos LTP/LTD \\
+15 & \texttt{fig\_\allowbreak{}15\_\allowbreak{}stdp.png} & \texttt{15\_\allowbreak{}stdp.py} & Ventana STDP \\
+16 & \texttt{fig\_\allowbreak{}16\_\allowbreak{}ciclo.png} & \texttt{16\_\allowbreak{}ltp\_\allowbreak{}ltd\_\allowbreak{}ciclo.py} & Ciclos LTP/LTD \\
+17 & \texttt{fig\_\allowbreak{}17\_\allowbreak{}stdp\_\allowbreak{}spikes.png} & \texttt{17\_\allowbreak{}stdp\_\allowbreak{}spikes.py} & Solapamiento de pulsos STDP \\
+18 & \texttt{fig\_\allowbreak{}18\_\allowbreak{}stdp\_\allowbreak{}temporal.png} & \texttt{18\_\allowbreak{}stdp\_\allowbreak{}temporal.py} & Evolución temporal de pesos \\
+19 & \texttt{fig\_19\_\allowbreak{}iv\_\allowbreak{}hysteresis.png} & \texttt{19\_\allowbreak{}iv\_\allowbreak{}histeresis.py} & Histéresis I--V \\
+20 & \texttt{fig\_20\_\allowbreak{}vi\_\allowbreak{}ltp\_\allowbreak{}ltd.png} & \texttt{20\_\allowbreak{}vi\_\allowbreak{}ltp\_\allowbreak{}ltd.py} & Variables V-I-R-G \\
+21a-d & \texttt{fig\_21a-d\_\allowbreak{}crossbar\_\allowbreak{}*.png} & \texttt{21\_\allowbreak{}crossbar\_\allowbreak{}1x1.py} & Señales del crossbar $1\times1$ \\
+22 & \texttt{fig\_22\_\allowbreak{}prezioso\_\allowbreak{}v2.png} & \texttt{22\_\allowbreak{}prezioso\_\allowbreak{}v2.py} & Respuesta I--V simulada \\
+23a-c & \texttt{23a--23c\_\allowbreak{}prezioso\_\allowbreak{}s3*\_\allowbreak{}modelo\_\allowbreak{}ejemplo.pdf} & \texttt{23\_\allowbreak{}prezioso\_\allowbreak{}s3.py} & Curvas cualitativas y matriz sintética \\
+24 & \texttt{auto2d\_\allowbreak{}trayectoria\_\allowbreak{}seed0.png} & \texttt{generate\_\allowbreak{}auto2d\_\allowbreak{}trajectory.py} & Ejemplo de trayectoria exitosa guardada en Auto 2D \\
+25 & \texttt{lif\_fi\_curve.png} & \texttt{26\_\allowbreak{}lif\_\allowbreak{}fi\_\allowbreak{}curve.py} & Curva LIF frecuencia--corriente y solución analítica \\
+26 & \url{fig_14b_ltp_ltd_jo2010.png}; \url{fig_15b_stdp_jo2010.png} & \url{24_jo2010_white.py} & Ajustes LTP/LTD y STDP de Jo et al. \\
+\end{longtable}
+\endgroup
