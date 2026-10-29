@@ -931,9 +931,20 @@ def _plot_run(run_dir: Path, domain: str, initial_X: np.ndarray,
         rolling = np.asarray([], dtype=float)
         x = np.asarray([], dtype=int)
     fig, axes = plt.subplots(1, 2, figsize=(11, 4))
-    axes[0].plot(x, rolling, color="tab:blue", lw=1.5)
+    # A run ending at exactly one window has a single rolling-average value.
+    # Without a marker, that point is invisible; the margin also keeps a 0%
+    # curve distinct from the bottom axis.
+    axes[0].plot(
+        x,
+        rolling,
+        color="tab:blue",
+        lw=1.5,
+        marker="o",
+        markersize=3,
+        markevery=max(1, rolling.size // 30),
+    )
     axes[0].axhline(target, color="tab:red", ls="--", label=f"meta {target:.0%}")
-    axes[0].set(xlabel="Episodio", ylabel=f"Éxito móvil ({window})", ylim=(0, 1.02))
+    axes[0].set(xlabel="Episodio", ylabel=f"Éxito móvil ({window})", ylim=(-0.05, 1.02))
     axes[0].grid(alpha=0.25)
     axes[0].legend()
     axes[0].set_title(f"{domain}: éxito durante entrenamiento")
