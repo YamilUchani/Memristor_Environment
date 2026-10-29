@@ -170,9 +170,10 @@ donde $\pi_{j,t}$ es la probabilidad softmax de la columna $j$. La softmax
 convierte puntuaciones en probabilidades que suman uno: una temperatura alta
 reparte m\'as la probabilidad y una baja la concentra. El decoder muestrea
 seg\'un esa distribuci\'on y la regla de aprendizaje ajusta el crossbar con el
-resultado del episodio. La implementaci\'on se describe en
-\texttt{robot\_sim/neurobot/agent.py} y
-\texttt{robot\_sim/neurobot/crossbar\_brain.py}.
+resultado del episodio. Esta forma de gradiente de pol\'itica se basa en REINFORCE y en los m\'etodos
+de aprendizaje por refuerzo descritos en la literatura~\cite{Williams1992REINFORCE,SuttonBarto2018}. La implementaci\'on se describe en
+\url{robot_sim/neurobot/reinforce_agent.py} y
+\url{robot_sim/neurobot/crossbar_brain.py}.
 
 La regla local STDP del laboratorio usa spikes binarios pre/post y trazas
 exponenciales $p_i$ y $q_j$:
@@ -187,7 +188,9 @@ En la regla R-STDP del m\'odulo, la elegibilidad decae y acumula ese cambio:
 E_{ij,t}=e^{-dt/\tau_e}E_{ij,t-1}+\Delta G_{ij,t}^{\mathrm{STDP}},
 \qquad \Delta G_{ij,t}^{\mathrm{R-STDP}}=R_tE_{ij,t}.
 \]
-El m\'odulo correspondiente es \texttt{neurolab/crossbar/plasticity.py}.
+Esta formulaci\'on de elegibilidad modulada por recompensa sigue el marco
+conceptual de R-STDP~\cite{Izhikevich2007RSTD}; en este proyecto, la regla
+local implementada se describe en \url{neurolab/crossbar/plasticity.py}.
 
 Las corridas del agente etiquetadas R-STDP en el Ap\'endice
 \ref{ap:evidencia_entrenamientos} no implementan esa regla estricta con

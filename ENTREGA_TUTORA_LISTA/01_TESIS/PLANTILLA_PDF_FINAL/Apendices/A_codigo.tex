@@ -68,7 +68,7 @@ neurolab/
 Módulo & Responsabilidad Principal \\
 \midrule
 \texttt{neurolab.core} & Define la configuración, el dispositivo memristivo base y las métricas de validación. \\
-\texttt{neurolab.devices} & Implementa los modelos memristivos (Strukov, Yakopcic, Memristor Volátil). \\
+\texttt{neurolab.devices} & Implementa los modelos memristivos (Strukov, Yakopcic~\cite{32}, Memristor Volátil). \\
 \texttt{neurolab.neurons} & Implementa la neurona Leaky Integrate-and-Fire (LIF) y su configuración. \\
 \texttt{neurolab.synapses} & Implementa la sinapsis memristiva y las reglas LTP/LTD y STDP. Los runners ofrecen REINFORCE y R-STDP: el primero actualiza $X$ con elegibilidad de pol\'itica; el segundo usa elegibilidad pre/acci\'on modulada por retornos descontados. En ambos, el memristor vol\'atil modula la corriente de entrada a las LIF. El R-STDP actual no usa el spike LIF como evento post ni aplica pulsos f\'isicos. El piloto de comparaci\'on est\'a en el ap\'endice de datos; no permite concluir superioridad estad\'istica. \\
 \texttt{neurolab.circuits} & Ensambla el circuito híbrido memristor-neurona. \\

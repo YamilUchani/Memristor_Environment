@@ -811,7 +811,7 @@ LaTeX Info: Redefining \. on input line 26.
 LaTeX Info: Redefining \% on input line 26.
  (Simbolos/simbolos.aux) (Cap1/cap1.aux)
 (Cap2/cap2.aux) (Cap3/cap3.aux) (Cap4/cap4.aux) (Apendices/Apendices.aux)
-(Apendices/D_extendido_main.aux))
+(Apendices/D_extendido_main.aux) (Apendices/F_entrenamientos.aux))
 \openout1 = `main.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 63.
@@ -842,12 +842,12 @@ LaTeX Font Info:    ... okay on input line 63.
 LaTeX Info: Redefining \. on input line 63.
 LaTeX Info: Redefining \% on input line 63.
 Package hyperref Info: Link coloring OFF on input line 63.
- (nameref.sty
+
+(nameref.sty
 Package: nameref 2021-04-02 v2.47 Cross-referencing by name of section
  (refcount.sty
 Package: refcount 2019/12/15 v3.6 Data extraction from label references (HO)
-)
-(gettitlestring.sty
+) (gettitlestring.sty
 Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
 )
 \c@section@level=\count368
@@ -862,7 +862,8 @@ LaTeX Info: Redefining \nameref on input line 63.
 Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: listings package is loaded.
 Package caption Info: longtable package is loaded.
- (ltcaption.sty
+
+(ltcaption.sty
 Package: ltcaption 2021/01/08 v1.4c longtable captions (AR)
 )
 Package caption Info: rotating package is loaded.
@@ -978,8 +979,8 @@ Package spanish Warning: Replacing `TU/lmr/bx/sc' by
 [9
 
 ]
-LaTeX Info: Redefining \. on input line 83.
-LaTeX Info: Redefining \% on input line 83.
+LaTeX Info: Redefining \. on input line 67.
+LaTeX Info: Redefining \% on input line 67.
  [10])
 \tf@toc=\write6
 \openout6 = `main.toc'.
@@ -989,34 +990,15 @@ LaTeX Info: Redefining \% on input line 77.
  [11] (main.lof
 LaTeX Info: Redefining \. on input line 1.
 LaTeX Info: Redefining \% on input line 1.
+ [12
 
-Overfull \hbox (5.78136pt too wide) in paragraph at lines 12--12
- \TU/lmr/m/n/12 la Figura \TU/lmr/bx/sc/12 3-9\TU/lmr/m/n/12 . Generada por \TU
-/lmtt/m/n/12 robot_sim/generate_thesis_test_figures.py\TU/lmr/m/n/12 .[] [][]  
-
- []
-
-
-Overfull \hbox (22.72134pt too wide) in paragraph at lines 14--14
- \TU/lmr/m/n/12 dispositivo físico. Generada por \TU/lmtt/m/n/12 robot_sim/gene
-rate_thesis_test_figures.py\TU/lmr/m/n/12 .[] [][]  
- []
-
-[12
-
-]
-LaTeX Info: Redefining \. on input line 44.
-LaTeX Info: Redefining \% on input line 44.
- [13]
-LaTeX Info: Redefining \. on input line 63.
-LaTeX Info: Redefining \% on input line 63.
- [14])
+])
 \tf@lof=\write7
 \openout7 = `main.lof'.
 
 LaTeX Info: Redefining \. on input line 78.
 LaTeX Info: Redefining \% on input line 78.
- [15] (main.lot
+ [13] (main.lot
 LaTeX Info: Redefining \. on input line 1.
 LaTeX Info: Redefining \% on input line 1.
 
@@ -1029,60 +1011,13 @@ Overfull \hbox (0.43198pt too wide) detected at line 18
 \TU/lmr/bx/sc/12 3-11\TU/lmr/m/n/12 . 
  []
 
-
-Overfull \hbox (0.43198pt too wide) detected at line 19
-\TU/lmr/bx/sc/12 3-12\TU/lmr/m/n/12 . 
- []
-
-
-Overfull \hbox (0.43198pt too wide) detected at line 20
-\TU/lmr/bx/sc/12 3-13\TU/lmr/m/n/12 . 
- []
-
-
-Overfull \hbox (0.43198pt too wide) detected at line 21
-\TU/lmr/bx/sc/12 3-14\TU/lmr/m/n/12 . 
- []
-
-
-Overfull \hbox (0.43198pt too wide) detected at line 22
-\TU/lmr/bx/sc/12 3-15\TU/lmr/m/n/12 . 
- []
-
-
-Overfull \hbox (0.43198pt too wide) detected at line 23
-\TU/lmr/bx/sc/12 3-16\TU/lmr/m/n/12 . 
- []
-
-[16
-
-]
-Overfull \hbox (0.43198pt too wide) detected at line 24
-\TU/lmr/bx/sc/12 3-17\TU/lmr/m/n/12 . 
- []
-
-
-Overfull \hbox (0.43198pt too wide) detected at line 25
-\TU/lmr/bx/sc/12 3-18\TU/lmr/m/n/12 . 
- []
-
-
-Overfull \hbox (0.43198pt too wide) detected at line 26
-\TU/lmr/bx/sc/12 3-19\TU/lmr/m/n/12 . 
- []
-
-
-Overfull \hbox (0.43198pt too wide) detected at line 27
-\TU/lmr/bx/sc/12 3-20\TU/lmr/m/n/12 . 
- []
-
 )
 \tf@lot=\write8
 \openout8 = `main.lot'.
 
-LaTeX Info: Redefining \. on input line 80.
-LaTeX Info: Redefining \% on input line 80.
- [17]
+ [14
+
+]
 \openout2 = `Cap1/cap1.aux'.
 
  (Cap1/cap1.tex
@@ -1173,17 +1108,22 @@ Underfull \hbox (badness 10000) in paragraph at lines 442--442
 
 
 Underfull \hbox (badness 10000) in paragraph at lines 442--442
-[]|[]$[][] [] [][][][][][][][] []
+[]|\TU/lmtt/m/n/10.95 StrukovConfig\TU/lmr/m/n/10.95 ,
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 442--442
-[][][][][][][][][][][][] [] [][][] []
+Underfull \hbox (badness 1033) in paragraph at lines 442--442
+[]|\TU/lmr/m/n/10.95 Umbral predeterminado
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 442--442
-[][][][][][][][] [] [][][][][][][] []
+Underfull \hbox (badness 5548) in paragraph at lines 442--442
+[]|\TU/lmr/m/n/10.95 Rail de lectura; ruta
+ []
+
+
+Underfull \hbox (badness 1596) in paragraph at lines 442--442
+\TU/lmr/m/n/10.95 MNA sin actualizacion
  []
 
 
@@ -1210,1027 +1150,136 @@ File: figuras/esquema_general.png Graphic file (type bmp)
 
 
 ]
-LaTeX Info: Redefining \. on input line 98.
-LaTeX Info: Redefining \% on input line 98.
+LaTeX Info: Redefining \. on input line 94.
+LaTeX Info: Redefining \% on input line 94.
  [24]
-LaTeX Info: Redefining \. on input line 143.
-LaTeX Info: Redefining \% on input line 143.
+LaTeX Info: Redefining \. on input line 138.
+LaTeX Info: Redefining \% on input line 138.
  [25]
-LaTeX Info: Redefining \. on input line 203.
-LaTeX Info: Redefining \% on input line 203.
+LaTeX Info: Redefining \. on input line 178.
+LaTeX Info: Redefining \% on input line 178.
  [26]
-LaTeX Info: Redefining \. on input line 253.
-LaTeX Info: Redefining \% on input line 253.
+LaTeX Info: Redefining \. on input line 252.
+LaTeX Info: Redefining \% on input line 252.
  [27]
-Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
-nput line 283.
-LaTeX Info: Redefining \. on input line 319.
-LaTeX Info: Redefining \% on input line 319.
- [28]
-LaTeX Info: Redefining \. on input line 388.
-LaTeX Info: Redefining \% on input line 388.
- [29]
-LaTeX Info: Redefining \. on input line 446.
-LaTeX Info: Redefining \% on input line 446.
- [30]
-LaTeX Info: Redefining \. on input line 504.
-LaTeX Info: Redefining \% on input line 504.
- [31]
-Overfull \hbox (19.60382pt too wide) in paragraph at lines 515--523
-[][][][][][][][][][][][] [] [][][] [] [][][][][][][][][][][][] [] [][] [] [][][
-][][][][] [] [][][][] [] [][]$[]\TU/lmr/m/n/12 ; el archivo \TU/lmtt/m/n/12 val
-idacion_strukov.csv
- []
-
 File: figuras/fig_01_strukov.png Graphic file (type bmp)
 <figuras/fig_01_strukov.png>
-
-Underfull \hbox (badness 3942) in paragraph at lines 527--527
-[]\TU/lmr/m/n/12 Figura \TU/lmr/bx/sc/12 3-2\TU/lmr/m/n/12 : |Curva I–V y señal
-es complementarias generadas por []$[][] [] [][][][][][][][] []
- []
-
-LaTeX Info: Redefining \. on input line 530.
-LaTeX Info: Redefining \% on input line 530.
-[32]
-LaTeX Info: Redefining \. on input line 573.
-LaTeX Info: Redefining \% on input line 573.
- [33]
-Underfull \hbox (badness 1383) in paragraph at lines 618--618
-[]|\TU/lmr/bx/n/10.95 Fuera del alcance
- []
-
-
-Underfull \hbox (badness 3364) in paragraph at lines 618--618
-[]|\TU/lmr/m/n/10.95 D2D sobre $\OML/cmm/m/it/10.95 G[]$ \TU/lmr/m/n/10.95 por
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 618--618
-\TU/lmr/m/n/10.95 celda en \TU/lmtt/m/n/10.95 neurolab
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 618--618
-\TU/lmtt/m/n/10.95 .crossbar.core
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 618--618
-[]|\TU/lmr/m/n/10.95 No es el meca-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 618--618
-\TU/lmr/m/n/10.95 nismo usado por
- []
-
-
-Underfull \hbox (badness 1147) in paragraph at lines 618--618
-\TU/lmr/m/n/10.95 esta clase en Robot
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 618--618
-[]|\TU/lmr/m/n/10.95 D2D sobre $\OML/cmm/m/it/10.95 R[]$
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 618--618
-\TU/lmr/m/n/10.95 y $\OML/cmm/m/it/10.95 R[]$ \TU/lmr/m/n/10.95 median-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 618--618
-\TU/lmr/m/n/10.95 te \TU/lmtt/m/n/10.95 apply_to_
- []
-
-
-Underfull \hbox (badness 8151) in paragraph at lines 618--618
-[]|\TU/lmr/m/n/10.95 Correspondencia ex-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 618--618
-[]|\TU/lmr/m/n/10.95 C2C sobre veloci-
- []
-
-
-Underfull \hbox (badness 1472) in paragraph at lines 618--618
-\TU/lmr/m/n/10.95 dad de conmutación
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 618--618
-[]|\TU/lmr/m/n/10.95 Sí, mediante ruido
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 618--618
-\TU/lmr/m/n/10.95 Ornstein–Uhlenbeck
- []
-
-
-Underfull \hbox (badness 8151) in paragraph at lines 618--618
-[]|\TU/lmr/m/n/10.95 Correspondencia ex-
- []
-
-
-Underfull \hbox (badness 1048) in paragraph at lines 618--618
-[]|\TU/lmr/m/n/10.95 Acoplamiento parási-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 618--618
-[]|\TU/lmr/m/n/10.95 Parcial; crosstalk
- []
-
-
-Overfull \hbox (8.1291pt too wide) in paragraph at lines 618--618
-[]|\TU/lmr/m/n/10.95 Programación/escritura
- []
-
-
-Underfull \hbox (badness 8151) in paragraph at lines 618--618
-[]|\TU/lmr/m/n/10.95 Correspondencia ex-
- []
-
-LaTeX Info: Redefining \. on input line 620.
-LaTeX Info: Redefining \% on input line 620.
-[34]
-LaTeX Info: Redefining \. on input line 636.
-LaTeX Info: Redefining \% on input line 636.
- [35]
-LaTeX Info: Redefining \. on input line 691.
-LaTeX Info: Redefining \% on input line 691.
- [36]
-LaTeX Info: Redefining \. on input line 757.
-LaTeX Info: Redefining \% on input line 757.
- [37]
-LaTeX Info: Redefining \. on input line 811.
-LaTeX Info: Redefining \% on input line 811.
- [38]
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[]|[]$[][] [] [][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[][][][][][][][][][][][] [] [][][] [] [][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[][][][][][][][][][] [] [][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[]|\TU/lmr/m/n/10.95 Strukov et al. (2008),
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[]|[]$[][] [] [][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[][][][][][][][][][][][] [] [][][] [] [][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[][][][][][][][][][] [] [][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[]|\TU/lmr/m/n/10.95 Strukov et al. (2008),
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[]|[]$[][] [] [][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[][][][][][][][][][][][] [] [][][] [] [][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[][][][][][][][][][] [] [][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[]|\TU/lmr/m/n/10.95 Strukov et al. (2008),
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[]|[]$[][] [] [][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[][][][][][][][][][][][] [] [][][] [] [][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[][][][][][][][][][] [] [][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[]|\TU/lmr/m/n/10.95 Prezioso et al. (2014),
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[]|[]$[][] [] [][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[][][][][][][][][][][][] [] [][][] [] [][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[][][][][][][][][][] [] [][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[]|[]$[][] [] [][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[][][][][][][][][][][][] [] [][][] [] [][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 864--864
-[][][][][][][][][][] [] [][][][][][] []
- []
-
-LaTeX Info: Redefining \. on input line 866.
-LaTeX Info: Redefining \% on input line 866.
-[39]
-Overfull \hbox (28.33301pt too wide) in paragraph at lines 867--872
-[][][][][][][] [] [][][][] [] [][]$[] \TU/lmr/m/n/12 guarda []$[][] [] [][][][]
-[][][][] [] [][][][][][][][][][][][] [] [][][] [] [][][][][][][][][][][][] [] [
-][][][][] [] [][][][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[]|[]$[][] [] [][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][][][][][][][][] [] [][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][] [] [][][][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][][][] [] [][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[]|[]$[][] [] [][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][] [] [][][][][][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][] [] [][][][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[]|[]$[][] [] [][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][][][][][][][][] [] [][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][] [] [][][][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][][][] [] [][][][] [] [][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[]|[]$[][] [] [][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][] [] [][][][][][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][] [] [][][][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][][][] [] [][][]$[]
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-\TU/lmr/m/n/10.95 (\TU/lmtt/m/n/10.95 I_sim_A\TU/lmr/m/n/10.95 ); inter-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-\TU/lmr/m/n/10.95 de []$[][] [] [][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][][][][][][][][] [] [][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][] [] [][][][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][][][] [] [][][][] [] [][][][] []
- []
-
-
-Underfull \hbox (badness 6675) in paragraph at lines 924--924
-[]|\TU/lmtt/m/n/10.95 R_sim_ohm\TU/lmr/m/n/10.95 , \TU/lmtt/m/n/10.95 G_sim_S\T
-U/lmr/m/n/10.95 ;
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[]|[]$[][] [] [][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][][][][][][][][] [] [][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][] [] [][][][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][][] [] [][][][][][] []
- []
-
-
-Underfull \hbox (badness 1953) in paragraph at lines 924--924
-[][][][] [] [][][]$[]\TU/lmr/m/n/10.95 ; 13 puntos
- []
-
-
-Underfull \hbox (badness 2285) in paragraph at lines 924--924
-\TU/lmr/m/n/10.95 lidador a Jo et al.,
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[]|\TU/lmr/m/n/10.95 Ajuste exponen-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-\TU/lmr/m/n/10.95 cial LTP/LTD
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-\TU/lmr/m/n/10.95 de []$[][] [] [][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][][][][][][][][] [] [][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][][][][][][][][] [] [][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][][] [] [][][][][] [] [][]$[]\TU/lmr/m/n/10.95 ,
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[]|[]$[][] [] [][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][][][][][][][][] [] [][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][] [] [][][][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][][] [] [][][][][][] [] [][][] []
- []
-
-
-Underfull \hbox (badness 7777) in paragraph at lines 924--924
-[][][] [] [][][]$[]\TU/lmr/m/n/10.95 ; 87 puntos
- []
-
-
-Underfull \hbox (badness 2285) in paragraph at lines 924--924
-\TU/lmr/m/n/10.95 lidador a Jo et al.,
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[]|\TU/lmr/m/n/10.95 Parámetros efectivos
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-\TU/lmr/m/n/10.95 tos train; selección
- []
-
-
-Underfull \hbox (badness 6157) in paragraph at lines 924--924
-\TU/lmr/m/n/10.95 entre tres inicializa-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[]|[]$[][] [] [][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][][][][][][][][] [] [][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][] [] [][][][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][][][][] [] [][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][][][][] [] [][][]$[]\TU/lmr/m/n/10.95 ; 179
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-\TU/lmr/m/n/10.95 puntos digitalizados
- []
-
-
-Underfull \hbox (badness 2173) in paragraph at lines 924--924
-[]|\TU/lmr/m/n/10.95 Reconstrucción visual
- []
-
-
-Underfull \hbox (badness 5388) in paragraph at lines 924--924
-\TU/lmr/m/n/10.95 es referencia experi-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[]|[]$[][] [] [][][][][][][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][][][][][][][][] [] [][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 924--924
-[][][][][][][][][][][][] [] [][] []
- []
-
-
-Underfull \hbox (badness 2368) in paragraph at lines 924--924
-[][][] [] [][] [] [][][][][] [] [][]$[]\TU/lmr/m/n/10.95 ; 14
- []
-
-
-LaTeX Warning: Float too large for page by 183.0525pt on input line 925.
-
-LaTeX Info: Redefining \. on input line 943.
-LaTeX Info: Redefining \% on input line 943.
-[40]
-LaTeX Info: Redefining \. on input line 943.
-LaTeX Info: Redefining \% on input line 943.
- [41]
-Underfull \hbox (badness 10000) in paragraph at lines 1015--1015
-[]|[]$[][] [] [][][][][][][][] [] [][][][][][][][][][][][] [] [][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1015--1015
-[][][][][][][][][][][][] [] [][] [] [][][][][][][] [] [][][][] [] [][]$[]\TU/lm
-r/m/n/10 ;
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1015--1015
-[]$[][] [] [][][][][][][][] [] [][][][][][][][][][][][] [] [][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1015--1015
-[]|[]$[][] [] [][][][][][][][] [] [][][][][][][][][][][][] [] [][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1015--1015
-[]|[]$[][] [] [][][][][][][][] [] [][][][][][][][][][][][] [] [][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1015--1015
-[][][][][][][][][][][][] [] [][] [] [][][] [] [][] [] [][][][][] [] [][]$[]\TU/
-lmr/m/n/10 ;
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1015--1015
-[]$[][] [] [][][][][][][][] [] [][][][][][][][][][][][] [] [][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1015--1015
-[]|[]$[][] [] [][][][][][][][] [] [][][][][][][][][][][][] [] [][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1015--1015
-[][][][][][][][][][][][] [] [][] [] [][][][][][] [] [][][][][] [] [][]$[]\TU/lm
-r/m/n/10 ;
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1015--1015
-[]$[][] [] [][][][][][][][] [] [][][][][][][][][][][][] [] [][][] [] [][][][] [
-]
- []
-
-
-Underfull \hbox (badness 1540) in paragraph at lines 1015--1015
-\OML/cmm/m/it/10 R[] \OT1/cmr/m/n/10 = 80[]958 M
-$\TU/lmr/m/n/10 , $\OML/cmm/m/it/10 x[] \OT1/cmr/m/n/10 = 0[]03793$ \TU/lmr/m/n
-/10 y
- []
-
-
-Underfull \hbox (badness 1237) in paragraph at lines 1015--1015
-\TU/lmr/m/n/10 coeficiente de deriva efectivo $\OT1/cmr/m/n/10 7[]5475 \OMS/cms
-y/m/n/10 ^^B
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1015--1015
-[]|[]$[][] [] [][][][][][][][] [] [][][][][][][][][][][][] [] [][][] []
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1015--1015
-[][][][][][][][][][][][] [] [][] [] [][][][][][] [] [][][][][] [] [][]$[]\TU/lm
-r/m/n/10 ;
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1015--1015
-[]$[][] [] [][][][][][][][] [] [][][][][][][][][][][][] [] [][][] [] [][][][] [
-]
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1015--1015
-[][][][][][][][][][] [] [][][][][][] [] [][][][][][] [] [][][] [] [][][] []
- []
-
-
-Underfull \hbox (badness 1527) in paragraph at lines 1015--1015
-[]|$\OML/cmm/m/it/10 G \OT1/cmr/m/n/10 = []  S$\TU/lmr/m/n/10 , $\OML/cmm/m/it/
-10 V \OT1/cmr/m/n/10 =
- []
-
-LaTeX Info: Redefining \. on input line 1017.
-LaTeX Info: Redefining \% on input line 1017.
-[42]
-Underfull \hbox (badness 10000) in paragraph at lines 1038--1038
-[]|\TU/lmr/m/n/10.95 Strukov, corriente
- []
-
-
-Underfull \hbox (badness 1082) in paragraph at lines 1038--1038
-[]|\TU/lmr/m/n/10.95 Strukov, resistencia
- []
-
-
-Underfull \hbox (badness 3386) in paragraph at lines 1038--1038
-[]|\TU/lmr/m/n/10.95 STDP, holdout (4
- []
-
-LaTeX Info: Redefining \. on input line 1040.
-LaTeX Info: Redefining \% on input line 1040.
-[43]
-LaTeX Info: Redefining \. on input line 1106.
-LaTeX Info: Redefining \% on input line 1106.
- [44]
+LaTeX Info: Redefining \. on input line 281.
+LaTeX Info: Redefining \% on input line 281.
+ [28]
+LaTeX Info: Redefining \. on input line 332.
+LaTeX Info: Redefining \% on input line 332.
+ [29]
 File: figuras/fig_15b_stdp_jo2010.png Graphic file (type bmp)
 <figuras/fig_15b_stdp_jo2010.png>
-LaTeX Info: Redefining \. on input line 1117.
-LaTeX Info: Redefining \% on input line 1117.
- [45]
 File: figuras/fig_14b_ltp_ltd_jo2010.png Graphic file (type bmp)
 <figuras/fig_14b_ltp_ltd_jo2010.png>
-LaTeX Info: Redefining \. on input line 1130.
-LaTeX Info: Redefining \% on input line 1130.
- [46]
-LaTeX Info: Redefining \. on input line 1159.
-LaTeX Info: Redefining \% on input line 1159.
- [47]
-File: figuras/lif_fi_curve.png Graphic file (type bmp)
-<figuras/lif_fi_curve.png>
-File: figuras/lif_behavior_qualitative.pdf Graphic file (type pdf)
-<use figuras/lif_behavior_qualitative.pdf>
-LaTeX Info: Redefining \. on input line 1181.
-LaTeX Info: Redefining \% on input line 1181.
- [48]
+LaTeX Info: Redefining \. on input line 345.
+LaTeX Info: Redefining \% on input line 345.
+ [30]
+LaTeX Info: Redefining \. on input line 372.
+LaTeX Info: Redefining \% on input line 372.
+ [31]
 File: figuras/fig_05_d2d_c2c.png Graphic file (type bmp)
 <figuras/fig_05_d2d_c2c.png>
-LaTeX Info: Redefining \. on input line 1203.
-LaTeX Info: Redefining \% on input line 1203.
- [49]
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 1204.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\times' on input line 1204.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 1204.
-
-
-Overfull \hbox (3.80861pt too wide) in paragraph at lines 1318--1319
- []|\TU/lmr/m/n/10 Completo| 
+File: figuras/lif_fi_curve.png Graphic file (type bmp)
+<figuras/lif_fi_curve.png>
+LaTeX Info: Redefining \. on input line 392.
+LaTeX Info: Redefining \% on input line 392.
+ [32]
+Underfull \hbox (badness 10000) in paragraph at lines 417--417
+[]|\TU/lmr/m/n/8 400 variantes nuevas; exactitud
  []
 
-LaTeX Info: Redefining \. on input line 1320.
-LaTeX Info: Redefining \% on input line 1320.
-[50]
-LaTeX Info: Redefining \. on input line 1320.
-LaTeX Info: Redefining \% on input line 1320.
- [51]
-LaTeX Info: Redefining \. on input line 1320.
-LaTeX Info: Redefining \% on input line 1320.
- [52]
-LaTeX Info: Redefining \. on input line 1369.
-LaTeX Info: Redefining \% on input line 1369.
- [53]
-File: figuras/cartpole_test_seed0.png Graphic file (type bmp)
-<figuras/cartpole_test_seed0.png>
-LaTeX Info: Redefining \. on input line 1427.
-LaTeX Info: Redefining \% on input line 1427.
- [54]
-Overfull \hbox (8.45358pt too wide) in paragraph at lines 1429--1450
-\TU/lmr/m/n/12 ción de pesos se conservan en \TU/lmtt/m/n/12 robot_sim/outputs/
-cartpole_train_validation_test.json\TU/lmr/m/n/12 . 
- []
-
-LaTeX Info: Redefining \. on input line 1471.
-LaTeX Info: Redefining \% on input line 1471.
-[55]
-Underfull \hbox (badness 10000) in alignment at lines 1516--1516
-[][][][] 
- []
-
-LaTeX Info: Redefining \. on input line 1518.
-LaTeX Info: Redefining \% on input line 1518.
-[56]
+LaTeX Info: Redefining \. on input line 431.
+LaTeX Info: Redefining \% on input line 431.
+[33]
 File: figuras/cartpole_learning_24x12_5seeds_d2d_c2c.png Graphic file (type bmp
 )
 <figuras/cartpole_learning_24x12_5seeds_d2d_c2c.png>
 
-Underfull \hbox (badness 5077) in paragraph at lines 1527--1527
-[]\TU/lmr/m/n/12 Figura \TU/lmr/bx/sc/12 3-9\TU/lmr/m/n/12 : |Recompensa por ep
-isodio para el agente CartPole $\OT1/cmr/m/n/12 24 \OMS/cmsy/m/n/12 ^^B \OT1/cm
-r/m/n/12 12$\TU/lmr/m/n/12 : me-
- []
 
-
-Underfull \hbox (badness 6300) in paragraph at lines 1527--1527
-\TU/lmr/m/n/12 dia y dispersión entre cinco semillas de 300 episodios. Figura g
-enerada por
- []
-
-
-Underfull \hbox (badness 2443) in paragraph at lines 1560--1560
-[]|\TU/lmr/m/n/10.95 Sin modulación por
- []
-
-
-Underfull \hbox (badness 1796) in paragraph at lines 1560--1560
-\TU/lmr/m/n/10.95 recompensa (actuali-
- []
-
-LaTeX Info: Redefining \. on input line 1561.
-LaTeX Info: Redefining \% on input line 1561.
-[57]
-File: figuras/cartpole_crossbar_estado.png Graphic file (type bmp)
-<figuras/cartpole_crossbar_estado.png>
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 447.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 1587.
+(hyperref)                removing `\times' on input line 447.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\times' on input line 1587.
+(hyperref)                removing `math shift' on input line 447.
 
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 1587.
-
-LaTeX Info: Redefining \. on input line 1601.
-LaTeX Info: Redefining \% on input line 1601.
-[58]
-File: figuras/vision_patrones_prueba.png Graphic file (type bmp)
-<figuras/vision_patrones_prueba.png>
-File: figuras/vision_arquitectura.png Graphic file (type bmp)
-<figuras/vision_arquitectura.png>
-LaTeX Info: Redefining \. on input line 1626.
-LaTeX Info: Redefining \% on input line 1626.
- [59]
-File: figuras/vision_learning_seed0.png Graphic file (type bmp)
-<figuras/vision_learning_seed0.png>
 File: figuras/vision_seeds.png Graphic file (type bmp)
 <figuras/vision_seeds.png>
-LaTeX Info: Redefining \. on input line 1646.
-LaTeX Info: Redefining \% on input line 1646.
- [60]
+LaTeX Info: Redefining \. on input line 464.
+LaTeX Info: Redefining \% on input line 464.
+[34]
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 1675.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\times' on input line 1675.
+(hyperref)                removing `math shift' on input line 465.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 1675.
+(hyperref)                removing `\times' on input line 465.
 
-LaTeX Info: Redefining \. on input line 1688.
-LaTeX Info: Redefining \% on input line 1688.
-[61]
-File: figuras/obstacle_mapa.png Graphic file (type bmp)
-<figuras/obstacle_mapa.png>
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 465.
+
 File: figuras/obstacle_learning.png Graphic file (type bmp)
 <figuras/obstacle_learning.png>
-LaTeX Info: Redefining \. on input line 1718.
-LaTeX Info: Redefining \% on input line 1718.
- [62]
-File: figuras/obstacle_trayectoria.png Graphic file (type bmp)
-<figuras/obstacle_trayectoria.png>
-LaTeX Info: Redefining \. on input line 1751.
-LaTeX Info: Redefining \% on input line 1751.
- [63]
-File: figuras/car_learning_seed0.png Graphic file (type bmp)
-<figuras/car_learning_seed0.png>
-File: figuras/auto2d_trayectoria_seed0.png Graphic file (type bmp)
-<figuras/auto2d_trayectoria_seed0.png>
-LaTeX Info: Redefining \. on input line 1778.
-LaTeX Info: Redefining \% on input line 1778.
- [64]
-LaTeX Info: Redefining \. on input line 1813.
-LaTeX Info: Redefining \% on input line 1813.
- [65]
-Underfull \hbox (badness 10000) in paragraph at lines 1838--1838
-[]|\TU/lmr/m/n/10 Sin de-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1838--1838
-\TU/lmr/m/n/10 caimiento
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1899--1899
-[]|\TU/lmr/m/n/10 Visión
- []
-
-
-Underfull \hbox (badness 1540) in paragraph at lines 1899--1899
-[]|\TU/lmr/m/n/10 160 ejemplos por checkpoint
- []
-
-
-Overfull \hbox (3.98862pt too wide) in paragraph at lines 1899--1899
-[]|\TU/lmr/m/n/10 Laberinto| 
- []
-
-
-Underfull \hbox (badness 5908) in paragraph at lines 1899--1899
-[]|\TU/lmr/m/n/10 20 escenarios por snapshot
- []
-
-
-Underfull \hbox (badness 3907) in paragraph at lines 1899--1899
-\TU/lmr/m/n/10 (10000–10019); selección por
- []
-
-
-Underfull \hbox (badness 4416) in paragraph at lines 1899--1899
-[]|\TU/lmr/m/n/10 Pesos congelados; 50 casos:
- []
-
-LaTeX Info: Redefining \. on input line 1901.
-LaTeX Info: Redefining \% on input line 1901.
-[66]
-LaTeX Info: Redefining \. on input line 1944.
-LaTeX Info: Redefining \% on input line 1944.
- [67]
-LaTeX Info: Redefining \. on input line 1996.
-LaTeX Info: Redefining \% on input line 1996.
- [68]
-Underfull \hbox (badness 2903) in paragraph at lines 2024--2024
-[]|\TU/lmr/m/n/10.95 Criterio alcanza-
- []
-
-
-Overfull \hbox (31.20448pt too wide) in paragraph at lines 2022--2036
- [][] 
- []
-
-LaTeX Info: Redefining \. on input line 2046.
-LaTeX Info: Redefining \% on input line 2046.
-[69]
-Overfull \hbox (11.82501pt too wide) in paragraph at lines 2066--2081
-[][][][][][][][][][][][][][] [] [][][] [] [][][][][] [] [][][][][][][] [] [][][
-][][] [] [] [] [] [] [][][]$[]\TU/lmr/m/n/12 . Los respectivos archivos \TU/lmt
-t/m/n/12 summary.csv
- []
-
-LaTeX Info: Redefining \. on input line 2103.
-LaTeX Info: Redefining \% on input line 2103.
-[70]
-LaTeX Info: Redefining \. on input line 2160.
-LaTeX Info: Redefining \% on input line 2160.
- [71])
+LaTeX Info: Redefining \. on input line 493.
+LaTeX Info: Redefining \% on input line 493.
+[35]
+LaTeX Info: Redefining \. on input line 551.
+LaTeX Info: Redefining \% on input line 551.
+ [36]
+LaTeX Info: Redefining \. on input line 601.
+LaTeX Info: Redefining \% on input line 601.
+ [37])
 LaTeX Info: Redefining \. on input line 91.
 LaTeX Info: Redefining \% on input line 91.
- [72]
+ [38]
 \openout2 = `Cap4/cap4.aux'.
 
  (Cap4/cap4.tex
 Capítulo 4.
-[73
+[39
 
 
 
 
 ]
-LaTeX Info: Redefining \. on input line 97.
-LaTeX Info: Redefining \% on input line 97.
- [74]
-LaTeX Info: Redefining \. on input line 159.
-LaTeX Info: Redefining \% on input line 159.
- [75]
-LaTeX Info: Redefining \. on input line 196.
-LaTeX Info: Redefining \% on input line 196.
- [76]
-LaTeX Info: Redefining \. on input line 250.
-LaTeX Info: Redefining \% on input line 250.
- [77])
+LaTeX Info: Redefining \. on input line 95.
+LaTeX Info: Redefining \% on input line 95.
+ [40]
+LaTeX Info: Redefining \. on input line 157.
+LaTeX Info: Redefining \% on input line 157.
+ [41]
+LaTeX Info: Redefining \. on input line 200.
+LaTeX Info: Redefining \% on input line 200.
+ [42]
+LaTeX Info: Redefining \. on input line 249.
+LaTeX Info: Redefining \% on input line 249.
+ [43])
 LaTeX Info: Redefining \. on input line 92.
 LaTeX Info: Redefining \% on input line 92.
- [78]
+ [44]
 \openout2 = `Apendices/Apendices.aux'.
 
  (Apendices/Apendices.tex
 Apéndice A.
-[79
+(Apendices/A_codigo [45
 
 
 
 
 ]
-File: 01b_strukov_dashboard_completo.png Graphic file (type bmp)
-<01b_strukov_dashboard_completo.png>
-File: 02_strukov_freq.png Graphic file (type bmp)
-<02_strukov_freq.png>
-LaTeX Info: Redefining \. on input line 78.
-LaTeX Info: Redefining \% on input line 78.
- [80]
-LaTeX Info: Redefining \. on input line 127.
-LaTeX Info: Redefining \% on input line 127.
- [81]
-File: 03_lif_validation_dashboard.png Graphic file (type bmp)
-<03_lif_validation_dashboard.png>
-LaTeX Info: Redefining \. on input line 165.
-LaTeX Info: Redefining \% on input line 165.
- [82]
-LaTeX Info: Redefining \. on input line 247.
-LaTeX Info: Redefining \% on input line 247.
- [83]
-LaTeX Info: Redefining \. on input line 250.
-LaTeX Info: Redefining \% on input line 250.
- [84]
-LaTeX Info: Redefining \. on input line 269.
-LaTeX Info: Redefining \% on input line 269.
- [85
-
-]
-File: 04_distribucion_estocastica.png Graphic file (type bmp)
-<04_distribucion_estocastica.png>
-LaTeX Info: Redefining \. on input line 282.
-LaTeX Info: Redefining \% on input line 282.
- [86
-
-]
-File: 04b_ruido_fisico_c2c.png Graphic file (type bmp)
-<04b_ruido_fisico_c2c.png>
-LaTeX Info: Redefining \. on input line 291.
-LaTeX Info: Redefining \% on input line 291.
- [87
-
-]
-File: 05_evolucion_set_reset.png Graphic file (type bmp)
-<05_evolucion_set_reset.png>
-LaTeX Info: Redefining \. on input line 344.
-LaTeX Info: Redefining \% on input line 344.
- [88
-
-] (Apendices/A_codigo
-LaTeX Info: Redefining \. on input line 1.
-LaTeX Info: Redefining \% on input line 1.
- [89]
 Apéndice B.
 LaTeX Font Info:    Font shape `TU/lmtt/bx/n' in size <17.28> not available
 (Font)              Font shape `TU/lmtt/b/n' tried instead on input line 8.
-[90
+[46
 
 ]
 Underfull \hbox (badness 5954) in paragraph at lines 78--79
@@ -2244,148 +1293,135 @@ Underfull \hbox (badness 8056) in paragraph at lines 78--79
 
 LaTeX Info: Redefining \. on input line 82.
 LaTeX Info: Redefining \% on input line 82.
-[91] (Apendices/B_catalogos
+[47] (Apendices/B_catalogos
 LaTeX Info: Redefining \. on input line 10.
 LaTeX Info: Redefining \% on input line 10.
- [92]
+ [48]
 LaTeX Info: Redefining \. on input line 71.
 LaTeX Info: Redefining \% on input line 71.
- [93]
+ [49]
 LaTeX Info: Redefining \. on input line 130.
 LaTeX Info: Redefining \% on input line 130.
- [94]
+ [50]
 LaTeX Info: Redefining \. on input line 130.
 LaTeX Info: Redefining \% on input line 130.
- [95])
+ [51])
 LaTeX Font Info:    Font shape `TU/lmtt/bx/n' in size <14.4> not available
 (Font)              Font shape `TU/lmtt/b/n' tried instead on input line 123.
 LaTeX Info: Redefining \. on input line 126.
 LaTeX Info: Redefining \% on input line 126.
- [96]) (Apendices/B_datos
+ [52]) (Apendices/B_datos
 LaTeX Info: Redefining \. on input line 1.
 LaTeX Info: Redefining \% on input line 1.
 
-[97]
+[53]
 Apéndice C.
 
-Overfull \hbox (31.90485pt too wide) in paragraph at lines 32--32
-[]|\TU/lmr/m/n/10.95 Estado/corriente 
- []
-
-
-Overfull \hbox (42.88295pt too wide) in paragraph at lines 32--32
-\OT1/cmr/m/n/10.95 0[]999657\OML/cmm/m/it/10.95 =\OT1/cmr/m/n/10.95 0[]996994$\
-TU/lmr/m/n/10.95 ; 
- []
-
-
-Overfull \hbox (6.98878pt too wide) in paragraph at lines 32--32
-\OT1/cmr/m/n/10.95 1[]27\OML/cmm/m/it/10.95 =\OT1/cmr/m/n/10.95 6[]22 %[]$|  
- []
-
-
-Overfull \hbox (14.86665pt too wide) in paragraph at lines 32--33
+Overfull \hbox (0.64027pt too wide) in paragraph at lines 33--34
 []|[]$[][][][][][][][][][] [] 
  []
 
 
-Overfull \hbox (3.36916pt too wide) in paragraph at lines 32--33
-[][][][][][][][] [] 
+Overfull \hbox (6.4473pt too wide) in paragraph at lines 34--34
+[][][][][][][][][][][][] [] 
  []
 
-[98
 
-] [99] [100]
-Overfull \hbox (4.60635pt too wide) in paragraph at lines 65--65
+Overfull \hbox (6.4473pt too wide) in paragraph at lines 35--35
+[][][][][][][][][][][][] [] 
+ []
+
+
+Overfull \hbox (3.551pt too wide) in paragraph at lines 40--40
+[]|\TU/lmr/m/n/10.95 Comparación 
+ []
+
+
+Overfull \hbox (7.28339pt too wide) in paragraph at lines 47--47
+[]|\TU/lmr/m/n/10.95 Solapamiento 
+ []
+
+
+Overfull \hbox (4.84154pt too wide) in paragraph at lines 48--48
+[]|\TU/lmr/m/n/10.95 Acumulación 
+ []
+
+
+Overfull \hbox (3.77939pt too wide) in paragraph at lines 49--49
+[]|\TU/lmr/m/n/10.95 Potenciación 
+ []
+
+
+Overfull \hbox (0.69855pt too wide) in paragraph at lines 58--58
+[][][][][][][][][][][] [] 
+ []
+
+
+Overfull \hbox (3.80446pt too wide) in paragraph at lines 58--58
+[]|[]|  
+ []
+
+[54
+
+] [55]
+Overfull \hbox (4.60635pt too wide) in paragraph at lines 66--66
 |[]\TU/lmr/bx/n/17.28 Registros del piloto comparativo REINFORCE/R-
  []
 
-))
+[56]))
 LaTeX Info: Redefining \. on input line 96.
 LaTeX Info: Redefining \% on input line 96.
- [101]
+ [57]
 \openout2 = `Apendices/D_extendido_main.aux'.
 
- (Apendices/D_extendido_main.tex (Apendices/D_desarrollo_extendido.tex
+ (Apendices/D_extendido_main.tex
+(Apendices/D_desarrollo_extendido.tex
 Apéndice D.
 (Apendices/D_desarrollo_extendido/03_fase1_nucleo
 
 Package hyperref Warning: Difference (2) between bookmark levels is greater 
 (hyperref)                than one, level fixed on input line 5.
 
-[102
+[58
 
 
 
 
 ]
-File: figuras/fig_10_triangular.png Graphic file (type bmp)
-<figuras/fig_10_triangular.png>
- [103]
-File: figuras/fig_01_strukov.png Graphic file (type bmp)
-<figuras/fig_01_strukov.png>
-File: figuras/fig_07_r_x.png Graphic file (type bmp)
-<figuras/fig_07_r_x.png>
- [104]
-File: figuras/fig_09_dt_extremos.png Graphic file (type bmp)
-<figuras/fig_09_dt_extremos.png>
-File: figuras/fig_02_prezioso.png Graphic file (type bmp)
-<figuras/fig_02_prezioso.png>
- [105] [106]
-File: figuras/fig_05_d2d_c2c.png Graphic file (type bmp)
-<figuras/fig_05_d2d_c2c.png>
 File: figuras/fig_11_ruido.png Graphic file (type bmp)
 <figuras/fig_11_ruido.png>
- [107]
+ [59]
 File: figuras/fig_12_estadistica.png Graphic file (type bmp)
 <figuras/fig_12_estadistica.png>
- [108])
-(Apendices/D_desarrollo_extendido/04_fase2_hibrido [109]
+ [60]) (Apendices/D_desarrollo_extendido/04_fase2_hibrido [61]
 File: figuras/fig_06_hfo2_isi_legible.pdf Graphic file (type pdf)
 <use figuras/fig_06_hfo2_isi_legible.pdf>
- [110]
+
+[62]
 File: figuras/fig_08_rs_x.png Graphic file (type bmp)
 <figuras/fig_08_rs_x.png>
- [111]
+ [63]
 File: figuras/fig_03_lif.png Graphic file (type bmp)
 <figuras/fig_03_lif.png>
- [112]
+ [64]
 File: figuras/fig_13_lif_behavior.pdf Graphic file (type pdf)
 <use figuras/fig_13_lif_behavior.pdf>
-
-[113]) (Apendices/D_desarrollo_extendido/05_fase3_plasticidad [114]
-File: figuras/fig_14_ltp_ltd.png Graphic file (type bmp)
-<figuras/fig_14_ltp_ltd.png>
-File: figuras/fig_16_ciclo.png Graphic file (type bmp)
-<figuras/fig_16_ciclo.png>
- [115]
-File: figuras/fig_17_stdp_spikes.png Graphic file (type bmp)
-<figuras/fig_17_stdp_spikes.png>
-
-[116]
-File: figuras/fig_18_stdp_temporal.png Graphic file (type bmp)
-<figuras/fig_18_stdp_temporal.png>
- [117]
-File: figuras/fig_15b_stdp_jo2010.png Graphic file (type bmp)
-<figuras/fig_15b_stdp_jo2010.png>
- [118]
-File: figuras/fig_14b_ltp_ltd_jo2010.png Graphic file (type bmp)
-<figuras/fig_14b_ltp_ltd_jo2010.png>
- [119]
+ [65]) (Apendices/D_desarrollo_extendido/05_fase3_plasticidad
+[66]
 File: figuras/fig_20_vi_ltp_ltd.png Graphic file (type bmp)
 <figuras/fig_20_vi_ltp_ltd.png>
- [120])
-(Apendices/D_desarrollo_extendido/06_fase4_crossbar [121]
+ [67]) (Apendices/D_desarrollo_extendido/06_fase4_crossbar [68]
 File: figuras/fig_21a_crossbar_V.png Graphic file (type bmp)
 <figuras/fig_21a_crossbar_V.png>
 File: figuras/fig_21b_crossbar_G.png Graphic file (type bmp)
 <figuras/fig_21b_crossbar_G.png>
- [122] [123]
+ [69]
+[70]
 File: figuras/fig_21c_crossbar_din.png Graphic file (type bmp)
 <figuras/fig_21c_crossbar_din.png>
 File: figuras/fig_21d_crossbar_stdp.png Graphic file (type bmp)
 <figuras/fig_21d_crossbar_stdp.png>
- [124
+ [71
 
 ]
 File: figuras/23a_prezioso_s3a_modelo_ejemplo.pdf Graphic file (type pdf)
@@ -2394,29 +1430,28 @@ File: figuras/23b_prezioso_s3b_modelo_ejemplo.pdf Graphic file (type pdf)
 <use figuras/23b_prezioso_s3b_modelo_ejemplo.pdf>
 File: figuras/23c_prezioso_s3c_modelo_ejemplo.pdf Graphic file (type pdf)
 <use figuras/23c_prezioso_s3c_modelo_ejemplo.pdf>
-
-[125]
+ [72]
 File: figuras/fig_22_prezioso_v2.png Graphic file (type bmp)
 <figuras/fig_22_prezioso_v2.png>
- [126] [127] [128]
+ [73] [74] [75]
 File: figuras/comparativa_ablaciones_24x12.pdf Graphic file (type pdf)
 <use figuras/comparativa_ablaciones_24x12.pdf>
 File: figuras/heatmap_matriz_X_24x12.pdf Graphic file (type pdf)
 <use figuras/heatmap_matriz_X_24x12.pdf>
- [129] [130]
+ [76] [77]
 File: experiments/figures/exp01_sneak_vs_N.png Graphic file (type bmp)
 <experiments/figures/exp01_sneak_vs_N.png>
 File: experiments/figures/exp02_mna_vs_ideal.png Graphic file (type bmp)
 <experiments/figures/exp02_mna_vs_ideal.png>
- [131]
+ [78]
 File: experiments/figures/exp03_rwire_effect.png Graphic file (type bmp)
 <experiments/figures/exp03_rwire_effect.png>
- [132]
+ [79]
 File: experiments/figures/exp04_vmm_precision.png Graphic file (type bmp)
 <experiments/figures/exp04_vmm_precision.png>
 File: experiments/figures/exp05_v2_vs_v3.png Graphic file (type bmp)
 <experiments/figures/exp05_v2_vs_v3.png>
- [133]
+ [80]
 File: experiments/figures/exp06_retention.png Graphic file (type bmp)
 <experiments/figures/exp06_retention.png>
 File: experiments/figures/exp07_ltp_ltd.png Graphic file (type bmp)
@@ -2424,34 +1459,403 @@ File: experiments/figures/exp07_ltp_ltd.png Graphic file (type bmp)
 File: experiments/figures/exp08_d2d_reproducibility.png Graphic file (type bmp)
 
 <experiments/figures/exp08_d2d_reproducibility.png>
- [134]
+ [81]
 File: experiments/figures/exp09_computational_cost.png Graphic file (type bmp)
 <experiments/figures/exp09_computational_cost.png>
- [135]
+ [82]
 File: experiments/figures/exp10_crosstalk.png Graphic file (type bmp)
 <experiments/figures/exp10_crosstalk.png>
-))) [136]
-(main.bbl [137
+))) [83]
+\openout2 = `Apendices/F_entrenamientos.aux'.
+
+
+(Apendices/F_entrenamientos.tex
+Apéndice E.
+[84
 
 
 
 
 ]
-LaTeX Info: Redefining \. on input line 176.
-LaTeX Info: Redefining \% on input line 176.
- [138])
-LaTeX Info: Redefining \. on input line 110.
-LaTeX Info: Redefining \% on input line 110.
- [139] (main.aux (HojaTitulo/Portada.aux)
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_re
+inforce_seed0_X0_0.1/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_reinfor
+ce_seed0_X0_0.1/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_re
+inforce_seed0_X0_0.1/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_reinfor
+ce_seed0_X0_0.1/success_curve.png>
+ [85
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_re
+inforce_seed0_X0_0.9/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_reinfor
+ce_seed0_X0_0.9/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_re
+inforce_seed0_X0_0.9/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_reinfor
+ce_seed0_X0_0.9/success_curve.png>
+ [86
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_re
+inforce_seed1_X0_0.1/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_reinfor
+ce_seed1_X0_0.1/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_re
+inforce_seed1_X0_0.1/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_reinfor
+ce_seed1_X0_0.1/success_curve.png>
+ [87
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_re
+inforce_seed1_X0_0.9/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_reinfor
+ce_seed1_X0_0.9/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_re
+inforce_seed1_X0_0.9/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_reinfor
+ce_seed1_X0_0.9/success_curve.png>
+ [88
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_rs
+tdp_seed0_X0_0.1/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_rstdp_s
+eed0_X0_0.1/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_rs
+tdp_seed0_X0_0.1/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_rstdp_s
+eed0_X0_0.1/success_curve.png>
+ [89
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_rs
+tdp_seed0_X0_0.9/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_rstdp_s
+eed0_X0_0.9/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_rs
+tdp_seed0_X0_0.9/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_rstdp_s
+eed0_X0_0.9/success_curve.png>
+ [90
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_rs
+tdp_seed1_X0_0.1/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_rstdp_s
+eed1_X0_0.1/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_rs
+tdp_seed1_X0_0.1/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_rstdp_s
+eed1_X0_0.1/success_curve.png>
+ [91
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_rs
+tdp_seed1_X0_0.9/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_rstdp_s
+eed1_X0_0.9/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_rs
+tdp_seed1_X0_0.9/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/robot_rstdp_s
+eed1_X0_0.9/success_curve.png>
+ [92
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_r
+einforce_seed0_X0_0.1/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_reinfo
+rce_seed0_X0_0.1/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_r
+einforce_seed0_X0_0.1/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_reinfo
+rce_seed0_X0_0.1/success_curve.png>
+ [93
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_r
+einforce_seed0_X0_0.9/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_reinfo
+rce_seed0_X0_0.9/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_r
+einforce_seed0_X0_0.9/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_reinfo
+rce_seed0_X0_0.9/success_curve.png>
+ [94
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_r
+einforce_seed1_X0_0.1/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_reinfo
+rce_seed1_X0_0.1/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_r
+einforce_seed1_X0_0.1/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_reinfo
+rce_seed1_X0_0.1/success_curve.png>
+ [95
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_r
+einforce_seed1_X0_0.9/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_reinfo
+rce_seed1_X0_0.9/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_r
+einforce_seed1_X0_0.9/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_reinfo
+rce_seed1_X0_0.9/success_curve.png>
+ [96
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_r
+stdp_seed0_X0_0.1/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_rstdp_
+seed0_X0_0.1/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_r
+stdp_seed0_X0_0.1/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_rstdp_
+seed0_X0_0.1/success_curve.png>
+ [97
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_r
+stdp_seed0_X0_0.9/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_rstdp_
+seed0_X0_0.9/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_r
+stdp_seed0_X0_0.9/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_rstdp_
+seed0_X0_0.9/success_curve.png>
+ [98
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_r
+stdp_seed1_X0_0.1/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_rstdp_
+seed1_X0_0.1/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_r
+stdp_seed1_X0_0.1/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_rstdp_
+seed1_X0_0.1/success_curve.png>
+
+[99
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_r
+stdp_seed1_X0_0.9/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_rstdp_
+seed1_X0_0.9/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_r
+stdp_seed1_X0_0.9/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/vision_rstdp_
+seed1_X0_0.9/success_curve.png>
+ [100
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle
+_reinforce_seed0_X0_0.1/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle_rein
+force_seed0_X0_0.1/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle
+_reinforce_seed0_X0_0.1/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle_rein
+force_seed0_X0_0.1/success_curve.png>
+ [101
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle
+_reinforce_seed0_X0_0.9/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle_rein
+force_seed0_X0_0.9/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle
+_reinforce_seed0_X0_0.9/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle_rein
+force_seed0_X0_0.9/success_curve.png>
+ [102
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle
+_reinforce_seed1_X0_0.1/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle_rein
+force_seed1_X0_0.1/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle
+_reinforce_seed1_X0_0.1/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle_rein
+force_seed1_X0_0.1/success_curve.png>
+ [103
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle
+_reinforce_seed1_X0_0.9/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle_rein
+force_seed1_X0_0.9/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle
+_reinforce_seed1_X0_0.9/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle_rein
+force_seed1_X0_0.9/success_curve.png>
+ [104
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle
+_rstdp_seed0_X0_0.1/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle_rstd
+p_seed0_X0_0.1/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle
+_rstdp_seed0_X0_0.1/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle_rstd
+p_seed0_X0_0.1/success_curve.png>
+ [105
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle
+_rstdp_seed0_X0_0.9/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle_rstd
+p_seed0_X0_0.9/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle
+_rstdp_seed0_X0_0.9/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle_rstd
+p_seed0_X0_0.9/success_curve.png>
+ [106
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle
+_rstdp_seed1_X0_0.1/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle_rstd
+p_seed1_X0_0.1/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle
+_rstdp_seed1_X0_0.1/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle_rstd
+p_seed1_X0_0.1/success_curve.png>
+ [107
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle
+_rstdp_seed1_X0_0.9/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle_rstd
+p_seed1_X0_0.9/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle
+_rstdp_seed1_X0_0.9/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/obstacle_rstd
+p_seed1_X0_0.9/success_curve.png>
+ [108
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/car_rstd
+p_seed0_X0_0.1/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/car_rstdp_see
+d0_X0_0.1/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/car_rstd
+p_seed0_X0_0.1/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/car_rstdp_see
+d0_X0_0.1/success_curve.png>
+ [109
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/car_rstd
+p_seed0_X0_0.9/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/car_rstdp_see
+d0_X0_0.9/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/car_rstd
+p_seed0_X0_0.9/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/car_rstdp_see
+d0_X0_0.9/success_curve.png>
+ [110
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/car_rstd
+p_seed1_X0_0.1/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/car_rstdp_see
+d1_X0_0.1/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/car_rstd
+p_seed1_X0_0.1/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/car_rstdp_see
+d1_X0_0.1/success_curve.png>
+ [111
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/car_rstd
+p_seed1_X0_0.9/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/car_rstdp_see
+d1_X0_0.9/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/car_rstd
+p_seed1_X0_0.9/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/COMPARATIVA_SEEDS_0_1_X0/runs/car_rstdp_see
+d1_X0_0.9/success_curve.png>
+
+[112
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/CAR_RSTDP_EVAL100_SEEDS_2_4_X0/runs/ca
+r_rstdp_seed2_X0_0.1/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/CAR_RSTDP_EVAL100_SEEDS_2_4_X0/runs/car_rst
+dp_seed2_X0_0.1/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/CAR_RSTDP_EVAL100_SEEDS_2_4_X0/runs/ca
+r_rstdp_seed2_X0_0.1/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/CAR_RSTDP_EVAL100_SEEDS_2_4_X0/runs/car_rst
+dp_seed2_X0_0.1/success_curve.png>
+ [113
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/CAR_RSTDP_EVAL100_SEEDS_2_4_X0/runs/ca
+r_rstdp_seed2_X0_0.9/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/CAR_RSTDP_EVAL100_SEEDS_2_4_X0/runs/car_rst
+dp_seed2_X0_0.9/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/CAR_RSTDP_EVAL100_SEEDS_2_4_X0/runs/ca
+r_rstdp_seed2_X0_0.9/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/CAR_RSTDP_EVAL100_SEEDS_2_4_X0/runs/car_rst
+dp_seed2_X0_0.9/success_curve.png>
+ [114
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/CAR_RSTDP_EVAL100_SEEDS_2_4_X0/runs/ca
+r_rstdp_seed4_X0_0.1/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/CAR_RSTDP_EVAL100_SEEDS_2_4_X0/runs/car_rst
+dp_seed4_X0_0.1/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/CAR_RSTDP_EVAL100_SEEDS_2_4_X0/runs/ca
+r_rstdp_seed4_X0_0.1/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/CAR_RSTDP_EVAL100_SEEDS_2_4_X0/runs/car_rst
+dp_seed4_X0_0.1/success_curve.png>
+ [115
+
+]
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/CAR_RSTDP_EVAL100_SEEDS_2_4_X0/runs/ca
+r_rstdp_seed4_X0_0.9/crossbar.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/CAR_RSTDP_EVAL100_SEEDS_2_4_X0/runs/car_rst
+dp_seed4_X0_0.9/crossbar.png>
+File: ../../03_EVIDENCIAS/ENTRENAMIENTOS/CAR_RSTDP_EVAL100_SEEDS_2_4_X0/runs/ca
+r_rstdp_seed4_X0_0.9/success_curve.png Graphic file (type bmp)
+<../../03_EVIDENCIAS/ENTRENAMIENTOS/CAR_RSTDP_EVAL100_SEEDS_2_4_X0/runs/car_rst
+dp_seed4_X0_0.9/success_curve.png>
+ [116
+
+]) (main.bbl [117
+
+
+
+
+
+]
+LaTeX Info: Redefining \. on input line 171.
+LaTeX Info: Redefining \% on input line 171.
+ [118]
+LaTeX Info: Redefining \. on input line 239.
+LaTeX Info: Redefining \% on input line 239.
+ [119])
+LaTeX Info: Redefining \. on input line 112.
+LaTeX Info: Redefining \% on input line 112.
+ [120] (main.aux
+(HojaTitulo/Portada.aux)
 LaTeX Info: Redefining \. on input line 26.
 LaTeX Info: Redefining \% on input line 26.
-
-(Simbolos/simbolos.aux) (Cap1/cap1.aux) (Cap2/cap2.aux) (Cap3/cap3.aux)
-(Cap4/cap4.aux) (Apendices/Apendices.aux) (Apendices/D_extendido_main.aux))
+ (Simbolos/simbolos.aux) (Cap1/cap1.aux) (Cap2/cap2.aux) (Cap3/cap3.aux) (Cap4/
+cap4.aux) (Apendices/Apendices.aux)
+(Apendices/D_extendido_main.aux) (Apendices/F_entrenamientos.aux))
 
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 7E71657E3AA173C4D85B00F3C7E924D8;20902.
+(rerunfilecheck)             Checksum: 2AA980C9DB71D3149B69E6387F641657;14950.
  )
-Output written on main.xdv (156 pages, 2829792 bytes).
+Output written on main.xdv (134 pages, 1889872 bytes).

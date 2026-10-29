@@ -31,11 +31,11 @@ ID & Origen & Script asociado & Métrica & Valor consignado & Evidencia \\
 \endlastfoot
 
 V01 & Strukov 2008 & \url{01_strukov_2008.py} & $R^2$ y ERP por rango & Estado/corriente $R^2=0.999657/0.996994$; ERP $=1.27/6.22\%$ & \url{validacion_strukov_metricas.csv}; Tabla~\ref{tab:metricas_validacion} \\
-V02 & Strukov 2008 & \url{07_r_x_consistencia.py} & Error relativo $R(x)$ & $0.00\%$ reportado & Fig.~\ref{fig:07_r_x} \\
-V03 & Strukov 2008 & \url{04_convergencia.py} & Orden de convergencia $p$ & $0.98$ reportado & Fig.~\ref{fig:09_dt_extremos} \\
-V04 & Strukov 2008 & \url{09_dt_extremos.py} & Umbral máximo de $dt$ & $10^{-3}\,\mathrm{s}$ reportado & Fig.~\ref{fig:09_dt_extremos} \\
-V05 & Strukov 2008 & \url{10_triangular.py} & Rango de $x(t)$ & $[0.0,0.38]$ reportado & Fig.~\ref{fig:val-triangular} \\
-V06 & Prezioso 2014 & \url{02_prezioso_2014.py} & Histéresis I--V & Visual aprox.; sin métricas ni ramas identificadas & Fig.~\ref{fig:val-prezioso} \\
+V02 & Strukov 2008 & \url{07_r_x_consistencia.py} & Error relativo $R(x)$ & $0.00\%$ reportado & Sin figura incluida \\
+V03 & Strukov 2008 & \url{04_convergencia.py} & Orden de convergencia $p$ & $0.98$ reportado & Sin figura incluida \\
+V04 & Strukov 2008 & \url{09_dt_extremos.py} & Umbral máximo de $dt$ & $10^{-3}\,\mathrm{s}$ reportado & Sin figura incluida \\
+V05 & Strukov 2008 & \url{10_triangular.py} & Rango de $x(t)$ & $[0.0,0.38]$ reportado & Sin figura incluida \\
+V06 & Prezioso 2014 & \url{02_prezioso_2014.py} & Histéresis I--V & Visual aprox.; sin métricas ni ramas identificadas & Sin figura incluida \\
 V07 & Modelo local inspirado en Prezioso 2014 & \url{22_prezioso_v2.py} & Salida I--V simulada; sin ajuste a datos experimentales & Sin ajuste cuantitativo & Fig.~\ref{fig:22_prezioso_v2} \\
 V08 & Comparación cualitativa Prezioso 2015 S3a & \url{23_prezioso_s3.py} & Forma I--V sin puntos digitalizados & Cuali\-tativa & Fig.~\ref{fig:prezioso_s3a} \\
 V09 & Modelo local & \url{23_prezioso_s3.py} & Matriz virtual $4\times4$ & Sintética; semilla 42 & Fig.~\ref{fig:prezioso_s3bc} \\
@@ -44,16 +44,16 @@ V11 & Modelo local HfO$_2$--LIF & \url{06_hfo2_isi.py} & ISI dentro de dos ciclo
 V12 & Identidad interna del modelo & \url{08_rs_de_x.py} & $R_S$ frente a $x(t)$ & Verifi\-cación algebraica reportada & Fig.~\ref{fig:08_rs_x} \\
 V13 & Wang 2025; referencia codificada & \url{13_wang_2025.py} & Parámetros de referencia & Resumen guardado; no es serie temporal & Tabla~\ref{tab:csv_datasets} \\
 V14 & Jo 2010, atribuido & \url{24_jo2010_white.py} & STDP; holdout ($R^2$, RMSE) & $0.94220$; $2.13626$ pp; $n=4$; signo declarado & Tabla~\ref{tab:metricas_validacion} \\
-V15 & Jo 2010 & \url{17_stdp_spikes.py} & Solapamiento de pulsos & $\Delta V_{\mathrm{pico}}=450\,\mathrm{mV}$ reportado & Fig.~\ref{fig:val-stdp-spikes} \\
-V16 & Jo 2010 & \url{18_stdp_temporal.py} & Acumulación temporal & $R^2=0.99$ reportado & Fig.~\ref{fig:18_stdp_temporal} \\
-V17 & Jo 2010 & \url{14_ltp_ltd.py} & Potenciación $\Delta G>0$ & Signo reportado & Fig.~\ref{fig:ltp_ltd_base} \\
-V18 & Jo 2010 & \url{14_ltp_ltd.py} & Depresión $\Delta G<0$ & Signo reportado & Fig.~\ref{fig:ltp_ltd_base} \\
-V19 & Jo 2010 & \url{16_ltp_ltd_ciclo.py} & Error de retorno (100 ciclos) & $0.84\%$ reportado & Fig.~\ref{fig:ltp_ltd_ciclo} \\
+V15 & Jo 2010 & \url{17_stdp_spikes.py} & Solapamiento de pulsos & $\Delta V_{\mathrm{pico}}=450\,\mathrm{mV}$ reportado & Sin figura incluida \\
+V16 & Jo 2010 & \url{18_stdp_temporal.py} & Acumulación temporal & $R^2=0.99$ reportado & Sin figura incluida \\
+V17 & Jo 2010 & \url{14_ltp_ltd.py} & Potenciación $\Delta G>0$ & Signo reportado & Fig.~\ref{fig:20_vi_ltp_ltd} \\
+V18 & Jo 2010 & \url{14_ltp_ltd.py} & Depresión $\Delta G<0$ & Signo reportado & Fig.~\ref{fig:20_vi_ltp_ltd} \\
+V19 & Jo 2010 & \url{16_ltp_ltd_ciclo.py} & Error de retorno (100 ciclos) & $0.84\%$ reportado & Sin figura incluida \\
 V20 & Jo 2010 & \url{20_vi_ltp_ltd.py} & Coherencia V-I-R-G & Error $=0.00\%$ reportado & Fig.~\ref{fig:20_vi_ltp_ltd} \\
 V21 & Jo 2010 & \url{19_iv_histeresis.py} & Lazo pinzado en origen & $I(0)=0.0\,\mathrm{nA}$ reportado & CSV en Tabla~\ref{tab:csv_datasets} \\
 V22 & Solución exacta & \url{03_lif_analitica.py} & $R^2$ subumbral LIF & 0.9999815 (archivado) & Fig.~\ref{fig:lif_fi_curve} \\
 V23 & Variabilidad D2D & \url{05_d2d_c2c.py} & Test KS $p$-valor D2D & $0.8959$ reproducido & Fig.~\ref{fig:d2d_c2c_validation} \\
-V24 & Variabilidad C2C sintética & \url{05_d2d_c2c.py} & Error relativo de varianza OU & $3.62\%$; prueba sintética & Fig.~\ref{fig:d2d_c2c_validation} \\
+V24 & Variabilidad C2C sintética & \url{05_d2d_c2c.py} & Error relativo de varianza OU~\cite{35} & $3.62\%$; prueba sintética & Fig.~\ref{fig:d2d_c2c_validation} \\
 V25 & Ruido paramétrico & \url{11_ruido.py} & CV de $I_{pp}$ & $115\%$ reportado & Fig.~\ref{fig:11_ruido} \\
 V26 & D2D/C2C & \url{12_estadistica.py} & KS $p$-valor & \shortstack{ON: 0.7092, OFF: 0.8351\\$x_0$: 0.6187, C2C: 0.0000} & Fig.~\ref{fig:12_estadistica} \\
 V27 & Crossbar $1\times1$ & \url{21_crossbar_1x1.py} & Operación VMM ($I=G^{\mathsf T}V$) & Error $=0.00\%$ reportado & Fig.~\ref{fig:crossbar_1x1_completo} \\
